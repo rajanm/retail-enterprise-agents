@@ -4,8 +4,9 @@ generate_portal_site.py — Retail Enterprise Agents Portal Generator
 
 Programmatically reads _shared/table_registry.yaml and all agent READMEs across 9 domains
 to generate a self-contained, lightning-fast, interactive single-page portal (index.html)
-for GitHub Pages with live search, domain filtering, KPI tags, prompt previews, architecture modal,
-and embedded 1080p video modal players with dual light/dark themes.
+for GitHub Pages with live search, domain filtering, persona filtering, Day-in-the-Life
+storyboards, KPI tags, prompt previews, architecture modal, and embedded 1080p video modal
+players with dual light/dark themes.
 
 Usage:
     uv run python _shared/scripts/generate_portal_site.py
@@ -22,6 +23,25 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from _shared.scripts.prompt_parser import parse_agent_prompts
+from _shared.scripts.persona_catalog import (
+    PERSONA_ARCHETYPES,
+    PERSONA_ORDER,
+    build_agent_transformation,
+    classify_persona_archetype,
+    extract_personas_from_readme,
+)
+
+__all__ = [
+    "DOMAIN_DISPLAY_NAMES",
+    "DOMAIN_ICONS",
+    "DOMAIN_ORDER",
+    "PERSONA_ARCHETYPES",
+    "PERSONA_ORDER",
+    "build_portal_html",
+    "classify_persona_archetype",
+    "extract_agent_metadata",
+    "main",
+]
 
 DOMAIN_ICONS = {
     "merchandising": "🛍️",
@@ -61,7 +81,7 @@ DOMAIN_ORDER = [
 
 
 def extract_agent_metadata(agent_name: str, domain: str, reg_agent: dict, repo_root: Path) -> dict:
-    """Extracts rich metadata, KPIs, and prompts for an agent from its README.md."""
+    """Extracts rich metadata, KPIs, prompts, personas, and transformations for an agent from its README.md."""
     readme_path = repo_root / "domains" / domain / "agents" / agent_name / "README.md"
     
     display_name = reg_agent.get("display_name", agent_name.replace("_", " ").title())
@@ -72,8 +92,9 @@ def extract_agent_metadata(agent_name: str, domain: str, reg_agent: dict, repo_r
     kpis = []
     prompts = []
     
-    if readme_path.exists():
-        content = readme_path.read_text(encoding="utf-8")
+    readme_content = readme_path.read_text(encoding="utf-8") if readme_path.exists() else ""
+    if readme_content:
+        content = readme_content
         
         # 1. Extract Description from Business Problem or Why This Agent Matters
         bp_match = re.search(r"###\s+Business Problem\s*\n+(.*?)(?=\n\s*###|\n\s*##|\n\s*---|\Z)", content, re.DOTALL)
@@ -135,6 +156,12 @@ def extract_agent_metadata(agent_name: str, domain: str, reg_agent: dict, repo_r
             f"Show me a visual chart comparing our {display_name} performance vs annual target."
         ]
         
+    personas = extract_personas_from_readme(readme_content, display_name, domain, kpis, tables)
+    persona_archetypes = [pid for pid in PERSONA_ORDER if any(p["archetype"] == pid for p in personas)]
+    if not persona_archetypes:
+        persona_archetypes = [classify_persona_archetype(display_name, domain)]
+    transformation = build_agent_transformation(display_name, domain, description, personas, kpis, tables)
+    
     demo_html_rel = f"demos/gemini-enterprise/{domain}/{agent_name}.html"
     demo_mp4_rel = f"demos/gemini-enterprise/{domain}/{agent_name}.mp4"
     readme_rel = f"domains/{domain}/{agents_dir_rel(domain, agent_name)}"
@@ -151,6 +178,9 @@ def extract_agent_metadata(agent_name: str, domain: str, reg_agent: dict, repo_r
         "kpis": kpis[:4],
         "prompts": prompts[:3],
         "tables": tables,
+        "personas": personas,
+        "persona_archetypes": persona_archetypes,
+        "transformation": transformation,
         "demo_html": demo_html_rel,
         "demo_mp4": demo_mp4_rel,
         "readme": readme_rel,
@@ -162,7 +192,7 @@ def agents_dir_rel(domain: str, agent_name: str) -> str:
 
 
 def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
-    """Generates the complete index.html file."""
+    """Generates the complete index.html file with Domain and Persona catalog views."""
     
     total_agents = len(agents_data)
     total_domains = len(DOMAIN_ORDER)
@@ -173,6 +203,13 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     for a in agents_data:
         d = a["domain"]
         domain_counts[d] = domain_counts.get(d, 0) + 1
+
+    # Pre-count agents per persona archetype
+    persona_counts = {}
+    for a in agents_data:
+        for pid in a.get("persona_archetypes", []):
+            persona_counts[pid] = persona_counts.get(pid, 0) + 1
+    personas_json = json.dumps(PERSONA_ARCHETYPES, indent=2)
         
     agents_json = json.dumps(agents_data, indent=2)
     
@@ -227,6 +264,19 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
       --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
       --modal-overlay: rgba(15, 23, 42, 0.85);
+
+      --without-bg: rgba(244, 63, 94, 0.10);
+      --without-border: rgba(244, 63, 94, 0.30);
+      --without-text: #fda4af;
+      --with-bg: rgba(52, 211, 153, 0.10);
+      --with-border: rgba(52, 211, 153, 0.30);
+      --with-text: #6ee7b7;
+      --aug-bg: rgba(129, 140, 248, 0.12);
+      --aug-border: rgba(129, 140, 248, 0.30);
+      --aug-text: #a5b4fc;
+      --persona-pill-bg: rgba(168, 85, 247, 0.12);
+      --persona-pill-border: rgba(168, 85, 247, 0.28);
+      --persona-pill-text: #d8b4fe;
     }}
 
     [data-theme="light"] {{
@@ -260,6 +310,19 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
       --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
       --modal-overlay: rgba(15, 23, 42, 0.6);
+
+      --without-bg: #fff1f2;
+      --without-border: #fecdd3;
+      --without-text: #be123c;
+      --with-bg: #ecfdf5;
+      --with-border: #a7f3d0;
+      --with-text: #047857;
+      --aug-bg: #eef2ff;
+      --aug-border: #c7d2fe;
+      --aug-text: #4338ca;
+      --persona-pill-bg: #f3e8ff;
+      --persona-pill-border: #d8b4fe;
+      --persona-pill-text: #6b21a8;
     }}
 
     * {{
@@ -535,6 +598,62 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       color: var(--text-primary);
     }}
 
+    /* View Mode Bar */
+    .view-mode-bar {{
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }}
+
+    .view-mode-toggle {{
+      display: inline-flex;
+      background: var(--bg-surface);
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid var(--border-faint);
+      width: fit-content;
+      gap: 4px;
+    }}
+
+    .view-mode-btn {{
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }}
+
+    .view-mode-btn:hover {{
+      color: var(--text-primary);
+    }}
+
+    .view-mode-btn.active {{
+      background: var(--accent-blue);
+      color: #0f172a;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(56, 189, 248, 0.3);
+    }}
+
+    .view-mode-btn.active .domain-count {{
+      background: rgba(15, 23, 42, 0.25);
+      color: #0f172a;
+    }}
+
+    .view-mode-hint {{
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }}
+
     /* Domain Tabs */
     .domain-pills {{
       display: flex;
@@ -555,6 +674,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       align-items: center;
       gap: 6px;
       transition: all 0.15s ease;
+      font-family: inherit;
     }}
 
     .domain-btn:hover {{
@@ -580,6 +700,477 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .domain-btn.active .domain-count {{
       background: rgba(15, 23, 42, 0.25);
       color: #0f172a;
+    }}
+
+    /* Persona Tabs */
+    .persona-pills {{
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }}
+
+    .persona-btn {{
+      background: var(--bg-surface);
+      border: 1px solid var(--border-faint);
+      color: var(--text-secondary);
+      padding: 8px 14px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }}
+
+    .persona-btn:hover {{
+      color: var(--text-primary);
+      border-color: var(--border-focus);
+    }}
+
+    .persona-btn.active {{
+      background: var(--accent-indigo);
+      color: #ffffff;
+      border-color: var(--accent-indigo);
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(129, 140, 248, 0.35);
+    }}
+
+    .persona-btn.active .domain-count {{
+      background: rgba(0, 0, 0, 0.25);
+      color: #ffffff;
+    }}
+
+    /* Persona Experience Container & Overview Grid */
+    #personaExperienceContainer {{
+      margin-bottom: 28px;
+    }}
+
+    .persona-overview-header {{
+      margin-bottom: 18px;
+    }}
+
+    .persona-overview-title {{
+      font-family: 'Google Sans', sans-serif;
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }}
+
+    .persona-overview-subtitle {{
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }}
+
+    .persona-overview-grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 18px;
+    }}
+
+    .persona-overview-card {{
+      background: var(--bg-card);
+      border: 1px solid var(--border-faint);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-card);
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+    }}
+
+    .persona-overview-card:hover {{
+      transform: translateY(-3px);
+      border-color: var(--border-focus);
+      box-shadow: 0 14px 28px -6px rgba(0, 0, 0, 0.35);
+    }}
+
+    .persona-card-header {{
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+    }}
+
+    .persona-card-title-wrap {{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }}
+
+    .persona-card-icon {{
+      font-size: 1.6rem;
+      line-height: 1;
+    }}
+
+    .persona-card-title {{
+      font-family: 'Google Sans', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }}
+
+    .persona-agent-badge {{
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: var(--persona-pill-bg);
+      border: 1px solid var(--persona-pill-border);
+      color: var(--persona-pill-text);
+      font-family: 'JetBrains Mono', monospace;
+      white-space: nowrap;
+    }}
+
+    .persona-card-subtitle {{
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: var(--accent-blue);
+      margin-bottom: 6px;
+    }}
+
+    .persona-card-summary {{
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+      margin-bottom: 14px;
+      flex: 1;
+    }}
+
+    .persona-metrics-row {{
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+      padding: 8px 12px;
+      background: var(--bg-surface);
+      border-radius: 8px;
+      border: 1px solid var(--border-faint);
+    }}
+
+    .persona-metric-pill {{
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }}
+
+    .persona-metric-pill strong {{
+      color: var(--accent-emerald);
+    }}
+
+    .auto-aug-bar-container {{
+      margin-bottom: 16px;
+    }}
+
+    .auto-aug-legend {{
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.74rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-secondary);
+    }}
+
+    .auto-aug-legend .auto-text {{
+      color: var(--accent-emerald);
+    }}
+
+    .auto-aug-legend .aug-text {{
+      color: var(--accent-indigo);
+    }}
+
+    .auto-aug-bar {{
+      display: flex;
+      height: 8px;
+      border-radius: 9999px;
+      overflow: hidden;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-faint);
+    }}
+
+    .auto-fill-bar {{
+      height: 100%;
+      background: var(--accent-emerald);
+      transition: width 0.6s ease-out;
+    }}
+
+    .aug-fill-bar {{
+      height: 100%;
+      background: var(--accent-indigo);
+      transition: width 0.6s ease-out;
+    }}
+
+    .btn-persona-cta {{
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }}
+
+    .btn-persona-cta:hover {{
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+      color: #0f172a;
+      transform: translateY(-1px);
+    }}
+
+    /* Day in the Life Storyboard */
+    .ditl-banner {{
+      background: var(--bg-card);
+      border: 1px solid var(--border-faint);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 20px;
+    }}
+
+    .ditl-header {{
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }}
+
+    .ditl-header-left {{
+      flex: 1;
+      min-width: 280px;
+    }}
+
+    .ditl-title {{
+      font-family: 'Google Sans', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }}
+
+    .ditl-subtitle {{
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }}
+
+    .ditl-stat-pills {{
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }}
+
+    .ditl-stat-pill {{
+      font-size: 0.76rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-faint);
+      color: var(--text-primary);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }}
+
+    .ditl-header-right {{
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }}
+
+    .ditl-grid {{
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-top: 14px;
+    }}
+
+    @media (max-width: 900px) {{
+      .ditl-grid {{
+        grid-template-columns: 1fr;
+      }}
+    }}
+
+    .ditl-stage-card {{
+      background: var(--bg-surface);
+      border: 1px solid var(--border-faint);
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }}
+
+    .ditl-stage-card:hover {{
+      border-color: var(--border-focus);
+    }}
+
+    .ditl-stage-top {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }}
+
+    .ditl-time-stage {{
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }}
+
+    .ditl-mode-badge {{
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }}
+
+    .ditl-mode-badge.automated {{
+      background: var(--with-bg);
+      border: 1px solid var(--with-border);
+      color: var(--with-text);
+    }}
+
+    .ditl-mode-badge.augmented {{
+      background: var(--aug-bg);
+      border: 1px solid var(--aug-border);
+      color: var(--aug-text);
+    }}
+
+    .ditl-compare-grid {{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }}
+
+    @media (max-width: 600px) {{
+      .ditl-compare-grid {{
+        grid-template-columns: 1fr;
+      }}
+    }}
+
+    .ditl-without {{
+      background: var(--without-bg);
+      border: 1px solid var(--without-border);
+      color: var(--without-text);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }}
+
+    .ditl-with {{
+      background: var(--with-bg);
+      border: 1px solid var(--with-border);
+      color: var(--with-text);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }}
+
+    .ditl-compare-header {{
+      font-weight: 700;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }}
+
+    .ditl-time-tag {{
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      opacity: 0.9;
+    }}
+
+    .ditl-split-box {{
+      background: var(--bg-card);
+      border: 1px solid var(--border-faint);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }}
+
+    .ditl-split-box strong {{
+      color: var(--text-primary);
+    }}
+
+    .ditl-agent-chips {{
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+      padding-top: 4px;
+    }}
+
+    .ditl-agent-chips-label {{
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }}
+
+    .ditl-agent-chip {{
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 4px 9px;
+      border-radius: 6px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }}
+
+    .ditl-agent-chip:hover {{
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+      color: #0f172a;
+      transform: translateY(-1px);
     }}
 
     /* Results Header */
@@ -688,6 +1279,121 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       -webkit-line-clamp: 4;
       -webkit-box-orient: vertical;
       overflow: hidden;
+    }}
+
+    /* Persona Row & Chips on Agent Card */
+    .persona-row {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }}
+
+    .persona-chip {{
+      background: var(--persona-pill-bg);
+      border: 1px solid var(--persona-pill-border);
+      color: var(--persona-pill-text);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }}
+
+    .persona-chip:hover {{
+      transform: translateY(-1px);
+      filter: brightness(1.15);
+    }}
+
+    /* Target Persona Spotlight & Transformation Box on Agent Card */
+    .card-persona-spotlight {{
+      background: var(--bg-surface);
+      border: 1px solid var(--persona-pill-border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+    }}
+
+    .card-persona-spotlight-title {{
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--persona-pill-text);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 6px;
+    }}
+
+    .card-persona-spotlight-roles {{
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }}
+
+    .card-persona-spotlight-roles strong {{
+      color: var(--text-primary);
+    }}
+
+    .card-transform-box {{
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }}
+
+    .card-transform-without {{
+      background: var(--without-bg);
+      border: 1px solid var(--without-border);
+      color: var(--without-text);
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 0.76rem;
+      line-height: 1.4;
+    }}
+
+    .card-transform-with {{
+      background: var(--with-bg);
+      border: 1px solid var(--with-border);
+      color: var(--with-text);
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 0.76rem;
+      line-height: 1.4;
+    }}
+
+    .card-transform-split {{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }}
+
+    .card-split-tag {{
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      line-height: 1.35;
+    }}
+
+    .card-split-tag.auto {{
+      background: var(--with-bg);
+      border: 1px solid var(--with-border);
+      color: var(--with-text);
+    }}
+
+    .card-split-tag.aug {{
+      background: var(--aug-bg);
+      border: 1px solid var(--aug-border);
+      color: var(--aug-text);
     }}
 
     /* KPI Tags */
@@ -1180,6 +1886,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         width: 100%;
         justify-content: space-between;
       }}
+      .persona-overview-grid {{
+        grid-template-columns: 1fr;
+      }}
     }}
   </style>
 </head>
@@ -1249,13 +1958,28 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
   <!-- Main Content Area -->
   <main class="main-container">
     
-    <!-- Toolbar: Search & Domain Filters -->
+    <!-- Toolbar: Search, View Mode, Domain & Persona Filters -->
     <section class="toolbar">
       <div class="search-row">
         <div class="search-input-wrapper">
           <span class="search-icon">🔍</span>
           <input type="text" id="searchInput" class="search-input" placeholder="Search 100 agents by name, KPI (e.g. TRIR, OTIF, ROAS), business question, or BigQuery table..." autocomplete="off">
           <button id="searchClear" class="search-clear" aria-label="Clear search">✕</button>
+        </div>
+      </div>
+
+      <!-- View Mode Selector -->
+      <div class="view-mode-bar" id="viewModeBar" role="tablist" aria-label="Catalog View Mode">
+        <div class="view-mode-toggle">
+          <button class="view-mode-btn active" data-view="domain" role="tab" aria-selected="true">
+            <span>🏢</span> Browse by Domain <span class="domain-count">9</span>
+          </button>
+          <button class="view-mode-btn" data-view="persona" role="tab" aria-selected="false">
+            <span>👤</span> Browse by Persona <span class="domain-count">10</span>
+          </button>
+        </div>
+        <div class="view-mode-hint" id="viewModeHint">
+          Organized by 9 enterprise retail business functions
         </div>
       </div>
 
@@ -1268,7 +1992,20 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           <span>{DOMAIN_ICONS[d]}</span> {DOMAIN_DISPLAY_NAMES[d]} <span class="domain-count">{domain_counts.get(d, 0)}</span>
         </button>''' for d in DOMAIN_ORDER])}
       </div>
+
+      <!-- Persona Pills -->
+      <div class="domain-pills" id="personaPills" style="display: none;">
+        <button class="domain-btn persona-btn active" data-persona="all">
+          <span>👥</span> All Personas <span class="domain-count">{total_agents}</span>
+        </button>
+        {"".join([f'''<button class="domain-btn persona-btn" data-persona="{p['id']}">
+          <span>{p['icon']}</span> {html.escape(p['title'])} <span class="domain-count">{persona_counts.get(p['id'], 0)}</span>
+        </button>''' for p in PERSONA_ARCHETYPES])}
+      </div>
     </section>
+
+    <!-- Persona Experience Container (Overview Grid or Day-in-the-Life Storyboard) -->
+    <section id="personaExperienceContainer" style="display: none;"></section>
 
     <!-- Results Header -->
     <div class="results-bar">
@@ -1286,7 +2023,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     <div class="no-results" id="noResults">
       <div class="no-results-icon">🔎</div>
       <div class="no-results-title">No Matching Enterprise Agents Found</div>
-      <p class="no-results-desc">Try refining your search keyword or switching domain filter tabs.</p>
+      <p class="no-results-desc">Try refining your search keyword or switching filter tabs.</p>
       <button class="btn-header" onclick="resetFilters()">Reset All Filters</button>
     </div>
 
@@ -1530,17 +2267,36 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     </div>
   </footer>
 
+  <!-- Motion Animation Library (ES Module with Web Animations API Fallback) -->
+  <script type="module">
+    try {{
+      const {{ animate, stagger }} = await import('https://cdn.jsdelivr.net/npm/motion@11.11.13/+esm');
+      window.Motion = {{ animate, stagger }};
+    }} catch (e) {{
+      console.warn('Motion CDN unavailable; using Web Animations API fallback', e);
+    }}
+  </script>
+
   <!-- Embedded JSON Data & Client Application Script -->
   <script>
     const AGENTS_DATA = {agents_json};
 
     let activeDomain = 'all';
+    const PERSONA_ARCHETYPES = {personas_json};
+    const PERSONA_MAP = Object.fromEntries(PERSONA_ARCHETYPES.map(p => [p.id, p]));
+    let viewMode = 'domain';
+    let activePersona = 'all';
+    let ditlCollapsed = false;
     let searchQuery = '';
 
     // Elements
     const searchInput = document.getElementById('searchInput');
     const searchClear = document.getElementById('searchClear');
     const domainPills = document.getElementById('domainPills');
+    const personaPills = document.getElementById('personaPills');
+    const viewModeBar = document.getElementById('viewModeBar');
+    const viewModeHint = document.getElementById('viewModeHint');
+    const personaExperienceContainer = document.getElementById('personaExperienceContainer');
     const agentGrid = document.getElementById('agentGrid');
     const noResults = document.getElementById('noResults');
     const resultsCount = document.getElementById('resultsCount');
@@ -1589,15 +2345,306 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       updateThemeUI(next);
     }});
 
+    // Motion Animation Choreography (Motion library + native Web Animations API fallback)
+    function runMotionChoreography(container) {{
+      if (!container) return;
+      const cards = container.querySelectorAll('.persona-overview-card, .ditl-stage-card, .agent-card');
+      if (!cards.length) return;
+
+      if (window.Motion && typeof window.Motion.animate === 'function') {{
+        try {{
+          const staggerFn = window.Motion.stagger ? window.Motion.stagger(0.04) : 0.04;
+          window.Motion.animate(
+            cards,
+            {{ opacity: [0, 1], y: [16, 0] }},
+            {{ delay: staggerFn, duration: 0.35, easing: 'ease-out' }}
+          );
+
+          const fillBars = container.querySelectorAll('.auto-fill-bar');
+          fillBars.forEach(bar => {{
+            const targetW = bar.getAttribute('data-target-width') || bar.style.width;
+            bar.style.width = '0%';
+            window.Motion.animate(bar, {{ width: targetW }}, {{ duration: 0.6, easing: 'ease-out' }});
+          }});
+          return;
+        }} catch (e) {{
+          // Fall through to native Web Animations API fallback
+        }}
+      }}
+
+      // Native Web Animations API fallback
+      cards.forEach((card, idx) => {{
+        card.animate(
+          [
+            {{ opacity: 0, transform: 'translateY(16px)' }},
+            {{ opacity: 1, transform: 'translateY(0)' }}
+          ],
+          {{
+            duration: 350,
+            delay: Math.min(idx * 40, 400),
+            easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+            fill: 'forwards'
+          }}
+        );
+      }});
+
+      const fillBars = container.querySelectorAll('.auto-fill-bar');
+      fillBars.forEach(bar => {{
+        const targetW = bar.getAttribute('data-target-width') || bar.style.width;
+        bar.animate(
+          [
+            {{ width: '0%' }},
+            {{ width: targetW }}
+          ],
+          {{
+            duration: 600,
+            easing: 'ease-out',
+            fill: 'forwards'
+          }}
+        );
+      }});
+    }}
+
+    // View Mode Management
+    function setViewMode(mode) {{
+      viewMode = mode;
+      document.querySelectorAll('.view-mode-btn').forEach(btn => {{
+        const isActive = btn.dataset.view === mode;
+        btn.classList.toggle('active', isActive);
+        btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      }});
+
+      if (mode === 'domain') {{
+        if (domainPills) domainPills.style.display = 'flex';
+        if (personaPills) personaPills.style.display = 'none';
+        if (personaExperienceContainer) personaExperienceContainer.style.display = 'none';
+        if (viewModeHint) viewModeHint.textContent = 'Organized by 9 enterprise retail business functions';
+      }} else {{
+        if (domainPills) domainPills.style.display = 'none';
+        if (personaPills) personaPills.style.display = 'flex';
+        if (personaExperienceContainer) personaExperienceContainer.style.display = 'block';
+        if (viewModeHint) viewModeHint.textContent = 'Organized by 10 retail leadership and operational roles with Day-in-the-Life workflows';
+      }}
+
+      renderPersonaExperience();
+      renderAgents();
+    }}
+
+    // Persona Selection
+    function selectPersona(personaId) {{
+      activePersona = personaId;
+      if (viewMode !== 'persona') {{
+        setViewMode('persona');
+      }}
+
+      document.querySelectorAll('.persona-btn').forEach(btn => {{
+        btn.classList.toggle('active', btn.dataset.persona === personaId);
+      }});
+
+      renderPersonaExperience();
+      renderAgents();
+    }}
+
+    // Switch to Persona Archetype from Domain View Card Chip
+    function switchToPersonaArchetype(personaId) {{
+      setViewMode('persona');
+      selectPersona(personaId);
+      if (viewModeBar) {{
+        viewModeBar.scrollIntoView({{ behavior: 'smooth', block: 'start' }});
+      }}
+    }}
+
+    // Day in the Life Collapsible Toggle
+    function toggleDitlStoryboard() {{
+      ditlCollapsed = !ditlCollapsed;
+      const grid = document.getElementById('ditlGrid');
+      const btn = document.getElementById('ditlToggleBtn');
+      if (grid) {{
+        grid.style.display = ditlCollapsed ? 'none' : 'grid';
+      }}
+      if (btn) {{
+        btn.textContent = ditlCollapsed ? '▼ Show Storyboard' : '▲ Hide Storyboard';
+      }}
+    }}
+
+    // Render Persona Experience Header & Day in the Life Storyboard
+    function renderPersonaExperience() {{
+      if (!personaExperienceContainer) return;
+
+      if (viewMode !== 'persona') {{
+        personaExperienceContainer.style.display = 'none';
+        personaExperienceContainer.innerHTML = '';
+        return;
+      }}
+
+      personaExperienceContainer.style.display = 'block';
+
+      if (activePersona === 'all') {{
+        // State A: 10-Persona Transformation Overview Grid
+        const cardsHtml = PERSONA_ARCHETYPES.map(p => {{
+          const count = AGENTS_DATA.filter(a => (a.persona_archetypes || []).includes(p.id)).length;
+          return `
+            <div class="persona-overview-card" data-persona-id="${{p.id}}">
+              <div class="persona-card-header">
+                <div class="persona-card-title-wrap">
+                  <span class="persona-card-icon">${{p.icon}}</span>
+                  <h3 class="persona-card-title">${{htmlEscape(p.title)}}</h3>
+                </div>
+                <span class="persona-agent-badge">${{count}} agents</span>
+              </div>
+              <div class="persona-card-subtitle">${{htmlEscape(p.subtitle)}}</div>
+              <p class="persona-card-summary">${{htmlEscape(p.roles_summary)}}</p>
+
+              <div class="persona-metrics-row">
+                <span class="persona-metric-pill">⏱️ <strong>${{htmlEscape(p.hours_saved)}}</strong></span>
+                <span class="persona-metric-pill">⚡ <strong>${{htmlEscape(p.decision_speed)}}</strong></span>
+              </div>
+
+              <div class="auto-aug-bar-container">
+                <div class="auto-aug-legend">
+                  <span class="auto-text">🤖 ${{p.automated_pct}}% Automated</span>
+                  <span class="aug-text">✨ ${{p.augmented_pct}}% Augmented</span>
+                </div>
+                <div class="auto-aug-bar">
+                  <div class="auto-fill-bar" style="width: ${{p.automated_pct}}%;" data-target-width="${{p.automated_pct}}%"></div>
+                  <div class="aug-fill-bar" style="width: ${{p.augmented_pct}}%;"></div>
+                </div>
+              </div>
+
+              <button class="btn-persona-cta" onclick="selectPersona('${{p.id}}')">
+                <span>🌅</span> View Day in the Life →
+              </button>
+            </div>
+          `;
+        }}).join('');
+
+        personaExperienceContainer.innerHTML = `
+          <div class="persona-overview-header">
+            <h2 class="persona-overview-title">
+              <span>👤</span> 10 Retail Enterprise Persona Archetypes
+            </h2>
+            <p class="persona-overview-subtitle">
+              Explore how Gemini Enterprise Agents transform daily workflows across retail leadership, merchandising, supply chain, store operations, and digital roles.
+            </p>
+          </div>
+          <div class="persona-overview-grid" id="personaOverviewGrid">
+            ${{cardsHtml}}
+          </div>
+        `;
+        runMotionChoreography(personaExperienceContainer);
+      }} else {{
+        // State B: Day-in-the-Life Storyboard for specific archetype
+        const p = PERSONA_MAP[activePersona];
+        if (!p) return;
+
+        const count = AGENTS_DATA.filter(a => (a.persona_archetypes || []).includes(p.id)).length;
+
+        const stagesHtml = (p.day_in_the_life || []).map(stage => {{
+          const modeClass = (stage.mode || '').toLowerCase();
+          const modeLabel = stage.mode === 'Automated' ? '🤖 Automated' : '✨ Augmented';
+
+          const agentChips = (stage.featured_agents || []).map(slug => {{
+            const agent = AGENTS_DATA.find(a => a.name === slug);
+            const label = agent ? agent.display_name : slug.replace(/_/g, ' ');
+            return `
+              <button class="ditl-agent-chip" onclick="openVideoModal('${{slug}}')" title="Watch Demo for ${{htmlEscape(label)}}">
+                <span>🎬</span> ${{htmlEscape(label)}}
+              </button>
+            `;
+          }}).join('');
+
+          return `
+            <div class="ditl-stage-card">
+              <div class="ditl-stage-top">
+                <span class="ditl-time-stage">⏰ ${{stage.time}} · ${{htmlEscape(stage.stage)}}</span>
+                <span class="ditl-mode-badge ${{modeClass}}">${{modeLabel}}</span>
+              </div>
+
+              <div class="ditl-compare-grid">
+                <div class="ditl-without">
+                  <div class="ditl-compare-header">
+                    <span>🔴 Without Agents (Manual)</span>
+                    <span class="ditl-time-tag">${{htmlEscape(stage.time_before)}}</span>
+                  </div>
+                  <p>${{htmlEscape(stage.without_agents)}}</p>
+                </div>
+                <div class="ditl-with">
+                  <div class="ditl-compare-header">
+                    <span>🟢 With Agents (Agentic)</span>
+                    <span class="ditl-time-tag">${{htmlEscape(stage.time_after)}}</span>
+                  </div>
+                  <p>${{htmlEscape(stage.with_agents)}}</p>
+                </div>
+              </div>
+
+              <div class="ditl-split-box">
+                <div>🤖 <strong>Automated:</strong> ${{htmlEscape(stage.automated_what)}}</div>
+                <div>✨ <strong>Augmented:</strong> ${{htmlEscape(stage.augmented_what)}}</div>
+              </div>
+
+              ${{agentChips ? `
+                <div class="ditl-agent-chips">
+                  <span class="ditl-agent-chips-label">Featured Agents:</span>
+                  ${{agentChips}}
+                </div>
+              ` : ''}}
+            </div>
+          `;
+        }}).join('');
+
+        personaExperienceContainer.innerHTML = `
+          <div class="ditl-banner">
+            <div class="ditl-header">
+              <div class="ditl-header-left">
+                <h2 class="ditl-title">
+                  <span>${{p.icon}}</span> ${{htmlEscape(p.title)}} — Day in the Life
+                </h2>
+                <div class="ditl-subtitle">${{htmlEscape(p.subtitle)}}</div>
+                <div class="ditl-stat-pills">
+                  <span class="ditl-stat-pill">⏱️ <strong>${{htmlEscape(p.hours_saved)}}</strong></span>
+                  <span class="ditl-stat-pill">⚡ <strong>${{htmlEscape(p.decision_speed)}}</strong></span>
+                  <span class="ditl-stat-pill">🤖 <strong>${{p.automated_pct}}% Automated</strong></span>
+                  <span class="ditl-stat-pill">✨ <strong>${{p.augmented_pct}}% Augmented</strong></span>
+                  <span class="ditl-stat-pill">👥 <strong>${{count}} Agents</strong></span>
+                </div>
+              </div>
+              <div class="ditl-header-right">
+                <button class="btn-header" id="backToAllPersonasBtn" onclick="selectPersona('all')">
+                  <span>👥</span> ← All Personas Overview
+                </button>
+                <button class="btn-header" id="ditlToggleBtn" onclick="toggleDitlStoryboard()">
+                  ${{ditlCollapsed ? '▼ Show Storyboard' : '▲ Hide Storyboard'}}
+                </button>
+              </div>
+            </div>
+
+            <div class="ditl-grid" id="ditlGrid" style="${{ditlCollapsed ? 'display: none;' : ''}}">
+              ${{stagesHtml}}
+            </div>
+          </div>
+        `;
+        runMotionChoreography(personaExperienceContainer);
+      }}
+    }}
+
     // Render Cards
     function renderAgents() {{
       const query = searchQuery.toLowerCase().trim();
       
       const filtered = AGENTS_DATA.filter(agent => {{
-        const matchesDomain = activeDomain === 'all' || agent.domain === activeDomain;
-        if (!matchesDomain) return false;
+        if (viewMode === 'domain') {{
+          const matchesDomain = activeDomain === 'all' || agent.domain === activeDomain;
+          if (!matchesDomain) return false;
+        }} else if (viewMode === 'persona') {{
+          const matchesPersona = activePersona === 'all' || (agent.persona_archetypes && agent.persona_archetypes.includes(activePersona));
+          if (!matchesPersona) return false;
+        }}
 
         if (!query) return true;
+
+        const personaText = (agent.personas || []).map(p => p.title + ' ' + (p.description || '')).join(' ');
+        const transformText = agent.transformation ? 
+          [agent.transformation.without_agent, agent.transformation.with_agent, agent.transformation.automated, agent.transformation.augmented].join(' ') : '';
 
         const textPool = [
           agent.display_name,
@@ -1605,6 +2652,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           agent.domain_display,
           agent.description,
           agent.location,
+          personaText,
+          transformText,
           ...(agent.kpis || []),
           ...(agent.prompts || []),
           ...(agent.tables || [])
@@ -1632,6 +2681,56 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           `<div class="prompt-item">"${{htmlEscape(prompt)}}"</div>`
         ).join('');
 
+        // Persona Chips for Domain View
+        const personaChips = (agent.personas || []).slice(0, 3).map(p => 
+          `<button class="persona-chip" onclick="switchToPersonaArchetype('${{p.archetype}}')" title="${{htmlEscape(p.title)}}: ${{htmlEscape(p.description)}}">
+            <span>👤</span> ${{htmlEscape(p.title)}}
+          </button>`
+        ).join('');
+
+        // Persona Spotlight and Transformation Details for Persona View
+        let personaSpotlightHtml = '';
+        let transformHtml = '';
+
+        if (viewMode === 'persona') {{
+          const matchingPersonas = activePersona === 'all' 
+            ? (agent.personas || []).slice(0, 2)
+            : (agent.personas || []).filter(p => p.archetype === activePersona);
+          const spotlightList = matchingPersonas.length > 0 ? matchingPersonas : (agent.personas || []).slice(0, 2);
+
+          if (spotlightList.length > 0) {{
+            personaSpotlightHtml = `
+              <div class="card-persona-spotlight">
+                <div class="card-persona-spotlight-title">
+                  <span>👤</span> Target Persona Spotlight
+                </div>
+                <div class="card-persona-spotlight-roles">
+                  ${{spotlightList.map(p => `
+                    <div><strong>${{htmlEscape(p.title)}}:</strong> ${{htmlEscape(p.description)}}</div>
+                  `).join('')}}
+                </div>
+              </div>
+            `;
+          }}
+
+          if (agent.transformation) {{
+            transformHtml = `
+              <div class="card-transform-box">
+                <div class="card-transform-without">
+                  <strong>🔴 Without Agent:</strong> ${{htmlEscape(agent.transformation.without_agent)}}
+                </div>
+                <div class="card-transform-with">
+                  <strong>🟢 With Agent:</strong> ${{htmlEscape(agent.transformation.with_agent)}}
+                </div>
+                <div class="card-transform-split">
+                  <div class="card-split-tag auto">🤖 <strong>Auto:</strong> ${{htmlEscape(agent.transformation.automated)}}</div>
+                  <div class="card-split-tag aug">✨ <strong>Augment:</strong> ${{htmlEscape(agent.transformation.augmented)}}</div>
+                </div>
+              </div>
+            `;
+          }}
+        }}
+
         return `
           <div class="agent-card" data-agent-id="${{agent.id}}">
             <div class="card-top">
@@ -1642,6 +2741,10 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             </div>
             <h3 class="card-title">${{htmlEscape(agent.display_name)}}</h3>
             <p class="card-desc">${{htmlEscape(agent.description)}}</p>
+
+            ${{viewMode === 'domain' && personaChips ? `<div class="persona-row">${{personaChips}}</div>` : ''}}
+            ${{personaSpotlightHtml}}
+            ${{transformHtml}}
 
             ${{kpiPills ? `<div class="kpi-row">${{kpiPills}}</div>` : ''}}
 
@@ -1709,27 +2812,50 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       searchInput.focus();
     }});
 
+    // View Mode Bar Handler
+    if (viewModeBar) {{
+      viewModeBar.addEventListener('click', (e) => {{
+        const btn = e.target.closest('.view-mode-btn');
+        if (!btn || !btn.dataset.view) return;
+        setViewMode(btn.dataset.view);
+      }});
+    }}
+
     // Domain Filter Handler
     domainPills.addEventListener('click', (e) => {{
       const btn = e.target.closest('.domain-btn');
-      if (!btn) return;
+      if (!btn || !btn.dataset.domain) return;
 
-      document.querySelectorAll('.domain-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#domainPills .domain-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
       activeDomain = btn.dataset.domain;
       renderAgents();
     }});
 
+    // Persona Filter Handler
+    if (personaPills) {{
+      personaPills.addEventListener('click', (e) => {{
+        const btn = e.target.closest('.persona-btn');
+        if (!btn || !btn.dataset.persona) return;
+
+        selectPersona(btn.dataset.persona);
+      }});
+    }}
+
     function resetFilters() {{
       searchInput.value = '';
       searchQuery = '';
       searchClear.style.display = 'none';
       activeDomain = 'all';
-      document.querySelectorAll('.domain-btn').forEach(b => {{
+      activePersona = 'all';
+      document.querySelectorAll('#domainPills .domain-btn').forEach(b => {{
         b.classList.toggle('active', b.dataset.domain === 'all');
       }});
-      renderAgents();
+      document.querySelectorAll('#personaPills .persona-btn').forEach(b => {{
+        b.classList.toggle('active', b.dataset.persona === 'all');
+      }});
+      setViewMode('domain');
     }}
 
     // Video Modal Handlers
@@ -1798,6 +2924,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     // Initial Load
     initTheme();
+    renderPersonaExperience();
     renderAgents();
   </script>
 </body>
