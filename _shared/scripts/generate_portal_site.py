@@ -285,6 +285,36 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --persona-pill-bg: rgba(168, 85, 247, 0.12);
       --persona-pill-border: rgba(168, 85, 247, 0.28);
       --persona-pill-text: #d8b4fe;
+
+      /* 5-State Task Bundle Tokens (Dark Theme) */
+      --task-unchanged-bg: rgba(148, 163, 184, 0.12);
+      --task-unchanged-border: rgba(148, 163, 184, 0.35);
+      --task-unchanged-text: #e2e8f0;
+      --task-unchanged-dot: #94a3b8;
+
+      --task-augmented-bg: rgba(168, 85, 247, 0.16);
+      --task-augmented-border: rgba(192, 132, 252, 0.55);
+      --task-augmented-text: #f3e8ff;
+      --task-augmented-dot: #c084fc;
+      --task-augmented-stack-1: rgba(168, 85, 247, 0.28);
+      --task-augmented-stack-2: rgba(168, 85, 247, 0.14);
+
+      --task-automated-bg: rgba(56, 189, 248, 0.16);
+      --task-automated-border: rgba(56, 189, 248, 0.55);
+      --task-automated-text: #e0f2fe;
+      --task-automated-dot: #38bdf8;
+      --task-automated-stack-1: rgba(56, 189, 248, 0.28);
+      --task-automated-stack-2: rgba(56, 189, 248, 0.14);
+
+      --task-new-bg: rgba(251, 191, 36, 0.16);
+      --task-new-border: rgba(251, 191, 36, 0.55);
+      --task-new-text: #fef3c7;
+      --task-new-dot: #fbbf24;
+
+      --task-retired-bg: rgba(148, 163, 184, 0.04);
+      --task-retired-border: rgba(148, 163, 184, 0.24);
+      --task-retired-text: #64748b;
+      --task-retired-dot: #64748b;
     }}
 
     [data-theme="light"] {{
@@ -331,6 +361,36 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --persona-pill-bg: #f3e8ff;
       --persona-pill-border: #d8b4fe;
       --persona-pill-text: #6b21a8;
+
+      /* 5-State Task Bundle Tokens (Light Theme) */
+      --task-unchanged-bg: #edeae2;
+      --task-unchanged-border: #c7c2b6;
+      --task-unchanged-text: #3f3d37;
+      --task-unchanged-dot: #8c8577;
+
+      --task-augmented-bg: #f3e8ff;
+      --task-augmented-border: #9333ea;
+      --task-augmented-text: #581c87;
+      --task-augmented-dot: #9333ea;
+      --task-augmented-stack-1: rgba(147, 51, 234, 0.22);
+      --task-augmented-stack-2: rgba(147, 51, 234, 0.11);
+
+      --task-automated-bg: #e0f2fe;
+      --task-automated-border: #0284c7;
+      --task-automated-text: #0c4a6e;
+      --task-automated-dot: #0284c7;
+      --task-automated-stack-1: rgba(2, 132, 199, 0.22);
+      --task-automated-stack-2: rgba(2, 132, 199, 0.11);
+
+      --task-new-bg: #fef3c7;
+      --task-new-border: #d97706;
+      --task-new-text: #78350f;
+      --task-new-dot: #d97706;
+
+      --task-retired-bg: #f4f3ee;
+      --task-retired-border: #c4bfb3;
+      --task-retired-text: #78716c;
+      --task-retired-dot: #a8a29e;
     }}
 
     * {{
@@ -923,6 +983,125 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       transition: width 0.6s ease-out;
     }}
 
+    /* 5-State Task Bundle Legend Key & 5-Segment Distribution Bar */
+    .task-bundle-key-bar {{
+      background: var(--bg-card);
+      border: 1px solid var(--border-faint);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-top: 12px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }}
+
+    .task-bundle-key-title {{
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }}
+
+    .task-bundle-key-items {{
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }}
+
+    .task-bundle-key-chip {{
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      line-height: 1.2;
+    }}
+
+    .task-bundle-key-chip.key-unchanged {{
+      background: var(--task-unchanged-bg);
+      border: 1px solid var(--task-unchanged-border);
+      color: var(--task-unchanged-text);
+    }}
+
+    .task-bundle-key-chip.key-augmented {{
+      background: var(--task-augmented-bg);
+      border: 1px solid var(--task-augmented-border);
+      color: var(--task-augmented-text);
+    }}
+
+    .task-bundle-key-chip.key-automated {{
+      background: var(--task-automated-bg);
+      border: 1px solid var(--task-automated-border);
+      color: var(--task-automated-text);
+    }}
+
+    .task-bundle-key-chip.key-new {{
+      background: var(--task-new-bg);
+      border: 1px solid var(--task-new-border);
+      color: var(--task-new-text);
+    }}
+
+    .task-bundle-key-chip.key-retired {{
+      background: var(--task-retired-bg);
+      border: 1px solid var(--task-retired-border);
+      color: var(--task-retired-text);
+    }}
+
+    .task-dist-container {{
+      margin-bottom: 16px;
+    }}
+
+    .task-dist-labels {{
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.70rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-secondary);
+      flex-wrap: wrap;
+      gap: 4px;
+    }}
+
+    .task-dist-bar {{
+      display: flex;
+      height: 8px;
+      border-radius: 9999px;
+      overflow: hidden;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-faint);
+    }}
+
+    .task-dist-bar .seg-unchanged {{
+      background: var(--task-unchanged-border);
+      height: 100%;
+    }}
+
+    .task-dist-bar .seg-augmented {{
+      background: var(--task-augmented-border);
+      height: 100%;
+    }}
+
+    .task-dist-bar .seg-automated {{
+      background: var(--task-automated-border);
+      height: 100%;
+    }}
+
+    .task-dist-bar .seg-new {{
+      background: var(--task-new-border);
+      height: 100%;
+    }}
+
+    .task-dist-bar .seg-retired {{
+      background: var(--task-retired-border);
+      height: 100%;
+    }}
+
     .btn-persona-cta {{
       width: 100%;
       display: inline-flex;
@@ -1180,6 +1359,701 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       border-color: var(--accent-blue);
       color: #0f172a;
       transform: translateY(-1px);
+    }}
+
+    /* 2-State Switcher Controls Bar */
+    .ditl-controls-row {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border-faint);
+      flex-wrap: wrap;
+    }}
+
+    .ditl-state-switcher {{
+      display: inline-flex;
+      background: var(--bg-surface);
+      border: 1.5px solid var(--border-color);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 4px;
+    }}
+
+    .ditl-state-btn {{
+      padding: 7px 14px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }}
+
+    .ditl-state-btn:hover {{
+      color: var(--text-primary);
+      transform: translateY(-1px);
+      border-color: var(--border-focus);
+    }}
+
+    .ditl-state-btn.active-before {{
+      background: #dc2626 !important;
+      border-color: #b91c1c !important;
+      color: #ffffff !important;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.28);
+    }}
+
+    .ditl-state-btn.active-after {{
+      background: #10b981 !important;
+      border-color: #059669 !important;
+      color: #ffffff !important;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.30);
+    }}
+
+    .mode-radio-dot {{
+      font-size: 0.85rem;
+      line-height: 1;
+    }}
+
+    /* Interactive 5-State Filter Pills */
+    .ditl-state-filter-pill {{
+      cursor: pointer;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      border-width: 1.5px !important;
+      user-select: none;
+    }}
+
+    .ditl-state-filter-pill:hover {{
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+    }}
+
+    .ditl-state-filter-pill.active-filter {{
+      border-width: 2px !important;
+      font-weight: 800 !important;
+      transform: translateY(-2px);
+      box-shadow: 0 0 0 3px var(--border-focus), 0 6px 14px rgba(0, 0, 0, 0.18) !important;
+    }}
+
+    .pill-check-ind {{
+      font-size: 0.72rem;
+      font-weight: 800;
+      margin-right: 2px;
+    }}
+
+    .filter-reset-pill {{
+      font-size: 0.70rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }}
+
+    .filter-reset-pill:hover {{
+      background: var(--without-bg);
+      border-color: var(--without-border);
+      color: var(--without-text);
+    }}
+
+    .ditl-stage-top-right {{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }}
+
+    .stage-maximize-btn {{
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 9px;
+      border-radius: 6px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }}
+
+    .stage-maximize-btn:hover {{
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+      color: #0f172a;
+      transform: translateY(-1px);
+    }}
+
+    .ditl-stage-horizon {{
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.74rem;
+      font-weight: 700;
+      padding: 4px 9px;
+      border-radius: 6px;
+      background: var(--badge-bg);
+      border: 1px solid var(--badge-border);
+      color: var(--badge-text);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }}
+
+    .ditl-stage-horizon.manual-mode {{
+      background: var(--without-bg);
+      border-color: var(--without-border);
+      color: var(--without-text);
+    }}
+
+    /* 3×2 Task-Bundle Grid */
+    .task-bundle-wrap {{
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }}
+
+    .task-bundle-title {{
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }}
+
+    .task-bundle-grid {{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }}
+
+    @media (max-width: 900px) {{
+      .task-bundle-grid {{
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }}
+    }}
+
+    @media (max-width: 600px) {{
+      .task-bundle-grid {{
+        grid-template-columns: 1fr;
+      }}
+    }}
+
+    .task-tile {{
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 88px;
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      cursor: pointer;
+      outline: none;
+    }}
+
+    .task-tile:focus-visible {{
+      box-shadow: 0 0 0 2.5px var(--border-focus);
+    }}
+
+    .task-tile-top {{
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 6px;
+    }}
+
+    .task-state-tag {{
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      line-height: 1.2;
+    }}
+
+    .task-step-ref {{
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.66rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.10);
+      color: inherit;
+      white-space: nowrap;
+    }}
+
+    .task-tile-label {{
+      font-size: 0.80rem;
+      line-height: 1.35;
+      font-weight: 600;
+    }}
+
+    .task-tile-footer {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.64rem;
+      color: var(--text-muted);
+      padding-top: 4px;
+      border-top: 1px dashed rgba(0, 0, 0, 0.08);
+    }}
+
+    .task-pin-chip {{
+      font-size: 0.64rem;
+      font-weight: 600;
+      opacity: 0.75;
+    }}
+
+    .task-tile.is-pinned .task-pin-chip {{
+      opacity: 1;
+      font-weight: 800;
+      color: var(--accent-blue);
+    }}
+
+    /* Task States */
+    .task-tile.state-unchanged {{
+      background: var(--task-unchanged-bg);
+      border: 1px solid var(--task-unchanged-border);
+      color: var(--task-unchanged-text);
+    }}
+
+    .task-tile.state-augmented {{
+      background: var(--task-augmented-bg);
+      border: 1px solid var(--task-augmented-border);
+      color: var(--task-augmented-text);
+      box-shadow: 0 2px 0 0 var(--task-augmented-stack-1), 0 4px 0 0 var(--task-augmented-stack-2);
+    }}
+
+    .task-tile.state-automated {{
+      background: var(--task-automated-bg);
+      border: 1px solid var(--task-automated-border);
+      color: var(--task-automated-text);
+      box-shadow: 0 2px 0 0 var(--task-automated-stack-1), 0 4px 0 0 var(--task-automated-stack-2);
+    }}
+
+    .task-tile.state-new {{
+      background: var(--task-new-bg);
+      border: 1px solid var(--task-new-border);
+      color: var(--task-new-text);
+    }}
+
+    .task-tile.state-retired {{
+      background: var(--task-retired-bg);
+      border: 1px dashed var(--task-retired-border);
+      color: var(--task-retired-text);
+      opacity: 0.75;
+    }}
+
+    .task-tile.state-retired .task-tile-label {{
+      text-decoration: line-through;
+    }}
+
+    .task-tile.state-dormant {{
+      background: var(--task-retired-bg);
+      border: 1px dashed var(--task-retired-border);
+      color: var(--task-retired-text);
+      opacity: 0.65;
+    }}
+
+    /* Prominent Motion Spotlighting & Dimming */
+    .motion-spotlight {{
+      transform: translateY(-4px) scale(1.03) !important;
+      z-index: 6 !important;
+      box-shadow: 0 0 0 2.5px var(--border-focus), 0 14px 28px -6px rgba(37, 99, 235, 0.28) !important;
+    }}
+
+    .motion-dimmed {{
+      opacity: 0.26 !important;
+      filter: grayscale(45%);
+      transform: scale(0.96);
+      pointer-events: auto;
+    }}
+
+    /* Motion UI Connected Orchestration Conduit (Metro Timeline) */
+    .stage-flow-section {{
+      margin-top: 12px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border-faint);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }}
+
+    .stage-flow-header {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }}
+
+    .stage-flow-title {{
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }}
+
+    .motion-pulse-dot {{
+      width: 7px;
+      height: 7px;
+      border-radius: 9999px;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+      animation: pulseDot 1.8s infinite;
+      display: inline-block;
+    }}
+
+    @keyframes pulseDot {{
+      0% {{
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+      }}
+      70% {{
+        box-shadow: 0 0 0 6px rgba(52, 211, 153, 0);
+      }}
+      100% {{
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
+      }}
+    }}
+
+    .stage-flow-hint {{
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }}
+
+    .flow-conduit-track {{
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(var(--conduit-cols, 3), minmax(0, 1fr));
+      gap: 12px;
+      padding-top: 4px;
+    }}
+
+    @media (max-width: 900px) {{
+      .flow-conduit-track {{
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }}
+    }}
+
+    @media (max-width: 600px) {{
+      .flow-conduit-track {{
+        grid-template-columns: 1fr;
+      }}
+    }}
+
+    .conduit-rail-line {{
+      position: absolute;
+      top: 21px;
+      left: 24px;
+      right: 24px;
+      height: 4px;
+      background: var(--border-color);
+      border-radius: 9999px;
+      z-index: 1;
+    }}
+
+    .conduit-rail-fill {{
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-indigo));
+      border-radius: 9999px;
+      transform-origin: left;
+    }}
+
+    .conduit-node {{
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      cursor: pointer;
+    }}
+
+    .conduit-medallion-row {{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      height: 38px;
+    }}
+
+    .conduit-medallion {{
+      width: 36px;
+      height: 36px;
+      border-radius: 9999px;
+      background: var(--bg-card);
+      border: 2px solid var(--accent-blue);
+      color: var(--accent-blue);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 0.78rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+      transition: all 0.2s ease;
+      z-index: 3;
+    }}
+
+    .conduit-node:hover .conduit-medallion,
+    .conduit-node.active-step .conduit-medallion,
+    .conduit-medallion.motion-spotlight {{
+      background: var(--accent-blue);
+      color: #0f172a;
+      transform: scale(1.12);
+      border-color: #ffffff;
+      box-shadow: 0 0 0 3px var(--border-focus), 0 8px 16px rgba(0, 0, 0, 0.25);
+    }}
+
+    .conduit-arrow {{
+      position: absolute;
+      right: -8px;
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--accent-emerald);
+      z-index: 3;
+    }}
+
+    .conduit-step-card {{
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-color);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      flex: 1;
+    }}
+
+    .conduit-step-card:hover,
+    .conduit-step-card.active-step,
+    .conduit-node.active-step .conduit-step-card {{
+      background: var(--bg-surface);
+      border-color: var(--border-focus);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.22);
+    }}
+
+    .conduit-linked-badge {{
+      display: none;
+      font-size: 0.62rem;
+      font-weight: 800;
+      color: var(--accent-emerald);
+      background: var(--kpi-bg);
+      border: 1px solid var(--kpi-border);
+      padding: 2px 5px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }}
+
+    .conduit-node.active-step .conduit-linked-badge {{
+      display: inline-flex;
+    }}
+
+    .flow-bento-grid {{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }}
+
+    .flow-step-card {{
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 9px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }}
+
+    .flow-step-card:hover,
+    .flow-step-card.active-step {{
+      background: var(--bg-surface);
+      border-color: var(--border-focus);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.2);
+    }}
+
+    .flow-step-card.active-step {{
+      box-shadow: 0 0 0 2px var(--border-focus), 0 6px 14px -2px rgba(0, 0, 0, 0.25);
+    }}
+
+    .flow-step-top {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 4px;
+    }}
+
+    .flow-step-badge {{
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.66rem;
+      font-weight: 800;
+      color: var(--accent-blue);
+      letter-spacing: 0.04em;
+    }}
+
+    .flow-demo-pill {{
+      font-size: 0.64rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }}
+
+    .flow-step-action {{
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.3;
+    }}
+
+    .flow-connector-tag {{
+      color: var(--accent-emerald);
+      font-weight: 800;
+      font-size: 0.76rem;
+    }}
+
+    .flow-step-agent {{
+      font-size: 0.71rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      line-height: 1.32;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }}
+
+    .conduit-demo-btn {{
+      margin-top: auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 6px 8px;
+      border-radius: 7px;
+      background: var(--bg-surface);
+      border: 1.5px solid var(--border-color);
+      color: var(--text-primary);
+      font-size: 0.70rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s ease;
+      width: 100%;
+    }}
+
+    .conduit-demo-btn:hover {{
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+      color: #0f172a;
+      transform: translateY(-1px);
+    }}
+
+    /* Full-Screen Stage Theater Modal */
+    .stage-theater-backdrop {{
+      z-index: 60;
+    }}
+
+    .stage-theater-dialog {{
+      max-width: 1440px !important;
+      width: 96vw !important;
+      max-height: 94vh !important;
+      overflow-y: auto;
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-focus);
+      border-radius: 18px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.45);
+      display: flex;
+      flex-direction: column;
+    }}
+
+    .stage-theater-header {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }}
+
+    .stage-theater-tabs {{
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }}
+
+    .theater-stage-tab {{
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }}
+
+    .theater-stage-tab:hover {{
+      color: var(--text-primary);
+      border-color: var(--border-focus);
+    }}
+
+    .theater-stage-tab.active {{
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+      color: #0f172a;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }}
+
+    .stage-theater-body {{
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }}
 
     /* Results Header */
@@ -2258,6 +3132,34 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     </div>
   </div>
 
+  <!-- Full-Screen Stage Focus Theater Modal -->
+  <div class="modal-backdrop stage-theater-backdrop" id="stageTheaterModal">
+    <div class="modal-dialog stage-theater-dialog" id="stageTheaterDialog">
+      <div class="stage-theater-header">
+        <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span id="theaterPersonaIcon" style="font-size:1.4rem;">👤</span>
+            <span id="theaterPersonaTitle" style="font-family:'Google Sans',sans-serif; font-size:1.05rem; font-weight:700; color:var(--text-primary);">Persona Focus Theater</span>
+          </div>
+          <div class="stage-theater-tabs" id="theaterStageTabs">
+            <!-- Injected via JavaScript -->
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="ditl-state-switcher" id="theaterStateSwitcher">
+            <!-- Injected via JavaScript -->
+          </div>
+          <button class="btn-header" onclick="closeStageTheater()" style="padding:6px 12px; font-weight:700;">
+            ✕ Exit Full Screen (Esc)
+          </button>
+        </div>
+      </div>
+      <div class="stage-theater-body" id="stageTheaterBody">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+  </div>
+
   <!-- Site Footer -->
   <footer class="site-footer">
     <div class="footer-inner">
@@ -2296,7 +3198,69 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     let viewMode = 'domain';
     let activePersona = 'all';
     let ditlCollapsed = false;
+    let ditlStateMode = 'after';
+    let activeTaskStateFilter = null; // null or 'unchanged' | 'augmented' | 'automated' | 'new' | 'retired'
+    let hoveredTaskStateFilter = null;
+    let maximizedStageIdx = 0;
     let searchQuery = '';
+
+    function setDitlStateMode(mode) {{
+      ditlStateMode = mode;
+      renderPersonaExperience();
+      if (stageTheaterModal && stageTheaterModal.classList.contains('open')) {{
+        renderStageTheater();
+      }}
+    }}
+
+    function previewTaskStateFilter(state) {{
+      hoveredTaskStateFilter = state;
+      applyProminentSpotlight();
+    }}
+
+    function clearPreviewTaskStateFilter() {{
+      hoveredTaskStateFilter = null;
+      applyProminentSpotlight();
+    }}
+
+    function toggleTaskStateFilter(state) {{
+      if (activeTaskStateFilter === state) {{
+        activeTaskStateFilter = null;
+      }} else {{
+        activeTaskStateFilter = state;
+      }}
+      applyProminentSpotlight();
+      // Update UI active filter pills
+      document.querySelectorAll('.ditl-state-filter-pill').forEach(pill => {{
+        const pState = pill.getAttribute('data-filter-state');
+        const isActive = pState === activeTaskStateFilter;
+        pill.classList.toggle('active-filter', isActive);
+        const ind = pill.querySelector('.pill-check-ind');
+        if (ind) ind.textContent = isActive ? '✓' : '○';
+      }});
+      // Show/hide reset pills
+      document.querySelectorAll('.filter-reset-pill').forEach(btn => {{
+        btn.style.display = activeTaskStateFilter ? 'inline-flex' : 'none';
+      }});
+    }}
+
+    function resetTaskStateFilter() {{
+      activeTaskStateFilter = null;
+      hoveredTaskStateFilter = null;
+      document.querySelectorAll('.task-tile.is-pinned, .conduit-node.is-pinned').forEach(el => {{
+        el.classList.remove('is-pinned');
+        const chip = el.querySelector('.task-pin-chip');
+        if (chip) chip.textContent = 'Click to pin focus';
+      }});
+      applyProminentSpotlight();
+      document.querySelectorAll('.ditl-state-filter-pill').forEach(pill => {{
+        pill.classList.remove('active-filter');
+        const ind = pill.querySelector('.pill-check-ind');
+        if (ind) ind.textContent = '○';
+      }});
+      document.querySelectorAll('.filter-reset-pill').forEach(btn => {{
+        btn.style.display = 'none';
+      }});
+    }}
 
     // Elements
     const searchInput = document.getElementById('searchInput');
@@ -2331,6 +3295,15 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     const archCloseBtn = document.getElementById('archCloseBtn');
     const archOkBtn = document.getElementById('archOkBtn');
 
+    // Full-Screen Stage Focus Theater Modal Elements
+    const stageTheaterModal = document.getElementById('stageTheaterModal');
+    const stageTheaterDialog = document.getElementById('stageTheaterDialog');
+    const theaterPersonaIcon = document.getElementById('theaterPersonaIcon');
+    const theaterPersonaTitle = document.getElementById('theaterPersonaTitle');
+    const theaterStageTabs = document.getElementById('theaterStageTabs');
+    const theaterStateSwitcher = document.getElementById('theaterStateSwitcher');
+    const stageTheaterBody = document.getElementById('stageTheaterBody');
+
     // Theme Management
     function initTheme() {{
       const current = document.documentElement.getAttribute('data-theme') || 'dark';
@@ -2359,16 +3332,46 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     function runMotionChoreography(container) {{
       if (!container) return;
       const cards = container.querySelectorAll('.persona-overview-card, .ditl-stage-card, .agent-card');
-      if (!cards.length) return;
+      const taskTiles = container.querySelectorAll('.task-tile');
+      const flowSteps = container.querySelectorAll('.flow-step-card');
+      const railFills = container.querySelectorAll('.motion-rail-fill');
 
       if (window.Motion && typeof window.Motion.animate === 'function') {{
         try {{
-          const staggerFn = window.Motion.stagger ? window.Motion.stagger(0.04) : 0.04;
-          window.Motion.animate(
-            cards,
-            {{ opacity: [0, 1], y: [16, 0] }},
-            {{ delay: staggerFn, duration: 0.35, easing: 'ease-out' }}
-          );
+          if (cards.length) {{
+            const staggerFn = window.Motion.stagger ? window.Motion.stagger(0.04) : 0.04;
+            window.Motion.animate(
+              cards,
+              {{ opacity: [0, 1], y: [16, 0] }},
+              {{ delay: staggerFn, duration: 0.35, easing: 'ease-out' }}
+            );
+          }}
+
+          if (taskTiles.length) {{
+            const tileStagger = window.Motion.stagger ? window.Motion.stagger(0.025) : 0.025;
+            window.Motion.animate(
+              taskTiles,
+              {{ opacity: [0, 1], scale: [0.96, 1] }},
+              {{ delay: tileStagger, duration: 0.30, easing: 'ease-out' }}
+            );
+          }}
+
+          if (flowSteps.length) {{
+            const flowStagger = window.Motion.stagger ? window.Motion.stagger(0.045) : 0.045;
+            window.Motion.animate(
+              flowSteps,
+              {{ opacity: [0, 1], y: [10, 0] }},
+              {{ delay: flowStagger, duration: 0.32, easing: 'ease-out' }}
+            );
+          }}
+
+          if (railFills.length) {{
+            window.Motion.animate(
+              railFills,
+              {{ width: ['0%', '100%'] }},
+              {{ duration: 0.65, easing: 'ease-out' }}
+            );
+          }}
 
           const fillBars = container.querySelectorAll('.auto-fill-bar');
           fillBars.forEach(bar => {{
@@ -2398,6 +3401,50 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         );
       }});
 
+      taskTiles.forEach((tile, idx) => {{
+        tile.animate(
+          [
+            {{ opacity: 0, transform: 'scale(0.96)' }},
+            {{ opacity: 1, transform: 'scale(1)' }}
+          ],
+          {{
+            duration: 300,
+            delay: Math.min(idx * 25, 300),
+            easing: 'ease-out',
+            fill: 'forwards'
+          }}
+        );
+      }});
+
+      flowSteps.forEach((step, idx) => {{
+        step.animate(
+          [
+            {{ opacity: 0, transform: 'translateY(10px)' }},
+            {{ opacity: 1, transform: 'translateY(0)' }}
+          ],
+          {{
+            duration: 320,
+            delay: Math.min(idx * 45, 350),
+            easing: 'ease-out',
+            fill: 'forwards'
+          }}
+        );
+      }});
+
+      railFills.forEach(rail => {{
+        rail.animate(
+          [
+            {{ width: '0%' }},
+            {{ width: '100%' }}
+          ],
+          {{
+            duration: 650,
+            easing: 'ease-out',
+            fill: 'forwards'
+          }}
+        );
+      }});
+
       const fillBars = container.querySelectorAll('.auto-fill-bar');
       fillBars.forEach(bar => {{
         const targetW = bar.getAttribute('data-target-width') || bar.style.width;
@@ -2413,6 +3460,483 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           }}
         );
       }});
+    }}
+
+    // Prominent Motion Spotlighting & Dimming Controller
+    function applyProminentSpotlight(pinnedTile = null) {{
+      const effectiveStateFilter = hoveredTaskStateFilter || activeTaskStateFilter;
+      const stageCards = document.querySelectorAll('.ditl-stage-card');
+      stageCards.forEach(stageCard => {{
+        const taskTiles = stageCard.querySelectorAll('.task-tile');
+        const conduitNodes = stageCard.querySelectorAll('.conduit-node');
+        const flowStepCards = stageCard.querySelectorAll('.flow-step-card');
+        const stagePinnedTile = pinnedTile && stageCard.contains(pinnedTile)
+          ? pinnedTile
+          : stageCard.querySelector('.task-tile.is-pinned');
+        const stagePinnedStep = stageCard.querySelector('.conduit-node.is-pinned');
+
+        const hasFilter = !!effectiveStateFilter;
+        const hasPinTile = !!stagePinnedTile;
+        const hasPinStep = !!stagePinnedStep;
+
+        if (!hasFilter && !hasPinTile && !hasPinStep) {{
+          taskTiles.forEach(tile => {{
+            tile.classList.remove('motion-dimmed', 'motion-spotlight');
+          }});
+          conduitNodes.forEach(node => {{
+            node.classList.remove('motion-dimmed', 'motion-spotlight', 'active-step');
+          }});
+          flowStepCards.forEach(card => {{
+            card.classList.remove('motion-dimmed', 'motion-spotlight', 'active-step');
+          }});
+          return;
+        }}
+
+        if (hasFilter) {{
+          const newlySpotlit = [];
+          taskTiles.forEach(tile => {{
+            const tileState = tile.getAttribute('data-task-state');
+            const isMatch = tileState === effectiveStateFilter;
+            const wasSpotlit = tile.classList.contains('motion-spotlight');
+            tile.classList.toggle('motion-spotlight', isMatch);
+            tile.classList.toggle('motion-dimmed', !isMatch);
+            if (isMatch && !wasSpotlit) newlySpotlit.push(tile);
+          }});
+          // Also highlight conduit nodes that execute tasks with this state
+          const activeStepIndices = new Set();
+          taskTiles.forEach(tile => {{
+            if (tile.getAttribute('data-task-state') === effectiveStateFilter) {{
+              const stepsAttr = tile.getAttribute('data-steps') || '';
+              stepsAttr.split(',').map(s => s.trim()).filter(Boolean).forEach(s => activeStepIndices.add(s));
+            }}
+          }});
+          conduitNodes.forEach(node => {{
+            const stepVal = node.getAttribute('data-step');
+            const isMatch = activeStepIndices.has(stepVal);
+            node.classList.toggle('active-step', isMatch);
+            node.classList.toggle('motion-dimmed', !isMatch);
+            node.classList.remove('motion-spotlight');
+          }});
+          flowStepCards.forEach(card => {{
+            const stepVal = card.getAttribute('data-step');
+            const isMatch = activeStepIndices.has(stepVal);
+            const wasSpotlit = card.classList.contains('motion-spotlight');
+            card.classList.toggle('motion-spotlight', isMatch);
+            card.classList.toggle('active-step', isMatch);
+            card.classList.toggle('motion-dimmed', !isMatch);
+            if (isMatch && !wasSpotlit) newlySpotlit.push(card);
+          }});
+          if (newlySpotlit.length && window.Motion && typeof window.Motion.animate === 'function') {{
+            try {{
+              window.Motion.animate(newlySpotlit, {{ scale: [0.97, 1.03] }}, {{ duration: 0.24, easing: 'ease-out' }});
+            }} catch (e) {{}}
+          }}
+        }} else if (hasPinTile) {{
+          const stepsAttr = stagePinnedTile.getAttribute('data-steps') || '';
+          const indices = stepsAttr.split(',').map(s => s.trim()).filter(Boolean);
+
+          taskTiles.forEach(tile => {{
+            const isTarget = tile === stagePinnedTile;
+            tile.classList.toggle('motion-spotlight', isTarget);
+            tile.classList.toggle('motion-dimmed', !isTarget);
+          }});
+
+          conduitNodes.forEach(node => {{
+            const stepVal = node.getAttribute('data-step');
+            const isMatch = indices.includes(stepVal);
+            node.classList.toggle('active-step', isMatch);
+            node.classList.toggle('motion-dimmed', !isMatch);
+            node.classList.remove('motion-spotlight');
+          }});
+
+          flowStepCards.forEach(card => {{
+            const stepVal = card.getAttribute('data-step');
+            const isMatch = indices.includes(stepVal);
+            card.classList.toggle('motion-spotlight', isMatch);
+            card.classList.toggle('active-step', isMatch);
+            card.classList.toggle('motion-dimmed', !isMatch);
+          }});
+        }} else if (hasPinStep) {{
+          const targetStepVal = stagePinnedStep.getAttribute('data-step');
+          taskTiles.forEach(tile => {{
+            const stepsAttr = tile.getAttribute('data-steps') || '';
+            const indices = stepsAttr.split(',').map(s => s.trim()).filter(Boolean);
+            const isMatch = indices.includes(targetStepVal);
+            tile.classList.toggle('motion-spotlight', isMatch);
+            tile.classList.toggle('motion-dimmed', !isMatch);
+          }});
+          conduitNodes.forEach(node => {{
+            const isTarget = node === stagePinnedStep;
+            node.classList.toggle('active-step', isTarget);
+            node.classList.toggle('motion-dimmed', !isTarget);
+            node.classList.remove('motion-spotlight');
+          }});
+          flowStepCards.forEach(card => {{
+            const isTarget = card.getAttribute('data-step') === targetStepVal;
+            card.classList.toggle('motion-spotlight', isTarget);
+            card.classList.toggle('active-step', isTarget);
+            card.classList.toggle('motion-dimmed', !isTarget);
+          }});
+        }}
+      }});
+    }}
+
+    // Interactive Bidirectional Pipeline Spotlight Tracing with Pinning Support
+    function bindPipelineSpotlightEvents(container) {{
+      if (!container) return;
+      const stageCards = container.querySelectorAll('.ditl-stage-card');
+
+      stageCards.forEach(stageCard => {{
+        const conduitNodes = stageCard.querySelectorAll('.conduit-node');
+        const flowStepCards = stageCard.querySelectorAll('.flow-step-card');
+        const taskTiles = stageCard.querySelectorAll('.task-tile');
+
+        const stepElements = conduitNodes.length ? conduitNodes : flowStepCards;
+
+        stepElements.forEach(stepElem => {{
+          const stepVal = stepElem.getAttribute('data-step');
+          if (!stepVal) return;
+
+          const onEnter = () => {{
+            if (activeTaskStateFilter || hoveredTaskStateFilter) return;
+            stepElements.forEach(se => {{
+              const isSelf = se === stepElem;
+              se.classList.toggle('active-step', isSelf);
+              se.classList.toggle('motion-dimmed', !isSelf);
+              const innerCard = se.classList.contains('flow-step-card') ? se : se.querySelector('.flow-step-card');
+              if (innerCard) {{
+                innerCard.classList.toggle('motion-spotlight', isSelf);
+                innerCard.classList.toggle('active-step', isSelf);
+              }}
+            }});
+            taskTiles.forEach(tile => {{
+              const stepsAttr = tile.getAttribute('data-steps') || '';
+              const indices = stepsAttr.split(',').map(s => s.trim()).filter(Boolean);
+              if (indices.includes(stepVal)) {{
+                tile.classList.add('motion-spotlight');
+                tile.classList.remove('motion-dimmed');
+                if (window.Motion && typeof window.Motion.animate === 'function') {{
+                  try {{
+                    window.Motion.animate(tile, {{ scale: [0.98, 1.03] }}, {{ duration: 0.24, easing: 'ease-out' }});
+                  }} catch (e) {{}}
+                }}
+              }} else {{
+                tile.classList.remove('motion-spotlight');
+                tile.classList.add('motion-dimmed');
+              }}
+            }});
+          }};
+
+          const onLeave = () => {{
+            if (activeTaskStateFilter || hoveredTaskStateFilter) return;
+            applyProminentSpotlight();
+          }};
+
+          stepElem.addEventListener('mouseenter', onEnter);
+          stepElem.addEventListener('mouseleave', onLeave);
+          stepElem.addEventListener('focus', onEnter);
+          stepElem.addEventListener('blur', onLeave);
+
+          stepElem.addEventListener('click', (e) => {{
+            if (e.target.closest('.conduit-demo-btn')) return;
+            const wasPinned = stepElem.classList.contains('is-pinned');
+            stageCard.querySelectorAll('.task-tile.is-pinned, .conduit-node.is-pinned').forEach(el => {{
+              el.classList.remove('is-pinned');
+              const chip = el.querySelector('.task-pin-chip');
+              if (chip) chip.textContent = 'Click to pin focus';
+            }});
+            if (!wasPinned) {{
+              stepElem.classList.add('is-pinned');
+            }}
+            applyProminentSpotlight();
+          }});
+        }});
+
+        taskTiles.forEach(tile => {{
+          const stepsAttr = tile.getAttribute('data-steps') || '';
+          const indices = stepsAttr.split(',').map(s => s.trim()).filter(Boolean);
+
+          tile.addEventListener('mouseenter', () => {{
+            if (activeTaskStateFilter || hoveredTaskStateFilter) return;
+            taskTiles.forEach(t => {{
+              const isSelf = t === tile;
+              t.classList.toggle('motion-spotlight', isSelf);
+              t.classList.toggle('motion-dimmed', !isSelf);
+            }});
+            const matchedSteps = [];
+            stepElements.forEach(stepElem => {{
+              const stepVal = stepElem.getAttribute('data-step');
+              const isMatch = indices.includes(stepVal);
+              const innerCard = stepElem.classList.contains('flow-step-card') ? stepElem : stepElem.querySelector('.flow-step-card');
+              stepElem.classList.toggle('active-step', isMatch);
+              stepElem.classList.toggle('motion-dimmed', !isMatch);
+              if (innerCard) {{
+                innerCard.classList.toggle('motion-spotlight', isMatch);
+                innerCard.classList.toggle('active-step', isMatch);
+                if (isMatch) matchedSteps.push(innerCard);
+              }}
+            }});
+            if (matchedSteps.length && window.Motion && typeof window.Motion.animate === 'function') {{
+              try {{
+                window.Motion.animate(matchedSteps, {{ scale: [0.98, 1.03] }}, {{ duration: 0.24, easing: 'ease-out' }});
+              }} catch (e) {{}}
+            }}
+          }});
+
+          tile.addEventListener('mouseleave', () => {{
+            if (activeTaskStateFilter || hoveredTaskStateFilter) return;
+            applyProminentSpotlight();
+          }});
+
+          // Click to Pin Focus
+          tile.addEventListener('click', (e) => {{
+            if (e.target.closest('button')) return;
+            const wasPinned = tile.classList.contains('is-pinned');
+            stageCard.querySelectorAll('.task-tile.is-pinned, .conduit-node.is-pinned').forEach(el => {{
+              el.classList.remove('is-pinned');
+              const chip = el.querySelector('.task-pin-chip');
+              if (chip) chip.textContent = 'Click to pin focus';
+            }});
+            if (!wasPinned) {{
+              tile.classList.add('is-pinned');
+              const chip = tile.querySelector('.task-pin-chip');
+              if (chip) chip.textContent = '📌 Pinned Focus';
+              applyProminentSpotlight(tile);
+            }} else {{
+              applyProminentSpotlight(null);
+            }}
+          }});
+        }});
+      }});
+    }}
+
+    // Full-Screen Stage Focus Theater Modal Handlers
+    function openStageTheater(stageIdx) {{
+      const p = PERSONA_MAP[activePersona];
+      if (!p) return;
+      maximizedStageIdx = stageIdx;
+
+      theaterPersonaIcon.textContent = p.icon || '👤';
+      theaterPersonaTitle.textContent = `${{p.title}} — Stage Focus Theater`;
+
+      renderStageTheater();
+      stageTheaterModal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+
+      if (stageTheaterDialog && window.Motion && typeof window.Motion.animate === 'function') {{
+        try {{
+          window.Motion.animate(
+            stageTheaterDialog,
+            {{ opacity: [0, 1], scale: [0.94, 1], y: [18, 0] }},
+            {{ duration: 0.28, easing: 'ease-out' }}
+          );
+        }} catch (e) {{}}
+      }}
+    }}
+
+    function closeStageTheater() {{
+      stageTheaterModal.classList.remove('open');
+      document.body.style.overflow = '';
+    }}
+
+    function switchTheaterStage(stageIdx) {{
+      maximizedStageIdx = stageIdx;
+      renderStageTheater();
+      if (stageTheaterBody && window.Motion && typeof window.Motion.animate === 'function') {{
+        try {{
+          window.Motion.animate(
+            stageTheaterBody,
+            {{ opacity: [0, 1], x: [14, 0] }},
+            {{ duration: 0.24, easing: 'ease-out' }}
+          );
+        }} catch (e) {{}}
+      }}
+    }}
+
+    function renderStageTheater() {{
+      const p = PERSONA_MAP[activePersona];
+      if (!p || !p.day_in_the_life) return;
+
+      const stages = p.day_in_the_life;
+      const stageIdx = Math.max(0, Math.min(maximizedStageIdx, stages.length - 1));
+      const stage = stages[stageIdx];
+
+      // 1. Render Stage Navigation Tabs
+      theaterStageTabs.innerHTML = stages.map((s, idx) => `
+        <button type="button" class="theater-stage-tab ${{idx === stageIdx ? 'active' : ''}}" onclick="switchTheaterStage(${{idx}})" title="Stage ${{idx + 1}}: ${{htmlEscape(s.stage)}}">
+          ${{idx === stageIdx ? '● ' : '○ '}}${{htmlEscape(s.time)}}
+        </button>
+      `).join('');
+
+      // 2. Render Theater State Switcher
+      theaterStateSwitcher.innerHTML = `
+        <div class="ditl-state-switcher">
+          <button type="button" class="ditl-state-btn ${{ditlStateMode === 'before' ? 'active-before' : ''}}" onclick="setDitlStateMode('before')" style="white-space:nowrap;">
+            <span class="mode-radio-dot">${{ditlStateMode === 'before' ? '●' : '○'}}</span> Before Agents
+          </button>
+          <button type="button" class="ditl-state-btn ${{ditlStateMode === 'after' ? 'active-after' : ''}}" onclick="setDitlStateMode('after')" style="white-space:nowrap;">
+            <span class="mode-radio-dot">${{ditlStateMode === 'after' ? '●' : '○'}}</span> After Agents (5-State + Flow)
+          </button>
+        </div>
+      `;
+
+      // 3. Render Stage Body
+      const bundle = stage.task_bundle || [];
+      const taskTilesHtml = bundle.map((t, tileIdx) => {{
+        if (ditlStateMode === 'before') {{
+          const isNew = t.state === 'new';
+          const stateClass = isNew ? 'state-dormant' : 'state-unchanged';
+          const tagText = isNew ? '◌ NOT PERFORMED' : '🟫 MANUAL STEP';
+          return `
+            <div class="task-tile ${{stateClass}}" data-task-state="${{t.state}}" data-task-idx="${{tileIdx}}">
+              <div class="task-tile-top">
+                <span class="task-state-tag">${{tagText}}</span>
+              </div>
+              <div class="task-tile-label">${{htmlEscape(t.label)}}</div>
+            </div>
+          `;
+        }} else {{
+          let stateTag = '🟫 UNCHANGED';
+          if (t.state === 'augmented') stateTag = '🟪 AUGMENTED';
+          else if (t.state === 'automated') stateTag = '🟦 AUTOMATED';
+          else if (t.state === 'new') stateTag = '🟨 NEW AI TASK';
+          else if (t.state === 'retired') stateTag = '◌ RETIRED';
+
+          const stepIndicesStr = (t.step_indices || []).join(',');
+          const stepRefHtml = t.steps_label ? `<span class="task-step-ref">${{htmlEscape(t.steps_label)}}</span>` : '';
+
+          return `
+            <div class="task-tile state-${{t.state}}" data-task-state="${{t.state}}" data-task-idx="${{tileIdx}}" data-steps="${{stepIndicesStr}}" tabindex="0">
+              <div class="task-tile-top">
+                <span class="task-state-tag">${{stateTag}}</span>
+                ${{stepRefHtml}}
+              </div>
+              <div class="task-tile-label">${{htmlEscape(t.label)}}</div>
+              <div class="task-tile-footer">
+                <span class="task-pin-chip">Click to pin focus</span>
+              </div>
+            </div>
+          `;
+        }}
+      }}).join('');
+
+      let flowHtml = '';
+      if (ditlStateMode === 'after') {{
+        let flow = stage.agent_flow || [];
+        if (!flow.length && stage.featured_agents) {{
+          flow = stage.featured_agents.map((slug, idx) => ({{
+            step: idx + 1,
+            step_code: String(idx + 1).padStart(2, '0'),
+            slug: slug,
+            action_tag: 'EXECUTES ANALYTICS'
+          }}));
+        }}
+
+        const conduitNodesHtml = flow.map((f, idx) => {{
+          const agent = AGENTS_DATA.find(a => a.name === f.slug);
+          const agentLabel = agent ? agent.display_name : f.slug.replace(/_/g, ' ');
+          const connector = idx < flow.length - 1 ? '→' : '✓';
+
+          return `
+            <div class="conduit-node" data-step="${{f.step}}">
+              <div class="conduit-medallion-row">
+                <div class="conduit-medallion">${{htmlEscape(f.step_code)}}</div>
+                ${{idx < flow.length - 1 ? `<span class="conduit-arrow">${{connector}}</span>` : ''}}
+              </div>
+              <div class="conduit-step-card flow-step-card" data-step="${{f.step}}">
+                <div class="flow-step-top">
+                  <span class="flow-step-badge">STEP ${{htmlEscape(f.step_code)}}</span>
+                  <span class="conduit-linked-badge">LINKED</span>
+                </div>
+                <div class="flow-step-action">
+                  <span>${{htmlEscape(f.action_tag)}}</span>
+                </div>
+                <div class="flow-step-agent" title="${{htmlEscape(agentLabel)}}">${{htmlEscape(agentLabel)}}</div>
+                <button type="button" class="conduit-demo-btn" onclick="openVideoModal('${{f.slug}}')" title="Watch 1080p Demo for ${{htmlEscape(agentLabel)}}">
+                  <span>🎬</span> Watch Demo
+                </button>
+              </div>
+            </div>
+          `;
+        }}).join('');
+
+        flowHtml = `
+          <div class="stage-flow-section">
+            <div class="stage-flow-header">
+              <span class="stage-flow-title">
+                <span class="motion-pulse-dot"></span> Recommended Agent Execution Flow (${{flow.length}} Sequenced Steps)
+              </span>
+              <span class="stage-flow-hint">⚡ Hover or click any task, state pill, or step to spotlight linked agents · Click 🎬 Watch Demo for 1080p video</span>
+            </div>
+            <div class="flow-conduit-track" style="--conduit-cols: ${{flow.length}};">
+              <div class="conduit-rail-line">
+                <div class="conduit-rail-fill motion-rail-fill"></div>
+              </div>
+              ${{conduitNodesHtml}}
+            </div>
+            <div class="flow-bento-grid" style="display: none;">
+              <!-- Maintained for bento grid compatibility -->
+            </div>
+          </div>
+        `;
+      }}
+
+      const horizonBadge = ditlStateMode === 'before'
+        ? `<span class="ditl-stage-horizon manual-mode">⏱️ Manual: ${{htmlEscape(stage.time_before)}}</span>`
+        : `<span class="ditl-stage-horizon">⏱️ ${{htmlEscape(stage.time_before)}} → ⚡ ${{htmlEscape(stage.time_after)}}</span>`;
+
+      stageTheaterBody.innerHTML = `
+        <div class="ditl-stage-card" style="box-shadow: none; border: none; padding: 0; background: transparent;">
+          <div class="ditl-stage-top">
+            <span class="ditl-time-stage">📋 ${{htmlEscape(stage.time)}} · ${{htmlEscape(stage.stage)}}</span>
+            <div class="ditl-stage-top-right">
+              ${{horizonBadge}}
+            </div>
+          </div>
+
+          <div class="task-bundle-key-bar" style="margin: 4px 0 8px; padding: 8px 12px;">
+            <span class="task-bundle-key-title">Filter by Task State:</span>
+            <div class="task-bundle-key-items">
+              <button type="button" class="task-bundle-key-chip key-unchanged ditl-state-filter-pill ${{activeTaskStateFilter === 'unchanged' ? 'active-filter' : ''}}" data-filter-state="unchanged" onclick="toggleTaskStateFilter('unchanged')" onmouseenter="previewTaskStateFilter('unchanged')" onmouseleave="clearPreviewTaskStateFilter()">
+                <span class="pill-check-ind">${{activeTaskStateFilter === 'unchanged' ? '✓' : '○'}}</span> 🟫 1. Tasks Unchanged
+              </button>
+              <button type="button" class="task-bundle-key-chip key-augmented ditl-state-filter-pill ${{activeTaskStateFilter === 'augmented' ? 'active-filter' : ''}}" data-filter-state="augmented" onclick="toggleTaskStateFilter('augmented')" onmouseenter="previewTaskStateFilter('augmented')" onmouseleave="clearPreviewTaskStateFilter()">
+                <span class="pill-check-ind">${{activeTaskStateFilter === 'augmented' ? '✓' : '○'}}</span> 🟪 2. Tasks Augmented
+              </button>
+              <button type="button" class="task-bundle-key-chip key-automated ditl-state-filter-pill ${{activeTaskStateFilter === 'automated' ? 'active-filter' : ''}}" data-filter-state="automated" onclick="toggleTaskStateFilter('automated')" onmouseenter="previewTaskStateFilter('automated')" onmouseleave="clearPreviewTaskStateFilter()">
+                <span class="pill-check-ind">${{activeTaskStateFilter === 'automated' ? '✓' : '○'}}</span> 🟦 3. Tasks Automated
+              </button>
+              <button type="button" class="task-bundle-key-chip key-new ditl-state-filter-pill ${{activeTaskStateFilter === 'new' ? 'active-filter' : ''}}" data-filter-state="new" onclick="toggleTaskStateFilter('new')" onmouseenter="previewTaskStateFilter('new')" onmouseleave="clearPreviewTaskStateFilter()">
+                <span class="pill-check-ind">${{activeTaskStateFilter === 'new' ? '✓' : '○'}}</span> 🟨 4. New Tasks Created by AI
+              </button>
+              <button type="button" class="task-bundle-key-chip key-retired ditl-state-filter-pill ${{activeTaskStateFilter === 'retired' ? 'active-filter' : ''}}" data-filter-state="retired" onclick="toggleTaskStateFilter('retired')" onmouseenter="previewTaskStateFilter('retired')" onmouseleave="clearPreviewTaskStateFilter()">
+                <span class="pill-check-ind">${{activeTaskStateFilter === 'retired' ? '✓' : '○'}}</span> ◌ 5. Retired Manual Tasks
+              </button>
+              <button type="button" class="filter-reset-pill" onclick="resetTaskStateFilter()" style="display: ${{activeTaskStateFilter ? 'inline-flex' : 'none'}};">
+                ✕ Reset Filter
+              </button>
+            </div>
+          </div>
+
+          <div class="task-bundle-wrap">
+            <div class="task-bundle-title">
+              <span>${{ditlStateMode === 'before' ? 'Manual Task Bundle (Baseline)' : '5-State Task Transformation Bundle (6 Tasks)'}}</span>
+              <span>${{ditlStateMode === 'before' ? '⏱️ Legacy Manual Effort' : '⚡ AI-Augmented Horizon'}}</span>
+            </div>
+            <div class="task-bundle-grid">
+              ${{taskTilesHtml}}
+            </div>
+          </div>
+
+          ${{flowHtml}}
+        </div>
+      `;
+
+      bindPipelineSpotlightEvents(stageTheaterBody);
+      runMotionChoreography(stageTheaterBody);
+      if (activeTaskStateFilter) {{
+        applyProminentSpotlight();
+      }}
     }}
 
     // View Mode Management
@@ -2507,7 +4031,14 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             p.decision_speed,
             p.automated_label || '',
             p.augmented_label || '',
-            ...(p.day_in_the_life || []).map(s => [s.stage, s.without_agents, s.with_agents, s.automated_what, s.augmented_what].join(' '))
+            ...(p.day_in_the_life || []).map(s => [
+              s.stage,
+              s.without_agents,
+              s.with_agents,
+              s.automated_what,
+              s.augmented_what,
+              ...(s.task_bundle || []).map(t => t.label)
+            ].join(' '))
           ].join(' ').toLowerCase();
           return pool.includes(query);
         }});
@@ -2534,6 +4065,13 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
         const cardsHtml = filteredPersonas.map(p => {{
           const count = AGENTS_DATA.filter(a => (a.persona_archetypes || []).includes(p.id)).length;
+          const dist = p.task_distribution || {{
+            unchanged_pct: 25,
+            augmented_pct: p.augmented_pct || 35,
+            automated_pct: p.automated_pct || 25,
+            new_ai_pct: 10,
+            retired_pct: 5
+          }};
           return `
             <div class="persona-overview-card" data-persona-id="${{p.id}}">
               <div class="persona-card-header">
@@ -2551,14 +4089,20 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                 <span class="persona-metric-pill">⚡ <strong>${{htmlEscape(p.decision_speed)}}</strong></span>
               </div>
 
-              <div class="auto-aug-bar-container">
-                <div class="auto-aug-legend">
-                  <span class="auto-text">🤖 ${{htmlEscape(p.automated_label || 'Automated: Data, SQL & Visuals')}}</span>
-                  <span class="aug-text">✨ ${{htmlEscape(p.augmented_label || 'Augmented: Strategy & Decisions')}}</span>
+              <div class="task-dist-container">
+                <div class="task-dist-labels">
+                  <span>🟫 Unchanged</span>
+                  <span>🟪 Augmented</span>
+                  <span>🟦 Automated</span>
+                  <span>🟨 New AI</span>
+                  <span>◌ Retired</span>
                 </div>
-                <div class="auto-aug-bar">
-                  <div class="auto-fill-bar" style="width: ${{p.automated_pct}}%;" data-target-width="${{p.automated_pct}}%"></div>
-                  <div class="aug-fill-bar" style="width: ${{p.augmented_pct}}%;"></div>
+                <div class="task-dist-bar">
+                  <div class="seg-unchanged" style="width: ${{dist.unchanged_pct}}%;" title="Unchanged: ${{dist.unchanged_pct}}%"></div>
+                  <div class="seg-augmented" style="width: ${{dist.augmented_pct}}%;" title="Augmented: ${{dist.augmented_pct}}%"></div>
+                  <div class="seg-automated" style="width: ${{dist.automated_pct}}%;" title="Automated: ${{dist.automated_pct}}%"></div>
+                  <div class="seg-new" style="width: ${{dist.new_ai_pct}}%;" title="New AI Tasks: ${{dist.new_ai_pct}}%"></div>
+                  <div class="seg-retired" style="width: ${{dist.retired_pct}}%;" title="Retired Manual Tasks: ${{dist.retired_pct}}%"></div>
                 </div>
               </div>
 
@@ -2577,6 +4121,16 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             <p class="persona-overview-subtitle">
               Explore how Gemini Enterprise Agents transform daily workflows across retail leadership, merchandising, supply chain, store operations, and digital roles.
             </p>
+            <div class="task-bundle-key-bar">
+              <span class="task-bundle-key-title">5-State Task Bundle Key:</span>
+              <div class="task-bundle-key-items">
+                <span class="task-bundle-key-chip key-unchanged">🟫 1. Tasks Unchanged</span>
+                <span class="task-bundle-key-chip key-augmented">🟪 2. Tasks Augmented</span>
+                <span class="task-bundle-key-chip key-automated">🟦 3. Tasks Automated</span>
+                <span class="task-bundle-key-chip key-new">🟨 4. New Tasks Created by AI</span>
+                <span class="task-bundle-key-chip key-retired">◌ 5. Retired Manual Tasks</span>
+              </div>
+            </div>
           </div>
           <div class="persona-overview-grid" id="personaOverviewGrid">
             ${{cardsHtml}}
@@ -2590,55 +4144,137 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
         const count = AGENTS_DATA.filter(a => (a.persona_archetypes || []).includes(p.id)).length;
 
-        const stagesHtml = (p.day_in_the_life || []).map(stage => {{
-          const modeClass = (stage.mode || '').toLowerCase();
-          const modeLabel = stage.mode === 'Automated' ? '🤖 Automated' : '✨ Augmented';
+        const stagesHtml = (p.day_in_the_life || []).map((stage, stageIdx) => {{
+          // 1. Task Bundle (6 tiles)
+          const bundle = stage.task_bundle || [];
+          const taskTilesHtml = bundle.map((t, tileIdx) => {{
+            if (ditlStateMode === 'before') {{
+              const isNew = t.state === 'new';
+              const stateClass = isNew ? 'state-dormant' : 'state-unchanged';
+              const tagText = isNew ? '◌ NOT PERFORMED' : '🟫 MANUAL STEP';
+              return `
+                <div class="task-tile ${{stateClass}}" data-task-state="${{t.state}}" data-task-idx="${{tileIdx}}">
+                  <div class="task-tile-top">
+                    <span class="task-state-tag">${{tagText}}</span>
+                  </div>
+                  <div class="task-tile-label">${{htmlEscape(t.label)}}</div>
+                </div>
+              `;
+            }} else {{
+              let stateTag = '🟫 UNCHANGED';
+              if (t.state === 'augmented') stateTag = '🟪 AUGMENTED';
+              else if (t.state === 'automated') stateTag = '🟦 AUTOMATED';
+              else if (t.state === 'new') stateTag = '🟨 NEW AI TASK';
+              else if (t.state === 'retired') stateTag = '◌ RETIRED';
 
-          const agentChips = (stage.featured_agents || []).map(slug => {{
-            const agent = AGENTS_DATA.find(a => a.name === slug);
-            const label = agent ? agent.display_name : slug.replace(/_/g, ' ');
-            return `
-              <button class="ditl-agent-chip" onclick="openVideoModal('${{slug}}')" title="Watch Demo for ${{htmlEscape(label)}}">
-                <span>🎬</span> ${{htmlEscape(label)}}
-              </button>
-            `;
+              const stepIndicesStr = (t.step_indices || []).join(',');
+              const stepRefHtml = t.steps_label ? `<span class="task-step-ref">${{htmlEscape(t.steps_label)}}</span>` : '';
+
+              return `
+                <div class="task-tile state-${{t.state}}" data-task-state="${{t.state}}" data-task-idx="${{tileIdx}}" data-steps="${{stepIndicesStr}}" tabindex="0">
+                  <div class="task-tile-top">
+                    <span class="task-state-tag">${{stateTag}}</span>
+                    ${{stepRefHtml}}
+                  </div>
+                  <div class="task-tile-label">${{htmlEscape(t.label)}}</div>
+                  <div class="task-tile-footer">
+                    <span class="task-pin-chip">Click to pin focus</span>
+                  </div>
+                </div>
+              `;
+            }}
           }}).join('');
+
+          // 2. Option A — Connected Orchestration Conduit (Only when ditlStateMode === 'after')
+          let bentoFlowHtml = '';
+          if (ditlStateMode === 'after') {{
+            let flow = stage.agent_flow || [];
+            if (!flow.length && stage.featured_agents) {{
+              flow = stage.featured_agents.map((slug, idx) => ({{
+                step: idx + 1,
+                step_code: String(idx + 1).padStart(2, '0'),
+                slug: slug,
+                action_tag: 'EXECUTES ANALYTICS'
+              }}));
+            }}
+
+            const conduitNodesHtml = flow.map((f, idx) => {{
+              const agent = AGENTS_DATA.find(a => a.name === f.slug);
+              const agentLabel = agent ? agent.display_name : f.slug.replace(/_/g, ' ');
+              const connector = idx < flow.length - 1 ? '→' : '✓';
+
+              return `
+                <div class="conduit-node" data-step="${{f.step}}">
+                  <div class="conduit-medallion-row">
+                    <div class="conduit-medallion">${{htmlEscape(f.step_code)}}</div>
+                    ${{idx < flow.length - 1 ? `<span class="conduit-arrow">${{connector}}</span>` : ''}}
+                  </div>
+                  <div class="conduit-step-card flow-step-card" data-step="${{f.step}}">
+                    <div class="flow-step-top">
+                      <span class="flow-step-badge">STEP ${{htmlEscape(f.step_code)}}</span>
+                      <span class="conduit-linked-badge">LINKED</span>
+                    </div>
+                    <div class="flow-step-action">
+                      <span>${{htmlEscape(f.action_tag)}}</span>
+                    </div>
+                    <div class="flow-step-agent" title="${{htmlEscape(agentLabel)}}">${{htmlEscape(agentLabel)}}</div>
+                    <button type="button" class="conduit-demo-btn" onclick="openVideoModal('${{f.slug}}')" title="Watch 1080p Demo for ${{htmlEscape(agentLabel)}}">
+                      <span>🎬</span> Watch Demo
+                    </button>
+                  </div>
+                </div>
+              `;
+            }}).join('');
+
+            bentoFlowHtml = `
+              <div class="stage-flow-section">
+                <div class="stage-flow-header">
+                  <span class="stage-flow-title">
+                    <span class="motion-pulse-dot"></span> Recommended Agent Execution Flow (${{flow.length}} Sequenced Steps)
+                  </span>
+                  <span class="stage-flow-hint">⚡ Hover or click any task, state pill, or step to spotlight linked agents · Click 🎬 Watch Demo for 1080p video</span>
+                </div>
+                <div class="flow-conduit-track" style="--conduit-cols: ${{flow.length}};">
+                  <div class="conduit-rail-line">
+                    <div class="conduit-rail-fill motion-rail-fill"></div>
+                  </div>
+                  ${{conduitNodesHtml}}
+                </div>
+                <div class="flow-bento-grid" style="display: none;">
+                  <!-- Maintained for bento grid selector compatibility -->
+                </div>
+              </div>
+            `;
+          }}
+
+          // 3. Stage Header Horizon Badge & Maximize Stage Button
+          const horizonBadge = ditlStateMode === 'before'
+            ? `<span class="ditl-stage-horizon manual-mode">⏱️ Manual: ${{htmlEscape(stage.time_before)}}</span>`
+            : `<span class="ditl-stage-horizon">⏱️ ${{htmlEscape(stage.time_before)}} → ⚡ ${{htmlEscape(stage.time_after)}}</span>`;
 
           return `
             <div class="ditl-stage-card">
               <div class="ditl-stage-top">
                 <span class="ditl-time-stage">📋 ${{htmlEscape(stage.time)}} · ${{htmlEscape(stage.stage)}}</span>
-                <span class="ditl-mode-badge ${{modeClass}}">${{modeLabel}}</span>
-              </div>
-
-              <div class="ditl-compare-grid">
-                <div class="ditl-without">
-                  <div class="ditl-compare-header">
-                    <span>🔴 WITHOUT AGENTS (MANUAL)</span>
-                    <span class="ditl-time-tag ditl-time-badge">⏱️ ${{htmlEscape(stage.time_before)}}</span>
-                  </div>
-                  <p>${{htmlEscape(stage.without_agents)}}</p>
-                </div>
-                <div class="ditl-with">
-                  <div class="ditl-compare-header">
-                    <span>🟢 WITH AGENTS (AGENTIC)</span>
-                    <span class="ditl-time-tag ditl-time-badge">⚡ ${{htmlEscape(stage.time_after)}}</span>
-                  </div>
-                  <p>${{htmlEscape(stage.with_agents)}}</p>
+                <div class="ditl-stage-top-right">
+                  ${{horizonBadge}}
+                  <button type="button" class="stage-maximize-btn" onclick="openStageTheater(${{stageIdx}})" title="Maximize stage in Full-Screen Focus Theater">
+                    <span>⤢</span> Maximize Stage
+                  </button>
                 </div>
               </div>
 
-              <div class="ditl-split-box">
-                <div>🤖 <strong>Automated:</strong> ${{htmlEscape(stage.automated_what)}}</div>
-                <div>✨ <strong>Augmented:</strong> ${{htmlEscape(stage.augmented_what)}}</div>
+              <div class="task-bundle-wrap">
+                <div class="task-bundle-title">
+                  <span>${{ditlStateMode === 'before' ? 'Manual Task Bundle (Baseline)' : '5-State Task Transformation Bundle (6 Tasks)'}}</span>
+                  <span>${{ditlStateMode === 'before' ? '⏱️ Legacy Manual Effort' : '⚡ AI-Augmented Horizon'}}</span>
+                </div>
+                <div class="task-bundle-grid">
+                  ${{taskTilesHtml}}
+                </div>
               </div>
 
-              ${{agentChips ? `
-                <div class="ditl-agent-chips">
-                  <span class="ditl-agent-chips-label">Agents (${{(stage.featured_agents || []).length}}):</span>
-                  ${{agentChips}}
-                </div>
-              ` : ''}}
+              ${{bentoFlowHtml}}
             </div>
           `;
         }}).join('');
@@ -2669,12 +4305,53 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               </div>
             </div>
 
+            <div class="ditl-controls-row">
+              <div class="ditl-state-switcher">
+                <button type="button" class="ditl-state-btn ${{ditlStateMode === 'before' ? 'active-before' : ''}}" onclick="setDitlStateMode('before')">
+                  <span class="mode-radio-dot">${{ditlStateMode === 'before' ? '●' : '○'}}</span> Before Agents (Manual Baseline)
+                </button>
+                <button type="button" class="ditl-state-btn ${{ditlStateMode === 'after' ? 'active-after' : ''}}" onclick="setDitlStateMode('after')">
+                  <span class="mode-radio-dot">${{ditlStateMode === 'after' ? '●' : '○'}}</span> After Agents (5-State Task Bundle + Agent Flow)
+                </button>
+              </div>
+
+              <div class="task-bundle-key-bar" style="margin: 0; padding: 6px 12px;">
+                <span class="task-bundle-key-title">5-State Task Bundle Key:</span>
+                <div class="task-bundle-key-items">
+                  <button type="button" class="task-bundle-key-chip key-unchanged ditl-state-filter-pill ${{activeTaskStateFilter === 'unchanged' ? 'active-filter' : ''}}" data-filter-state="unchanged" onclick="toggleTaskStateFilter('unchanged')" onmouseenter="previewTaskStateFilter('unchanged')" onmouseleave="clearPreviewTaskStateFilter()">
+                    <span class="pill-check-ind">${{activeTaskStateFilter === 'unchanged' ? '✓' : '○'}}</span> 🟫 1. Tasks Unchanged
+                  </button>
+                  <button type="button" class="task-bundle-key-chip key-augmented ditl-state-filter-pill ${{activeTaskStateFilter === 'augmented' ? 'active-filter' : ''}}" data-filter-state="augmented" onclick="toggleTaskStateFilter('augmented')" onmouseenter="previewTaskStateFilter('augmented')" onmouseleave="clearPreviewTaskStateFilter()">
+                    <span class="pill-check-ind">${{activeTaskStateFilter === 'augmented' ? '✓' : '○'}}</span> 🟪 2. Tasks Augmented
+                  </button>
+                  <button type="button" class="task-bundle-key-chip key-automated ditl-state-filter-pill ${{activeTaskStateFilter === 'automated' ? 'active-filter' : ''}}" data-filter-state="automated" onclick="toggleTaskStateFilter('automated')" onmouseenter="previewTaskStateFilter('automated')" onmouseleave="clearPreviewTaskStateFilter()">
+                    <span class="pill-check-ind">${{activeTaskStateFilter === 'automated' ? '✓' : '○'}}</span> 🟦 3. Tasks Automated
+                  </button>
+                  <button type="button" class="task-bundle-key-chip key-new ditl-state-filter-pill ${{activeTaskStateFilter === 'new' ? 'active-filter' : ''}}" data-filter-state="new" onclick="toggleTaskStateFilter('new')" onmouseenter="previewTaskStateFilter('new')" onmouseleave="clearPreviewTaskStateFilter()">
+                    <span class="pill-check-ind">${{activeTaskStateFilter === 'new' ? '✓' : '○'}}</span> 🟨 4. New Tasks Created by AI
+                  </button>
+                  <button type="button" class="task-bundle-key-chip key-retired ditl-state-filter-pill ${{activeTaskStateFilter === 'retired' ? 'active-filter' : ''}}" data-filter-state="retired" onclick="toggleTaskStateFilter('retired')" onmouseenter="previewTaskStateFilter('retired')" onmouseleave="clearPreviewTaskStateFilter()">
+                    <span class="pill-check-ind">${{activeTaskStateFilter === 'retired' ? '✓' : '○'}}</span> ◌ 5. Retired Manual Tasks
+                  </button>
+                  <button type="button" class="filter-reset-pill" onclick="resetTaskStateFilter()" style="display: ${{activeTaskStateFilter ? 'inline-flex' : 'none'}};">
+                    ✕ Reset Filter
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div class="ditl-grid" id="ditlGrid" style="${{ditlCollapsed ? 'display: none;' : ''}}">
               ${{stagesHtml}}
             </div>
           </div>
         `;
         runMotionChoreography(personaExperienceContainer);
+        if (activePersona !== 'all') {{
+          bindPipelineSpotlightEvents(personaExperienceContainer);
+          if (activeTaskStateFilter) {{
+            applyProminentSpotlight();
+          }}
+        }}
       }}
     }}
 
@@ -2927,11 +4604,22 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       if (e.target === archModal) closeArchModal();
     }});
 
+    if (stageTheaterModal) {{
+      stageTheaterModal.addEventListener('click', (e) => {{
+        if (e.target === stageTheaterModal) closeStageTheater();
+      }});
+    }}
+
     // ESC key listener for modals
     document.addEventListener('keydown', (e) => {{
       if (e.key === 'Escape') {{
-        if (videoModal.classList.contains('open')) closeVideoModal();
-        if (archModal.classList.contains('open')) closeArchModal();
+        if (videoModal && videoModal.classList.contains('open')) {{
+          closeVideoModal();
+        }} else if (stageTheaterModal && stageTheaterModal.classList.contains('open')) {{
+          closeStageTheater();
+        }} else if (archModal && archModal.classList.contains('open')) {{
+          closeArchModal();
+        }}
       }}
     }});
 

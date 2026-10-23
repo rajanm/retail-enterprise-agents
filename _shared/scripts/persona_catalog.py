@@ -658,6 +658,542 @@ PERSONA_ARCHETYPES: list[dict[str, Any]] = [
 ]
 
 
+
+AGENT_ACTION_TAGS: dict[str, str] = {
+    "ai_chatbot_deflection_handoff": "Contain AI Bot Escalations",
+    "associate_engagement_pulse_enps": "Benchmark Associate Pulse eNPS",
+    "assortment_planning": "Audit Assortment Breadth",
+    "b2b_wholesale_portal_analytics": "Track Wholesale Portal Volume",
+    "brand_health_social_sentiment": "Analyze Social Brand Sentiment",
+    "campaign_performance_roi": "Attribute Omnichannel Campaign ROAS",
+    "capex_store_remodel_roi": "Model Remodel CapEx Payback",
+    "carbon_footprint_scope_emissions": "Audit Scope 1-3 Carbon Footprint",
+    "cart_checkout_analytics": "Diagnose Checkout Funnel Friction",
+    "category_growth_strategy": "Screen Category Growth White-Space",
+    "chemical_restricted_substances_rsl": "Screen RSL Chemical Compliance",
+    "cold_chain_temperature_compliance": "Monitor Cold-Chain Temperatures",
+    "contact_center_agent_performance": "Triage Contact Center FCR Rates",
+    "corporate_budget_variance_fpna": "Reconcile Corporate Budget Variances",
+    "cross_dock_flow_through": "Accelerate Cross-Dock Flow Velocity",
+    "curbside_pickup_speed_accuracy": "Audit Curbside Fulfillment Speed",
+    "customer_acquisition_cost_cac": "Optimize CAC Payback Velocity",
+    "customer_churn_winback_analytics": "Score Churn Risk & Win-Back",
+    "customer_lifecycle_loyalty": "Segment Customer Lifecycle CLV",
+    "customs_import_tariff_compliance": "Verify Import Tariff Classifications",
+    "damaged_goods_claims_resolution": "Recover Damaged Carrier Freight",
+    "dc_automation_robotics_kpis": "Track DC Robotics Productivity",
+    "dei_supplier_diversity_spend": "Track Diverse Supplier Spend",
+    "digital_promotions_coupon_abuse": "Detect Promo Abuse & Fraud",
+    "digital_site_performance_vitals": "Audit Core Web Vitals Latency",
+    "email_sms_crm_orchestration": "Orchestrate CRM Email Journeys",
+    "energy_facilities_maintenance": "Audit Store Facilities Utility Load",
+    "energy_renewable_grid_transition": "Model Renewable Grid Transition",
+    "ethical_sourcing_labor_audits": "Audit Sourcing Labor Standards",
+    "extended_producer_responsibility_epr": "Track EPR Circularity Mandates",
+    "food_waste_spoilage_reduction": "Minimize Fresh Food Spoilage",
+    "foreign_exchange_landed_costs": "Hedge FX Landed Cost Exposure",
+    "frontline_wage_market_benchmarks": "Benchmark Frontline Market Wages",
+    "geotargeted_local_marketing": "Optimize Local Store Geotargeting",
+    "gift_card_breakage_liability": "Forecast Gift Card Breakage",
+    "gross_margin_profitability": "Audit Gross Margin Variances",
+    "inbound_freight_optimization": "Optimize Inbound Freight Lanes",
+    "influencer_creator_campaign_roi": "Measure Influencer Campaign ROI",
+    "inventory_planning": "Balance Reorder Quantities",
+    "inventory_valuation_provisions": "Calculate LCM Inventory Reserves",
+    "item_lifecycle_rationalization": "Rationalize Long-Tail SKUs",
+    "labor_productivity": "Audit Store Labor Scheduling",
+    "labor_union_compliance_cba": "Audit Labor Union CBA Rules",
+    "last_mile_delivery_dispatch": "Dispatch Last-Mile Routes",
+    "localized_curation_clustering": "Cluster Store Assortment Curations",
+    "logistics_operations": "Monitor Freight Transit Bottlenecks",
+    "loss_prevention_shrinkage": "Detect Store Shrink & Cash Drift",
+    "markdown_clearance_optimization": "Trigger Markdown Clearance Pricing",
+    "marketplace_seller_performance": "Audit 3P Marketplace SLAs",
+    "mobile_app_conversion_retention": "Optimize Mobile App Conversion",
+    "multi_echelon_safety_stock": "Simulate Multi-Echelon Safety Stock",
+    "omnichannel_customer_cdp_insights": "Unify Omnichannel Customer CDP",
+    "omnichannel_returns_in_store": "Streamline In-Store BORIS Returns",
+    "omnichannel_social_support_desk": "Triage Social Support Escalations",
+    "packaging_dunnage_optimization": "Optimize Carton Dunnage Cube",
+    "payment_gateway_fraud_risk": "Screen Payment Gateway Fraud",
+    "pos_checkout_queue_analytics": "Reduce POS Register Queues",
+    "price_matching_competitor_intel": "Monitor Competitor Price Match",
+    "pricing_promotions": "Model Price Elasticity Lift",
+    "private_brand_development": "Formulate Private Brand Margins",
+    "product_detail_page_optimization": "Optimize PDP Media Engagement",
+    "product_safety_recall_readiness": "Audit Product Recall Traceability",
+    "product_warranty_claims_repair": "Process Warranty Repair Claims",
+    "retail_media_network_monetization": "Maximize Retail Media Ad Yield",
+    "returns_appeals_exception_desk": "Resolve Return Policy Appeals",
+    "returns_reverse_logistics": "Optimize Reverse Returns Routing",
+    "sales_tax_nexus_compliance": "Reconcile Multi-State Sales Tax",
+    "search_merchandising_personalization": "Tune Site Search Merchandising",
+    "seasonal_hiring_peak_readiness": "Forecast Peak Seasonal Staffing",
+    "seasonal_transition_planning": "Plan Seasonal Assortment Reset",
+    "sell_through_inventory_health": "Track SKU Sell-Through Velocity",
+    "size_pack_optimization": "Optimize Case Pack Size Runs",
+    "space_planning_micro_merch": "Rebalance Planogram Shelf Space",
+    "store_associate_support_hotline": "Resolve POS Store Helpdesk Tickets",
+    "store_associate_turnover_retention": "Analyze Frontline Turnover Drift",
+    "store_cash_management_tills": "Reconcile Register Till Cash",
+    "store_fulfillment_execution": "Accelerate BOPIS Store Picking",
+    "store_manager_bench_succession": "Map Store Leadership Succession",
+    "store_manager_operational_audit": "Audit Store Operational Standards",
+    "store_pnl_operating_costs": "Audit Store Controllable P&L",
+    "store_real_estate_lease_mgmt": "Audit Retail Real Estate Leases",
+    "store_safety_incident_management": "Track Store Safety OSHA Incidents",
+    "subscription_recurring_orders": "Retain Subscription Replenishments",
+    "supplier_risk_resilience": "Assess Supplier Solvency Risk",
+    "sustainable_packaging_circularity": "Assess Sustainable Packaging",
+    "trade_spend_effectiveness": "Audit Trade Spend Allowances",
+    "training_onboarding_compliance": "Track Retail Training Compliance",
+    "vendor_negotiation_rebates": "Claw Back Vendor Rebate Allowances",
+    "vendor_performance": "Score Vendor OTIF Compliance",
+    "vendor_recovery_audit_compliance": "Audit Vendor Invoice Overpayments",
+    "vip_clientele_concierge_support": "Elevate VIP Concierge Clienteling",
+    "visual_merchandising_compliance": "Verify Planogram Visual Compliance",
+    "voice_of_customer_sentiment_nlp": "Cluster Voice-of-Customer Feedback",
+    "warehouse_dc_operations": "Audit Warehouse DC Flow Bottlenecks",
+    "water_conservation_facility_audit": "Audit Facility Water Footprints",
+    "web_accessibility_seo_health": "Audit SEO & Web Accessibility",
+    "wismo_order_tracking_resolution": "Resolve WISMO Order Tracking",
+    "workforce_scheduling_fairness": "Enforce Fair Predictive Scheduling",
+    "working_capital_cashflow": "Project 90-Day Working Capital",
+    "workplace_safety_workers_comp": "Mitigate Workers Comp Claims",
+}
+
+TASK_DISTRIBUTIONS: dict[str, dict[str, int]] = {
+    "exec_leadership": {'unchanged_pct': 25, 'augmented_pct': 30, 'automated_pct': 25, 'new_ai_pct': 10, 'retired_pct': 10},
+    "merchandising_buyers": {'unchanged_pct': 20, 'augmented_pct': 30, 'automated_pct': 30, 'new_ai_pct': 10, 'retired_pct': 10},
+    "inventory_planners": {'unchanged_pct': 15, 'augmented_pct': 25, 'automated_pct': 40, 'new_ai_pct': 10, 'retired_pct': 10},
+    "supply_chain_logistics": {'unchanged_pct': 20, 'augmented_pct': 25, 'automated_pct': 35, 'new_ai_pct': 10, 'retired_pct': 10},
+    "store_field_ops": {'unchanged_pct': 30, 'augmented_pct': 25, 'automated_pct': 25, 'new_ai_pct': 10, 'retired_pct': 10},
+    "ecommerce_digital": {'unchanged_pct': 15, 'augmented_pct': 30, 'automated_pct': 35, 'new_ai_pct': 10, 'retired_pct': 10},
+    "marketing_loyalty": {'unchanged_pct': 20, 'augmented_pct': 30, 'automated_pct': 30, 'new_ai_pct': 10, 'retired_pct': 10},
+    "finance_fpa": {'unchanged_pct': 15, 'augmented_pct': 30, 'automated_pct': 35, 'new_ai_pct': 10, 'retired_pct': 10},
+    "customer_care_cx": {'unchanged_pct': 20, 'augmented_pct': 30, 'automated_pct': 30, 'new_ai_pct': 10, 'retired_pct': 10},
+    "hr_esg_compliance": {'unchanged_pct': 25, 'augmented_pct': 25, 'automated_pct': 30, 'new_ai_pct': 10, 'retired_pct': 10},
+}
+
+STAGE_TASK_SPECS: dict[tuple[str, int], dict[str, str]] = {
+    ('customer_care_cx', 0): {
+        "retired": "Extract telephony call logs into Excel to find queue spikes",
+        "auto1": "Track multi-queue contact center first contact resolution (FCR)",
+        "auto2": "Monitor average handle time and queue abandonment rate anomalies",
+        "aug": "Reallocate tier-2 specialist support agents to high-volume queues",
+        "unchanged": "Deliver one-on-one empathy coaching to frontline care agents",
+        "new": "Audit automated contact center queue capacity prediction models",
+    },
+    ('customer_care_cx', 1): {
+        "retired": "Lookup tracking numbers across courier portals to answer WISMO",
+        "auto1": "Reconcile carrier delivery tracking status against customer orders",
+        "auto2": "Process damaged transit goods claims and carrier reimbursement",
+        "aug": "Authorize proactive courtesy goodwill credits for delayed shipments",
+        "unchanged": "Resolve high-profile executive escalations with aggrieved VIPs",
+        "new": "Audit automated shipping delay notification deflection rates",
+    },
+    ('customer_care_cx', 2): {
+        "retired": "Read customer CSAT survey comments line-by-line in spreadsheets",
+        "auto1": "Cluster voice-of-customer sentiment and emerging product issues",
+        "auto2": "Triage public social care mentions and brand support tickets",
+        "aug": "Escalate critical product defect patterns to quality assurance",
+        "unchanged": "Lead cross-functional customer advisory council feedback panels",
+        "new": "Audit voice-of-customer sentiment NLP clustering accuracy",
+    },
+    ('customer_care_cx', 3): {
+        "retired": "Listen to random IVR recordings to see why customers drop out",
+        "auto1": "Track AI bot containment, intent drop-offs and deflection rates",
+        "auto2": "Orchestrate high-CLV VIP clienteling and concierge service",
+        "aug": "Tune conversational AI bot guardrails and human handoff triggers",
+        "unchanged": "Host private client VIP styling and concierge loyalty sessions",
+        "new": "Audit automated chatbot containment evaluation and guardrails",
+    },
+    ('ecommerce_digital', 0): {
+        "retired": "Pull hourly web sessions into spreadsheets to spot cart drops",
+        "auto1": "Track step-by-step cart and checkout conversion funnel drops",
+        "auto2": "Screen payment gateway decline codes and fraud risk spikes",
+        "aug": "Trigger checkout UX interventions and payment failover routing",
+        "unchanged": "Lead digital design thinking workshops on customer UX flows",
+        "new": "Audit payment gateway fraud scoring thresholds and friction",
+    },
+    ('ecommerce_digital', 1): {
+        "retired": "Read massive site search logs line-by-line to identify nulls",
+        "auto1": "Cluster zero-result site search queries and diagnose intent",
+        "auto2": "Optimize product detail page media engagement and conversion",
+        "aug": "Approve automated search synonyms and merchandised redirects",
+        "unchanged": "Conduct qualitative user research and moderated usability tests",
+        "new": "Audit conversational site search auto-redirect relevance rules",
+    },
+    ('ecommerce_digital', 2): {
+        "retired": "Check search engine rankings manually across incognito tabs",
+        "auto1": "Audit Core Web Vitals and organic SEO category rankings",
+        "auto2": "Monitor digital coupon redemption spikes and promo code abuse",
+        "aug": "Prioritize high-impact web performance and schema optimizations",
+        "unchanged": "Review creative digital asset design with brand art director",
+        "new": "Audit automated digital coupon abuse blocking rule accuracy",
+    },
+    ('ecommerce_digital', 3): {
+        "retired": "Calculate marketplace merchant defect rates in manual sheets",
+        "auto1": "Track 3P marketplace seller SLAs, late shipments and buy-box",
+        "auto2": "Monitor subscription order churn and recurring renewal trends",
+        "aug": "Enforce marketplace seller policy warnings or suspend accounts",
+        "unchanged": "Recruit strategic third-party marketplace brand partners",
+        "new": "Audit marketplace automated buy-box suppression mechanisms",
+    },
+    ('exec_leadership', 0): {
+        "retired": "Consolidate manual PDF revenue summaries from 9 division heads",
+        "auto1": "Aggregate gross margin, store P&L and cash metrics in BigQuery",
+        "auto2": "Flag district payroll anomalies and inventory reserve spikes",
+        "aug": "Evaluate enterprise capital allocation and strategic priorities",
+        "unchanged": "Chair weekly executive operating committee review meeting",
+        "new": "Audit automated executive P&L anomaly detection thresholds",
+    },
+    ('exec_leadership', 1): {
+        "retired": "Sift through conflicting departmental quarterly variance logs",
+        "auto1": "Decompose gross margin erosion into freight vs markdown drivers",
+        "auto2": "Simulate forward working capital and budget variance trends",
+        "aug": "Negotiate cross-functional mitigation across retail divisions",
+        "unchanged": "Direct executive accountability on commercial commitments",
+        "new": "Review conversational reasoning traces across FP&A and supply chain",
+    },
+    ('exec_leadership', 2): {
+        "retired": "Wait days for third-party macro consulting trend reports",
+        "auto1": "Synthesize macroeconomic competitor earnings and retail press",
+        "auto2": "Map tariff classification changes and FX exposure to categories",
+        "aug": "Formulate executive pricing defense and supply chain strategies",
+        "unchanged": "Engage retail industry board peers and institutional investors",
+        "new": "Validate external Google Search grounding source reliability",
+    },
+    ('exec_leadership', 3): {
+        "retired": "Copy-paste charts into static quarterly executive slide decks",
+        "auto1": "Generate interactive Canvas briefings with Matplotlib curves",
+        "auto2": "Publish structured board performance memos with key metrics",
+        "aug": "Align executive talking points ahead of quarterly earnings calls",
+        "unchanged": "Present strategic vision and guidance to board committee",
+        "new": "Audit executive Canvas briefing accuracy against master ledger",
+    },
+    ('finance_fpa', 0): {
+        "retired": "Run batch ERP trial balances to build store-by-store variance decks",
+        "auto1": "Track store controllable operating costs and labor variances",
+        "auto2": "Decompose gross margin rate variances by category and region",
+        "aug": "Direct field controllers to audit abnormal store expense spikes",
+        "unchanged": "Review confidential financial audit findings with internal audit",
+        "new": "Audit automated general ledger anomaly detection alert limits",
+    },
+    ('finance_fpa', 1): {
+        "retired": "Maintain complex Excel macros for lower-of-cost-or-market reserves",
+        "auto1": "Project 90-day working capital conversion and cash flow curves",
+        "auto2": "Calculate LCM inventory valuation reserves across aging tiers",
+        "aug": "Advise CFO on credit facility draws and vendor payment timing",
+        "unchanged": "Maintain bank credit facility relationships and lender updates",
+        "new": "Audit automated LCM reserve provision calculation algorithms",
+    },
+    ('finance_fpa', 2): {
+        "retired": "Check financial news terminals manually for foreign currency shifts",
+        "auto1": "Synthesize central bank interest rates and FX currency trends",
+        "auto2": "Audit retail real estate lease obligations and store rent steps",
+        "aug": "Structure currency hedges and renegotiate store anchor lease terms",
+        "unchanged": "Lead commercial lease negotiations with shopping mall landlords",
+        "new": "Verify automated lease accounting and FX rate conversion sources",
+    },
+    ('finance_fpa', 3): {
+        "retired": "Collate remodeling invoices and post-remodel sales across drives",
+        "auto1": "Calculate store remodel CapEx net present value and payback ROI",
+        "auto2": "Audit vendor invoice overpayments and recover pricing discrepancies",
+        "aug": "Submit capital expenditure proposals to board finance committee",
+        "unchanged": "Evaluate enterprise strategic acquisitions and capital allocation",
+        "new": "Audit automated vendor overpayment recovery dispute workflows",
+    },
+    ('hr_esg_compliance', 0): {
+        "retired": "Collate store timecards manually to check predictive scheduling",
+        "auto1": "Calculate store associate turnover and predict retention risks",
+        "auto2": "Audit store predictive scheduling fairness and clopening rules",
+        "aug": "Advise district store leaders on frontline retention action plans",
+        "unchanged": "Conduct confidential stay interviews with high-potential staff",
+        "new": "Audit predictive scheduling compliance rule validation engine",
+    },
+    ('hr_esg_compliance', 1): {
+        "retired": "Gather paper utility power bills from hundreds of store locations",
+        "auto1": "Aggregate kilowatt-hour data and model Scope 1-3 carbon emissions",
+        "auto2": "Audit fresh grocery food waste diversion and store markdown velocity",
+        "aug": "Prioritize store HVAC retrofits and corporate net-zero projects",
+        "unchanged": "Engage community food bank partners on surplus food donation",
+        "new": "Audit greenhouse gas emission factor calculations",
+    },
+    ('hr_esg_compliance', 2): {
+        "retired": "Search government websites manually for labor and chemical updates",
+        "auto1": "Ground compliance research with real-time OSHA and EPR statutes",
+        "auto2": "Audit global supplier factory ethical labor standards and audits",
+        "aug": "Update corporate supplier codes of conduct and trigger audits",
+        "unchanged": "Lead annual supplier ethics conference and human rights summit",
+        "new": "Verify automated regulatory statute extraction and freshness",
+    },
+    ('hr_esg_compliance', 3): {
+        "retired": "Transcribe paper OSHA accident incident forms into logbooks",
+        "auto1": "Track store warehouse OSHA recordables and workers comp reserves",
+        "auto2": "Simulate lot-level product safety recall traceability readiness",
+        "aug": "Mandate store safety retraining and issue stop-sale safety notices",
+        "unchanged": "Comfort injured employees and review workplace ergonomic safety",
+        "new": "Audit automated mock product recall traceability response time",
+    },
+    ('inventory_planners', 0): {
+        "retired": "Export ERP shortage reports and calculate safety stocks in Excel",
+        "auto1": "Track SKU sell-through velocity and lead-time drift in real time",
+        "auto2": "Score supplier OTIF delivery trends and stockout vulnerability",
+        "aug": "Prioritize expedited freight routes for high-velocity SKUs",
+        "unchanged": "Negotiate emergency dock space with regional DC managers",
+        "new": "Calibrate multi-echelon stockout risk scoring sensitivity",
+    },
+    ('inventory_planners', 1): {
+        "retired": "Update static safety stock formulas annually in legacy MRP",
+        "auto1": "Simulate multi-echelon safety stock across DCs and store hubs",
+        "auto2": "Model seasonal inventory transition curves and pack-size runs",
+        "aug": "Balance holding cost budgets against 98.5% on-shelf targets",
+        "unchanged": "Align replenishment targets with merchandising leadership",
+        "new": "Audit automated inventory reorder parameter recommendations",
+    },
+    ('inventory_planners', 2): {
+        "retired": "Rely on carrier email alerts hours after supply disruptions",
+        "auto1": "Ground logistics delays against live severe weather and ports",
+        "auto2": "Track supplier solvency and geopolitical trade corridor risks",
+        "aug": "Reroute purchase order containers to secondary cross-dock hubs",
+        "unchanged": "Conduct emergency alignment with logistics freight dispatch",
+        "new": "Validate external maritime disruption alert sources and impact",
+    },
+    ('inventory_planners', 3): {
+        "retired": "Key purchase orders line-by-line into ERP green screens",
+        "auto1": "Calculate economic order quantities (EOQ) and minimum constraints",
+        "auto2": "Generate purchase order payloads for EDI supplier submission",
+        "aug": "Conduct human-in-the-loop review on million-dollar commitments",
+        "unchanged": "Review supplier SLA compliance with procurement leadership",
+        "new": "Audit automated purchase order release thresholds and limits",
+    },
+    ('marketing_loyalty', 0): {
+        "retired": "Log in to 6 ad platforms to copy spend into master spreadsheets",
+        "auto1": "Aggregate multi-channel ad spend and attribute blended ROAS",
+        "auto2": "Analyze CAC payback velocity across paid search, social and CTV",
+        "aug": "Reallocate advertising budgets from lagging to winning channels",
+        "unchanged": "Direct agency creative partners on emotional brand campaigns",
+        "new": "Audit automated multi-touch ad attribution weight allocations",
+    },
+    ('marketing_loyalty', 1): {
+        "retired": "Wait weeks for data science teams to score customer churn lists",
+        "auto1": "Segment omnichannel customer CDP cohorts by RFM and lifetime value",
+        "auto2": "Score customer churn risk and model win-back coupon lift",
+        "aug": "Design personalized loyalty incentives for slipping VIP cohorts",
+        "unchanged": "Lead customer focus groups on retail loyalty program perks",
+        "new": "Audit customer churn predictive model features and drift metrics",
+    },
+    ('marketing_loyalty', 2): {
+        "retired": "Rely on sporadic focus groups to gauge consumer brand perception",
+        "auto1": "Analyze real-time brand sentiment and viral creator engagement",
+        "auto2": "Evaluate influencer marketing campaign conversion lift and ROI",
+        "aug": "Pivot marketing messaging to capitalize on emerging viral trends",
+        "unchanged": "Cultivate relationships with tier-one brand ambassador creators",
+        "new": "Audit social brand sentiment NLP topic classification accuracy",
+    },
+    ('marketing_loyalty', 3): {
+        "retired": "Calculate on-site sponsored ad banner fill rates in Excel",
+        "auto1": "Maximize retail media network sponsored ad auction yield",
+        "auto2": "Orchestrate automated CRM email and SMS personalized journeys",
+        "aug": "Package guaranteed RMN impression commitments for CPG partners",
+        "unchanged": "Negotiate annual retail media contracts with major CPG brands",
+        "new": "Audit retail media sponsored ad auction pricing fairness rules",
+    },
+    ('merchandising_buyers', 0): {
+        "retired": "Download and VLOOKUP weekly POS spreadsheets across regions",
+        "auto1": "Aggregate SKU velocity, sell-through % and inventory health",
+        "auto2": "Flag clearance candidates and private label margin gaps",
+        "aug": "Decide markdown timing vs promotional vendor funding allowances",
+        "unchanged": "Inspect physical product samples and fabric hand-feel quality",
+        "new": "Verify automated markdown clearance trigger elasticity models",
+    },
+    ('merchandising_buyers', 1): {
+        "retired": "Build multi-tab regression sheets to guess promo price lift",
+        "auto1": "Model promotional price elasticity and baseline sales lift",
+        "auto2": "Forecast category cannibalization and trade spend ROI",
+        "aug": "Finalize seasonal promotional calendar depth and co-op terms",
+        "unchanged": "Lead face-to-face line reviews with key brand suppliers",
+        "new": "Audit promotional lift forecast confidence intervals in BigQuery",
+    },
+    ('merchandising_buyers', 2): {
+        "retired": "Manually browse competitor e-commerce sites to verify pricing",
+        "auto1": "Monitor competitor price matching and promo circulars via Search",
+        "auto2": "Benchmark category commodity input costs and tariff shifts",
+        "aug": "Negotiate vendor cost allowances and claw back rebate gaps",
+        "unchanged": "Build trusted long-term merchandising vendor partnerships",
+        "new": "Verify competitor price-scrape match accuracy and freshness",
+    },
+    ('merchandising_buyers', 3): {
+        "retired": "Draw planogram resets manually in legacy desktop CAD tools",
+        "auto1": "Calculate store cluster space productivity and sales per sq.ft",
+        "auto2": "Optimize assortment breadth vs depth by regional cluster",
+        "aug": "Approve final seasonal floor reset layout and shelf allocations",
+        "unchanged": "Walk flagship store floor with visual merchandising team",
+        "new": "Audit micro-merchandising planogram clustering recommendations",
+    },
+    ('store_field_ops', 0): {
+        "retired": "Match printed foot-traffic sheets with punch-clock timesheets",
+        "auto1": "Track store traffic patterns and calculate sales per labor hour",
+        "auto2": "Audit store labor schedule adherence against customer surges",
+        "aug": "Reallocate hourly store staffing between registers and curbside",
+        "unchanged": "Lead morning store team huddle and inspire frontline morale",
+        "new": "Audit fair labor scheduling algorithms for compliance rules",
+    },
+    ('store_field_ops', 1): {
+        "retired": "Walk retail aisles searching for unfulfilled BOPIS customer bags",
+        "auto1": "Track curbside pickup staging speed and click-and-collect SLAs",
+        "auto2": "Analyze omnichannel store order fulfillment picking accuracy",
+        "aug": "Rebalance store floor associates during peak curbside surges",
+        "unchanged": "Greet retail customers and resolve high-touch in-store issues",
+        "new": "Audit automated order fulfillment queue routing efficiency",
+    },
+    ('store_field_ops', 2): {
+        "retired": "Speculate on foot-traffic drops without local neighborhood data",
+        "auto1": "Ground store foot traffic with local stadium events and weather",
+        "auto2": "Audit visual merchandising planogram compliance across displays",
+        "aug": "Stage grab-and-go product displays ahead of local event crowds",
+        "unchanged": "Conduct walk-through audits with district store managers",
+        "new": "Validate store operational audit computer vision detections",
+    },
+    ('store_field_ops', 3): {
+        "retired": "Count register drawer envelopes manually to find cashier errors",
+        "auto1": "Reconcile daily POS till cash and flag register drawer drift",
+        "auto2": "Detect sweethearting, return fraud and store shrinkage anomalies",
+        "aug": "Initiate loss prevention reviews and cash-handling retraining",
+        "unchanged": "Deliver confidential coaching to store staff on compliance",
+        "new": "Audit store loss prevention anomaly detection false-alarm rates",
+    },
+    ('supply_chain_logistics', 0): {
+        "retired": "Radio gatehouse security to locate overdue freight trailers",
+        "auto1": "Track yard gatehouse check-ins and dock door dwell telemetry",
+        "auto2": "Monitor cold-chain temperature thresholds and detention risk",
+        "aug": "Prioritize dock door sequencing for perishable cold-chain loads",
+        "unchanged": "Inspect DC physical staging areas and conveyor safety checks",
+        "new": "Audit IoT cold-chain sensor drift and automated alert triggers",
+    },
+    ('supply_chain_logistics', 1): {
+        "retired": "Manually cross-check signed bills of lading against invoices",
+        "auto1": "Score vendor OTIF fulfillment against purchase order lines",
+        "auto2": "Audit freight invoice lane surcharges and accessorial fees",
+        "aug": "Enforce vendor SLA chargeback penalties and resolve disputes",
+        "unchanged": "Hold strategic quarterly business reviews with carrier CEOs",
+        "new": "Verify automated OTIF penalty calculations before assessment",
+    },
+    ('supply_chain_logistics', 2): {
+        "retired": "Query static freight rate subscription sheets for spot quotes",
+        "auto1": "Ground spot market freight lane rates via Google Search",
+        "auto2": "Audit customs tariff codes and import compliance documents",
+        "aug": "Select dedicated fleet commitments versus spot carrier brokers",
+        "unchanged": "Lead driver safety briefings and regional fleet check-ins",
+        "new": "Audit automated customs tariff classification determinations",
+    },
+    ('supply_chain_logistics', 3): {
+        "retired": "Print route manifests on clipboards for parcel delivery drivers",
+        "auto1": "Optimize last-mile multi-stop parcel delivery dispatch routes",
+        "auto2": "Monitor DC robotics pick rates and carton dunnage utilization",
+        "aug": "Resolve dispatch exceptions and high-priority VIP parcel reroutes",
+        "unchanged": "Coach delivery drivers and audit fleet vehicle road safety",
+        "new": "Audit automated dispatch routing algorithms for driver fairness",
+    },
+}
+
+
+def _enrich_persona_archetypes(archetypes: list[dict[str, Any]]) -> None:
+    """Populates task_distribution, task_bundle, and agent_flow on each archetype and stage."""
+    for arch in archetypes:
+        arch_id = arch["id"]
+        arch["task_distribution"] = dict(TASK_DISTRIBUTIONS[arch_id])
+
+        for stage_idx, stage in enumerate(arch.get("day_in_the_life", [])):
+            featured = stage.get("featured_agents", [])
+            n = len(featured)
+
+            stage["agent_flow"] = [
+                {
+                    "step": idx + 1,
+                    "step_code": f"{idx + 1:02d}",
+                    "slug": slug,
+                    "action_tag": AGENT_ACTION_TAGS[slug],
+                }
+                for idx, slug in enumerate(featured)
+            ]
+
+            spec = STAGE_TASK_SPECS[(arch_id, stage_idx)]
+
+            if n == 3:
+                s2 = [1, 2]
+                s3 = [2]
+                s4 = [3]
+                l2 = "STEP 01 · 02"
+                l3 = "STEP 02"
+                l4 = "STEP 03"
+            elif n == 4:
+                s2 = [1, 2]
+                s3 = [2, 3]
+                s4 = [3, 4]
+                l2 = "STEP 01 · 02"
+                l3 = "STEP 02 · 03"
+                l4 = "STEP 03 · 04"
+            else:  # n >= 5
+                s2 = [1, 2]
+                s3 = [3, 4]
+                s4 = [4, 5]
+                l2 = "STEP 01 · 02"
+                l3 = "STEP 03 · 04"
+                l4 = "STEP 04 · 05"
+
+            s6 = list(range(1, n + 1))
+            l6 = f"STEP 01–{n:02d}"
+
+            stage["task_bundle"] = [
+                {
+                    "id": f"{arch_id}_s{stage_idx + 1}_t1_retired",
+                    "label": spec["retired"],
+                    "state": "retired",
+                    "steps_label": "",
+                    "step_indices": [],
+                },
+                {
+                    "id": f"{arch_id}_s{stage_idx + 1}_t2_auto",
+                    "label": spec["auto1"],
+                    "state": "automated",
+                    "steps_label": l2,
+                    "step_indices": s2,
+                },
+                {
+                    "id": f"{arch_id}_s{stage_idx + 1}_t3_auto",
+                    "label": spec["auto2"],
+                    "state": "automated",
+                    "steps_label": l3,
+                    "step_indices": s3,
+                },
+                {
+                    "id": f"{arch_id}_s{stage_idx + 1}_t4_aug",
+                    "label": spec["aug"],
+                    "state": "augmented",
+                    "steps_label": l4,
+                    "step_indices": s4,
+                },
+                {
+                    "id": f"{arch_id}_s{stage_idx + 1}_t5_unchanged",
+                    "label": spec["unchanged"],
+                    "state": "unchanged",
+                    "steps_label": "",
+                    "step_indices": [],
+                },
+                {
+                    "id": f"{arch_id}_s{stage_idx + 1}_t6_new",
+                    "label": spec["new"],
+                    "state": "new",
+                    "steps_label": l6,
+                    "step_indices": s6,
+                },
+            ]
+
+
+_enrich_persona_archetypes(PERSONA_ARCHETYPES)
+
 def classify_persona_archetype(role_title: str, domain: str) -> str:
     """
     Deterministically maps a role title and parent domain to one of the 10

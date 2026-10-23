@@ -325,6 +325,149 @@ def test_generated_index_html_contains_persona_view_and_dual_theme_tokens():
     assert "motion" in content.lower()
 
 
+def test_persona_5state_task_bundle_and_agent_flow_schema(table_registry_data):
+    from _shared.scripts.persona_catalog import AGENT_ACTION_TAGS
+
+    all_agents = table_registry_data.get("agents", {})
+    assert len(AGENT_ACTION_TAGS) == 100, (
+        f"Expected 100 entries in AGENT_ACTION_TAGS, found {len(AGENT_ACTION_TAGS)}"
+    )
+    for slug in all_agents:
+        assert slug in AGENT_ACTION_TAGS, f"Missing action tag for agent {slug}"
+        tag = AGENT_ACTION_TAGS[slug]
+        assert isinstance(tag, str) and 6 <= len(tag) <= 36, (
+            f"Invalid action tag for {slug}: '{tag}'"
+        )
+
+    valid_states = {"unchanged", "augmented", "automated", "new", "retired"}
+
+    for arch in PERSONA_ARCHETYPES:
+        dist = arch.get("task_distribution", {})
+        for k in ("unchanged_pct", "augmented_pct", "automated_pct", "new_ai_pct", "retired_pct"):
+            assert k in dist and isinstance(dist[k], int) and dist[k] > 0, (
+                f"Invalid {k} in {arch['id']} task_distribution: {dist}"
+            )
+        assert sum(dist.values()) == 100, (
+            f"task_distribution in {arch['id']} must sum to 100, got {sum(dist.values())}"
+        )
+
+        for stage_idx, stage in enumerate(arch.get("day_in_the_life", [])):
+            bundle = stage.get("task_bundle", [])
+            assert isinstance(bundle, list) and len(bundle) == 6, (
+                f"Stage {stage_idx} in {arch['id']} must have 6 tasks in task_bundle, found {len(bundle)}"
+            )
+            states_present = {t.get("state") for t in bundle}
+            assert states_present == valid_states, (
+                f"Stage {stage_idx} in {arch['id']} task_bundle must include all 5 states {valid_states}, got {states_present}"
+            )
+            for t in bundle:
+                assert isinstance(t.get("label"), str) and 10 <= len(t["label"]) <= 68, (
+                    f"Invalid task label in {arch['id']} stage {stage_idx}: {t}"
+                )
+                assert isinstance(t.get("step_indices"), list), (
+                    f"Missing step_indices list in {arch['id']} stage {stage_idx}: {t}"
+                )
+                if t["state"] in ("automated", "augmented", "new"):
+                    assert len(t["step_indices"]) >= 1 and len(t.get("steps_label", "")) > 0, (
+                        f"Active AI task {t['label']} must reference at least 1 step index"
+                    )
+                else:
+                    assert t.get("steps_label", "") == "", (
+                        f"Unchanged/Retired task {t['label']} should have empty steps_label"
+                    )
+
+            flow = stage.get("agent_flow", [])
+            featured = stage.get("featured_agents", [])
+            assert len(flow) == len(featured), (
+                f"Stage {stage_idx} in {arch['id']} agent_flow length {len(flow)} != featured_agents length {len(featured)}"
+            )
+            for idx, step_obj in enumerate(flow):
+                assert step_obj["step"] == idx + 1
+                assert step_obj["step_code"] == f"{idx + 1:02d}"
+                assert step_obj["slug"] == featured[idx]
+                assert step_obj["action_tag"] == AGENT_ACTION_TAGS[featured[idx]]
+
+
+def test_generated_index_html_5state_task_bundle_and_motion_pipeline():
+    index_file = REPO_ROOT / "index.html"
+    content = index_file.read_text(encoding="utf-8")
+
+    # 1. Verify 5-state CSS custom properties exist in index.html
+    for token in [
+        "--task-unchanged-bg",
+        "--task-augmented-bg",
+        "--task-automated-bg",
+        "--task-new-bg",
+        "--task-retired-bg",
+    ]:
+        assert token in content, f"Missing 5-state CSS token {token} in index.html"
+
+    # 2. Verify 5-state legend labels exist and forbidden legend words are absent
+    assert "5-State Task Bundle Key:" in content
+    assert "1. Tasks Unchanged" in content
+    assert "2. Tasks Augmented" in content
+    assert "3. Tasks Automated" in content
+    assert "4. New Tasks Created by AI" in content
+    assert "5. Retired Manual Tasks" in content
+    assert "AI Co-Pilot" not in content, "Legend must not contain 'AI Co-Pilot'"
+    assert "2. Augmented (AI Co-Pilot)" not in content
+    assert "3. Automated (Autonomous)" not in content
+
+    # 3. Verify 2-state toggle and Motion Bento Pipeline classes/functions exist
+    assert "setDitlStateMode" in content
+    assert "Before Agents (Manual Baseline)" in content
+    assert "After Agents (5-State Task Bundle + Agent Flow)" in content
+    assert "flow-bento-grid" in content
+    assert "flow-step-card" in content
+    assert "motion-spotlight" in content
+    assert "bindPipelineSpotlightEvents" in content
+
+    # 4. Verify compare narrative DOM classes are not rendered in renderPersonaExperience
+    render_fn_match = re.search(
+        r"function renderPersonaExperience\(\)\s*\{(.*?)\n    function renderAgents\(\)",
+        content,
+        re.DOTALL,
+    )
+    assert render_fn_match is not None
+    render_fn_body = render_fn_match.group(1)
+    assert "ditl-compare-grid" not in render_fn_body, (
+        "Compare narrative grid must be removed from renderPersonaExperience()"
+    )
+
+
+def test_v5_interactive_states_conduit_and_fullscreen_theater():
+    index_file = REPO_ROOT / "index.html"
+    content = index_file.read_text(encoding="utf-8")
+
+    # 1. Interactive 5-State filter pills & handlers
+    assert "ditl-state-filter-pill" in content
+    assert "data-filter-state" in content
+    assert "toggleTaskStateFilter" in content
+    assert "resetTaskStateFilter" in content
+
+    # 2. Prominent Motion spotlighting & dimming
+    assert "motion-spotlight" in content
+    assert "motion-dimmed" in content
+    assert "applyProminentSpotlight" in content
+
+    # 3. Option A — Connected Orchestration Conduit
+    assert "flow-conduit-track" in content
+    assert "conduit-rail-line" in content
+    assert "conduit-rail-fill" in content
+    assert "conduit-medallion" in content
+    assert "conduit-step-card" in content
+    assert "conduit-demo-btn" in content
+    assert "flow-step-card" in content
+    assert "flow-bento-grid" in content
+
+    # 4. Full-Screen / Maximize Stage Focus Theater
+    assert "stage-maximize-btn" in content
+    assert "stageTheaterModal" in content
+    assert "openStageTheater" in content
+    assert "closeStageTheater" in content
+    assert "switchTheaterStage" in content
+
+
 def test_zero_modifications_to_scaffold_agents_and_demos():
     res = subprocess.run(
         ["git", "status", "--porcelain"],
