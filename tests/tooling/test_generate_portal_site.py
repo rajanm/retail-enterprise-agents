@@ -158,16 +158,29 @@ def test_persona_archetypes_and_day_in_the_life_schema(table_registry_data):
     assert len(PERSONA_ORDER) == 10, f"Expected 10 persona IDs in PERSONA_ORDER, got {len(PERSONA_ORDER)}"
     assert len(PERSONA_ARCHETYPES) == 10, f"Expected 10 persona archetypes, got {len(PERSONA_ARCHETYPES)}"
 
-    expected_times = ["08:00 AM", "10:30 AM", "01:30 PM", "03:30 PM"]
+    expected_times = ["Stage 1", "Stage 2", "Stage 3", "Stage 4"]
 
+    all_featured_agents = set()
     for i, arch in enumerate(PERSONA_ARCHETYPES):
         assert arch["id"] == PERSONA_ORDER[i], (
             f"Archetype {i} id {arch.get('id')} does not match PERSONA_ORDER {PERSONA_ORDER[i]}"
         )
-        for key in ["id", "icon", "title", "subtitle", "roles_summary", "hours_saved", "decision_speed"]:
+        for key in ["id", "icon", "title", "subtitle", "roles_summary", "hours_saved", "decision_speed", "automated_label", "augmented_label"]:
             assert key in arch and isinstance(arch[key], str) and len(arch[key]) > 0, (
                 f"Missing or empty {key} in archetype {arch.get('id')}"
             )
+
+        # Assert qualitative labels do not contain specific % numbers
+        assert "%" not in arch["automated_label"], f"automated_label should not contain '%': {arch['automated_label']}"
+        assert "%" not in arch["augmented_label"], f"augmented_label should not contain '%': {arch['augmented_label']}"
+
+        # Assert hours_saved and decision_speed do not contain specific numeric values
+        assert not any(c.isdigit() for c in arch["hours_saved"]), (
+            f"hours_saved should use high-level horizon strings without digits: {arch['hours_saved']}"
+        )
+        assert not any(c.isdigit() for c in arch["decision_speed"]), (
+            f"decision_speed should use high-level horizon strings without digits: {arch['decision_speed']}"
+        )
 
         assert "automated_pct" in arch and isinstance(arch["automated_pct"], int)
         assert "augmented_pct" in arch and isinstance(arch["augmented_pct"], int)
@@ -188,6 +201,14 @@ def test_persona_archetypes_and_day_in_the_life_schema(table_registry_data):
             for str_key in ["stage", "time_before", "time_after"]:
                 assert str_key in stage and isinstance(stage[str_key], str) and len(stage[str_key]) > 0
 
+            # Assert time_before and time_after are high-level horizon units
+            assert stage["time_before"] in ("Weeks", "Days", "Hours"), (
+                f"Stage {stage_idx} in {arch['id']} time_before must be in ('Weeks', 'Days', 'Hours'), got {stage['time_before']}"
+            )
+            assert stage["time_after"] in ("Hours", "Minutes"), (
+                f"Stage {stage_idx} in {arch['id']} time_after must be in ('Hours', 'Minutes'), got {stage['time_after']}"
+            )
+
             assert len(stage.get("without_agents", "")) >= 30, (
                 f"Stage {stage_idx} in {arch['id']} 'without_agents' must be >= 30 chars: {stage.get('without_agents')}"
             )
@@ -202,11 +223,16 @@ def test_persona_archetypes_and_day_in_the_life_schema(table_registry_data):
             )
 
             featured = stage.get("featured_agents", [])
-            assert isinstance(featured, list) and len(featured) >= 1, (
-                f"Stage {stage_idx} in {arch['id']} must have featured_agents list"
+            assert isinstance(featured, list) and len(featured) >= 3, (
+                f"Stage {stage_idx} in {arch['id']} must have featured_agents list with at least 3 agents"
             )
             for fa in featured:
                 assert fa in all_agents, f"Featured agent '{fa}' in {arch['id']} not found in table_registry.yaml"
+                all_featured_agents.add(fa)
+
+    assert len(all_featured_agents) == len(all_agents) == 100, (
+        f"Expected all 100 registry agents covered across persona stages, got {len(all_featured_agents)}"
+    )
 
 
 def test_all_100_agents_extract_personas_and_transformations(table_registry_data):

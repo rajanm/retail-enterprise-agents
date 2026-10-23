@@ -158,6 +158,14 @@ def extract_agent_metadata(agent_name: str, domain: str, reg_agent: dict, repo_r
         
     personas = extract_personas_from_readme(readme_content, display_name, domain, kpis, tables)
     persona_archetypes = [pid for pid in PERSONA_ORDER if any(p["archetype"] == pid for p in personas)]
+    for arch in PERSONA_ARCHETYPES:
+        arch_id = arch["id"]
+        if arch_id not in persona_archetypes:
+            for stage in arch.get("day_in_the_life", []):
+                if agent_name in stage.get("featured_agents", []):
+                    persona_archetypes.append(arch_id)
+                    break
+    persona_archetypes = [pid for pid in PERSONA_ORDER if pid in persona_archetypes]
     if not persona_archetypes:
         persona_archetypes = [classify_persona_archetype(display_name, domain)]
     transformation = build_agent_transformation(display_name, domain, description, personas, kpis, tables)
@@ -1112,7 +1120,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       align-items: center;
     }}
 
-    .ditl-time-tag {{
+    .ditl-time-tag,
+    .ditl-time-badge {{
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.7rem;
       opacity: 0.9;
@@ -2298,6 +2307,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     const viewModeHint = document.getElementById('viewModeHint');
     const personaExperienceContainer = document.getElementById('personaExperienceContainer');
     const agentGrid = document.getElementById('agentGrid');
+    const resultsBar = document.querySelector('.results-bar');
     const noResults = document.getElementById('noResults');
     const resultsCount = document.getElementById('resultsCount');
     const themeToggleBtn = document.getElementById('themeToggleBtn');
@@ -2418,11 +2428,16 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         if (domainPills) domainPills.style.display = 'flex';
         if (personaPills) personaPills.style.display = 'none';
         if (personaExperienceContainer) personaExperienceContainer.style.display = 'none';
+        if (resultsBar) resultsBar.style.display = 'flex';
+        if (agentGrid) agentGrid.style.display = 'grid';
         if (viewModeHint) viewModeHint.textContent = 'Organized by 9 enterprise retail business functions';
       }} else {{
         if (domainPills) domainPills.style.display = 'none';
         if (personaPills) personaPills.style.display = 'flex';
         if (personaExperienceContainer) personaExperienceContainer.style.display = 'block';
+        if (resultsBar) resultsBar.style.display = 'none';
+        if (agentGrid) agentGrid.style.display = 'none';
+        if (noResults) noResults.style.display = 'none';
         if (viewModeHint) viewModeHint.textContent = 'Organized by 10 retail leadership and operational roles with Day-in-the-Life workflows';
       }}
 
@@ -2481,7 +2496,43 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
       if (activePersona === 'all') {{
         // State A: 10-Persona Transformation Overview Grid
-        const cardsHtml = PERSONA_ARCHETYPES.map(p => {{
+        const query = searchQuery.toLowerCase().trim();
+        const filteredPersonas = PERSONA_ARCHETYPES.filter(p => {{
+          if (!query) return true;
+          const pool = [
+            p.title,
+            p.subtitle,
+            p.roles_summary,
+            p.hours_saved,
+            p.decision_speed,
+            p.automated_label || '',
+            p.augmented_label || '',
+            ...(p.day_in_the_life || []).map(s => [s.stage, s.without_agents, s.with_agents, s.automated_what, s.augmented_what].join(' '))
+          ].join(' ').toLowerCase();
+          return pool.includes(query);
+        }});
+
+        if (filteredPersonas.length === 0) {{
+          personaExperienceContainer.innerHTML = `
+            <div class="persona-overview-header">
+              <h2 class="persona-overview-title">
+                <span>👤</span> 10 Retail Enterprise Persona Archetypes
+              </h2>
+              <p class="persona-overview-subtitle">
+                Explore how Gemini Enterprise Agents transform daily workflows across retail leadership, merchandising, supply chain, store operations, and digital roles.
+              </p>
+            </div>
+            <div class="no-results" style="display: block; padding: 48px 24px; text-align: center;">
+              <div style="font-size: 2.5rem; margin-bottom: 12px;">🔍</div>
+              <h3 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 8px;">No matching persona archetypes found</h3>
+              <p style="color: var(--text-secondary); margin-bottom: 16px;">Try adjusting your search terms or clearing the search filter.</p>
+              <button class="btn-persona-cta" onclick="resetFilters()" style="margin: 0 auto;">Clear Search</button>
+            </div>
+          `;
+          return;
+        }}
+
+        const cardsHtml = filteredPersonas.map(p => {{
           const count = AGENTS_DATA.filter(a => (a.persona_archetypes || []).includes(p.id)).length;
           return `
             <div class="persona-overview-card" data-persona-id="${{p.id}}">
@@ -2502,8 +2553,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
               <div class="auto-aug-bar-container">
                 <div class="auto-aug-legend">
-                  <span class="auto-text">🤖 ${{p.automated_pct}}% Automated</span>
-                  <span class="aug-text">✨ ${{p.augmented_pct}}% Augmented</span>
+                  <span class="auto-text">🤖 ${{htmlEscape(p.automated_label || 'Automated: Data, SQL & Visuals')}}</span>
+                  <span class="aug-text">✨ ${{htmlEscape(p.augmented_label || 'Augmented: Strategy & Decisions')}}</span>
                 </div>
                 <div class="auto-aug-bar">
                   <div class="auto-fill-bar" style="width: ${{p.automated_pct}}%;" data-target-width="${{p.automated_pct}}%"></div>
@@ -2556,22 +2607,22 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           return `
             <div class="ditl-stage-card">
               <div class="ditl-stage-top">
-                <span class="ditl-time-stage">⏰ ${{stage.time}} · ${{htmlEscape(stage.stage)}}</span>
+                <span class="ditl-time-stage">📋 ${{htmlEscape(stage.time)}} · ${{htmlEscape(stage.stage)}}</span>
                 <span class="ditl-mode-badge ${{modeClass}}">${{modeLabel}}</span>
               </div>
 
               <div class="ditl-compare-grid">
                 <div class="ditl-without">
                   <div class="ditl-compare-header">
-                    <span>🔴 Without Agents (Manual)</span>
-                    <span class="ditl-time-tag">${{htmlEscape(stage.time_before)}}</span>
+                    <span>🔴 WITHOUT AGENTS (MANUAL)</span>
+                    <span class="ditl-time-tag ditl-time-badge">⏱️ ${{htmlEscape(stage.time_before)}}</span>
                   </div>
                   <p>${{htmlEscape(stage.without_agents)}}</p>
                 </div>
                 <div class="ditl-with">
                   <div class="ditl-compare-header">
-                    <span>🟢 With Agents (Agentic)</span>
-                    <span class="ditl-time-tag">${{htmlEscape(stage.time_after)}}</span>
+                    <span>🟢 WITH AGENTS (AGENTIC)</span>
+                    <span class="ditl-time-tag ditl-time-badge">⚡ ${{htmlEscape(stage.time_after)}}</span>
                   </div>
                   <p>${{htmlEscape(stage.with_agents)}}</p>
                 </div>
@@ -2584,7 +2635,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
               ${{agentChips ? `
                 <div class="ditl-agent-chips">
-                  <span class="ditl-agent-chips-label">Featured Agents:</span>
+                  <span class="ditl-agent-chips-label">Agents (${{(stage.featured_agents || []).length}}):</span>
                   ${{agentChips}}
                 </div>
               ` : ''}}
@@ -2603,8 +2654,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                 <div class="ditl-stat-pills">
                   <span class="ditl-stat-pill">⏱️ <strong>${{htmlEscape(p.hours_saved)}}</strong></span>
                   <span class="ditl-stat-pill">⚡ <strong>${{htmlEscape(p.decision_speed)}}</strong></span>
-                  <span class="ditl-stat-pill">🤖 <strong>${{p.automated_pct}}% Automated</strong></span>
-                  <span class="ditl-stat-pill">✨ <strong>${{p.augmented_pct}}% Augmented</strong></span>
+                  <span class="ditl-stat-pill">🤖 <strong>${{htmlEscape(p.automated_label || 'Automated: Data, SQL & Visuals')}}</strong></span>
+                  <span class="ditl-stat-pill">✨ <strong>${{htmlEscape(p.augmented_label || 'Augmented: Strategy & Sign-Off')}}</strong></span>
                   <span class="ditl-stat-pill">👥 <strong>${{count}} Agents</strong></span>
                 </div>
               </div>
@@ -2629,16 +2680,21 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     // Render Cards
     function renderAgents() {{
+      if (viewMode === 'persona') {{
+        if (agentGrid) agentGrid.style.display = 'none';
+        if (resultsBar) resultsBar.style.display = 'none';
+        if (noResults) noResults.style.display = 'none';
+        return;
+      }}
+
+      if (resultsBar) resultsBar.style.display = 'flex';
+      if (agentGrid) agentGrid.style.display = 'grid';
+
       const query = searchQuery.toLowerCase().trim();
       
       const filtered = AGENTS_DATA.filter(agent => {{
-        if (viewMode === 'domain') {{
-          const matchesDomain = activeDomain === 'all' || agent.domain === activeDomain;
-          if (!matchesDomain) return false;
-        }} else if (viewMode === 'persona') {{
-          const matchesPersona = activePersona === 'all' || (agent.persona_archetypes && agent.persona_archetypes.includes(activePersona));
-          if (!matchesPersona) return false;
-        }}
+        const matchesDomain = activeDomain === 'all' || agent.domain === activeDomain;
+        if (!matchesDomain) return false;
 
         if (!query) return true;
 
@@ -2688,49 +2744,6 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           </button>`
         ).join('');
 
-        // Persona Spotlight and Transformation Details for Persona View
-        let personaSpotlightHtml = '';
-        let transformHtml = '';
-
-        if (viewMode === 'persona') {{
-          const matchingPersonas = activePersona === 'all' 
-            ? (agent.personas || []).slice(0, 2)
-            : (agent.personas || []).filter(p => p.archetype === activePersona);
-          const spotlightList = matchingPersonas.length > 0 ? matchingPersonas : (agent.personas || []).slice(0, 2);
-
-          if (spotlightList.length > 0) {{
-            personaSpotlightHtml = `
-              <div class="card-persona-spotlight">
-                <div class="card-persona-spotlight-title">
-                  <span>👤</span> Target Persona Spotlight
-                </div>
-                <div class="card-persona-spotlight-roles">
-                  ${{spotlightList.map(p => `
-                    <div><strong>${{htmlEscape(p.title)}}:</strong> ${{htmlEscape(p.description)}}</div>
-                  `).join('')}}
-                </div>
-              </div>
-            `;
-          }}
-
-          if (agent.transformation) {{
-            transformHtml = `
-              <div class="card-transform-box">
-                <div class="card-transform-without">
-                  <strong>🔴 Without Agent:</strong> ${{htmlEscape(agent.transformation.without_agent)}}
-                </div>
-                <div class="card-transform-with">
-                  <strong>🟢 With Agent:</strong> ${{htmlEscape(agent.transformation.with_agent)}}
-                </div>
-                <div class="card-transform-split">
-                  <div class="card-split-tag auto">🤖 <strong>Auto:</strong> ${{htmlEscape(agent.transformation.automated)}}</div>
-                  <div class="card-split-tag aug">✨ <strong>Augment:</strong> ${{htmlEscape(agent.transformation.augmented)}}</div>
-                </div>
-              </div>
-            `;
-          }}
-        }}
-
         return `
           <div class="agent-card" data-agent-id="${{agent.id}}">
             <div class="card-top">
@@ -2742,9 +2755,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             <h3 class="card-title">${{htmlEscape(agent.display_name)}}</h3>
             <p class="card-desc">${{htmlEscape(agent.description)}}</p>
 
-            ${{viewMode === 'domain' && personaChips ? `<div class="persona-row">${{personaChips}}</div>` : ''}}
-            ${{personaSpotlightHtml}}
-            ${{transformHtml}}
+            ${{personaChips ? `<div class="persona-row">${{personaChips}}</div>` : ''}}
 
             ${{kpiPills ? `<div class="kpi-row">${{kpiPills}}</div>` : ''}}
 
@@ -2801,6 +2812,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     searchInput.addEventListener('input', (e) => {{
       searchQuery = e.target.value;
       searchClear.style.display = searchQuery ? 'block' : 'none';
+      renderPersonaExperience();
       renderAgents();
     }});
 
@@ -2808,6 +2820,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       searchInput.value = '';
       searchQuery = '';
       searchClear.style.display = 'none';
+      renderPersonaExperience();
       renderAgents();
       searchInput.focus();
     }});
