@@ -513,6 +513,20 @@ def test_portal_keyboard_accessibility_and_reduced_motion():
     assert "openAccessibleModal" in html
     assert "closeAccessibleModal" in html
 
+    # Finding 1: Nested interactive element guard so Watch Demo button is not hijacked by step keydown
+    assert "e.target.closest('button, a, input, select, textarea')" in html
+
+    # Finding 2: Per-modal focus stack, proper modal z-order precedence, and Theater arrow navigation guard
+    assert "modalFocusStack = new Map()" in html
+    assert "[videoModal, archModal, stageTheaterModal]" in html
+    assert "openModal === stageTheaterModal" in html
+    assert "anyModalOpen" in html
+
+    # Finding 3: resetTaskStateFilter clears aria-pressed across flow-step-card.is-pinned as well
+    assert ".task-tile.is-pinned, .conduit-node.is-pinned, .flow-step-card.is-pinned" in html
+    assert "el.setAttribute('aria-pressed', 'false')" in html
+
+
 
 
 def test_zero_modifications_to_scaffold_agents_and_demos():

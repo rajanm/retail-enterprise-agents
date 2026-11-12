@@ -3324,8 +3324,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     function resetTaskStateFilter() {{
       activeTaskStateFilter = null;
       hoveredTaskStateFilter = null;
-      document.querySelectorAll('.task-tile.is-pinned, .conduit-node.is-pinned').forEach(el => {{
+      document.querySelectorAll('.task-tile.is-pinned, .conduit-node.is-pinned, .flow-step-card.is-pinned').forEach(el => {{
         el.classList.remove('is-pinned');
+        el.setAttribute('aria-pressed', 'false');
         const chip = el.querySelector('.task-pin-chip');
         if (chip) chip.textContent = 'Click to pin focus';
       }});
@@ -3676,8 +3677,10 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         const flowStepCards = stageCard.querySelectorAll('.flow-step-card');
         const taskTiles = stageCard.querySelectorAll('.task-tile');
 
-        // Set ARIA role, tabindex and keyboard activation on all interactive flow and task nodes
-        const allInteractiveNodes = [...conduitNodes, ...flowStepCards, ...taskTiles];
+        const stepElements = conduitNodes.length ? conduitNodes : flowStepCards;
+
+        // Set ARIA role, tabindex and keyboard activation on top-level interactive flow steps and task tiles
+        const allInteractiveNodes = [...stepElements, ...taskTiles];
         allInteractiveNodes.forEach(node => {{
           node.setAttribute('tabindex', '0');
           node.setAttribute('role', 'button');
@@ -3685,14 +3688,13 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             node.setAttribute('aria-pressed', 'false');
           }}
           node.addEventListener('keydown', (e) => {{
+            if (e.target.closest('button, a, input, select, textarea') && e.target !== node) return;
             if (e.key === 'Enter' || e.key === ' ') {{
               e.preventDefault();
               node.click();
             }}
           }});
         }});
-
-        const stepElements = conduitNodes.length ? conduitNodes : flowStepCards;
 
         stepElements.forEach(stepElem => {{
           const stepVal = stepElem.getAttribute('data-step');
@@ -3819,7 +3821,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     // Modal Accessibility & Focus Management
-    let lastFocusedEl = null;
+    const modalFocusStack = new Map();
 
     function getFocusableElements(container) {{
       if (!container) return [];
@@ -3831,7 +3833,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     function openAccessibleModal(modalEl, focusSelector) {{
       if (!modalEl) return;
-      lastFocusedEl = document.activeElement;
+      if (!modalEl.classList.contains('open')) {{
+        modalFocusStack.set(modalEl, document.activeElement);
+      }}
       modalEl.classList.add('open');
       document.body.style.overflow = 'hidden';
 
@@ -3849,13 +3853,17 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     function closeAccessibleModal(modalEl) {{
       if (!modalEl) return;
       modalEl.classList.remove('open');
-      document.body.style.overflow = '';
-      if (lastFocusedEl && typeof lastFocusedEl.focus === 'function') {{
-        try {{
-          lastFocusedEl.focus();
-        }} catch (e) {{}}
-        lastFocusedEl = null;
+      const anyModalOpen = Boolean(document.querySelector('.modal-backdrop.open'));
+      if (!anyModalOpen) {{
+        document.body.style.overflow = '';
       }}
+      const prevFocus = modalFocusStack.get(modalEl);
+      if (prevFocus && typeof prevFocus.focus === 'function') {{
+        try {{
+          prevFocus.focus();
+        }} catch (e) {{}}
+      }}
+      modalFocusStack.delete(modalEl);
     }}
 
     // Full-Screen Stage Focus Theater Modal Handlers
@@ -4757,15 +4765,15 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     // Global keyboard listener: ESC, modal Tab trapping, Theater arrow navigation, global search
     document.addEventListener('keydown', (e) => {{
-      const openModal = [stageTheaterModal, videoModal, archModal].find(m => m && m.classList.contains('open'));
+      const openModal = [videoModal, archModal, stageTheaterModal].find(m => m && m.classList.contains('open'));
 
       if (e.key === 'Escape') {{
         if (videoModal && videoModal.classList.contains('open')) {{
           closeVideoModal();
-        }} else if (stageTheaterModal && stageTheaterModal.classList.contains('open')) {{
-          closeStageTheater();
         }} else if (archModal && archModal.classList.contains('open')) {{
           closeArchModal();
+        }} else if (stageTheaterModal && stageTheaterModal.classList.contains('open')) {{
+          closeStageTheater();
         }}
         return;
       }}
@@ -4795,7 +4803,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       }}
 
       // Theater stage navigation with ArrowLeft / ArrowRight
-      if (stageTheaterModal && stageTheaterModal.classList.contains('open')) {{
+      if (openModal === stageTheaterModal) {{
         const p = PERSONA_MAP[activePersona];
         if (p && p.day_in_the_life && p.day_in_the_life.length > 0) {{
           const maxStages = p.day_in_the_life.length;
