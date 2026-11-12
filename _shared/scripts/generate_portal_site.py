@@ -355,6 +355,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --deck-border: rgba(255, 255, 255, 0.10);
       --deck-top-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
       --deck-active-shadow: 0 22px 48px -18px rgba(0, 0, 0, 0.55);
+      --deck-glow-peak: #bae6fd;
+      --deck-glow-shadow: 0 14px 40px -6px rgba(56, 189, 248, 0.36), 0 0 0 1px rgba(56, 189, 248, 0.45);
       --deck-sheen: linear-gradient(112deg, transparent 20%, rgba(255, 255, 255, 0.13) 48%, rgba(56, 189, 248, 0.12) 52%, transparent 80%);
       --deck-ink: #f4f4f5;
       --deck-ink-secondary: #d4d4d8;
@@ -445,6 +447,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --deck-border: rgba(12, 12, 9, 0.10);
       --deck-top-highlight: none;
       --deck-active-shadow: 0 20px 44px -18px rgba(12, 12, 9, 0.16);
+      --deck-glow-peak: #38bdf8;
+      --deck-glow-shadow: 0 14px 36px -6px rgba(3, 105, 161, 0.25), 0 0 0 1px rgba(3, 105, 161, 0.40);
       --deck-sheen: linear-gradient(112deg, transparent 20%, rgba(255, 255, 255, 0.52) 48%, rgba(3, 105, 161, 0.12) 52%, transparent 80%);
       --deck-ink: #0c0c09;
       --deck-ink-secondary: #3f3f46;
@@ -1212,10 +1216,87 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       z-index: 10;
     }}
 
+    @property --glow-angle {{
+      syntax: '<angle>';
+      initial-value: 0deg;
+      inherits: false;
+    }}
+
+    @keyframes borderRimTrace {{
+      0% {{
+        --glow-angle: 0deg;
+        opacity: 0;
+      }}
+      18% {{
+        opacity: 1;
+      }}
+      80% {{
+        opacity: 0.9;
+      }}
+      100% {{
+        --glow-angle: 360deg;
+        opacity: 0;
+      }}
+    }}
+
+    @keyframes borderBloomSettle {{
+      0% {{
+        box-shadow: var(--deck-active-shadow);
+      }}
+      35% {{
+        box-shadow: var(--deck-glow-shadow);
+      }}
+      100% {{
+        box-shadow: var(--deck-active-shadow);
+      }}
+    }}
+
     .deck-slide .persona-overview-card,
     .deck-slide .ditl-stage-slide {{
       position: relative;
       overflow: hidden;
+    }}
+
+    .deck-slide .ditl-stage-slide {{
+      border-radius: 16px;
+    }}
+
+    .deck-slide .persona-overview-card::before,
+    .deck-slide .ditl-stage-slide::before {{
+      content: '';
+      position: absolute;
+      inset: 0;
+      padding: 1.5px;
+      border-radius: inherit;
+      background: conic-gradient(
+        from var(--glow-angle, 0deg),
+        transparent 0deg,
+        transparent 215deg,
+        var(--deck-accent) 285deg,
+        var(--deck-glow-peak) 325deg,
+        transparent 360deg
+      );
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 5;
+    }}
+
+    .deck-slide.is-active.is-flip-next .persona-overview-card::before,
+    .deck-slide.is-active.is-flip-prev .persona-overview-card::before,
+    .deck-slide.is-active.is-flip-next .ditl-stage-slide::before,
+    .deck-slide.is-active.is-flip-prev .ditl-stage-slide::before {{
+      animation: borderRimTrace 740ms cubic-bezier(0.22, 1, 0.36, 1) 120ms 1 both;
+    }}
+
+    .deck-slide.is-active.is-flip-next .persona-overview-card,
+    .deck-slide.is-active.is-flip-prev .persona-overview-card,
+    .deck-slide.is-active.is-flip-next .ditl-stage-slide,
+    .deck-slide.is-active.is-flip-prev .ditl-stage-slide {{
+      animation: borderBloomSettle 740ms cubic-bezier(0.22, 1, 0.36, 1) 120ms 1 both;
     }}
 
     .deck-slide .persona-overview-card::after,
