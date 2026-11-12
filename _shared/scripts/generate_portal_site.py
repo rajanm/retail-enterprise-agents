@@ -346,12 +346,15 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
       /* Scoped Minimalist Deck & Surface Tokens (Dark Theme) */
       --m-slide: 240ms;
+      --m-coverflow: 380ms;
+      --m-spring: cubic-bezier(0.22, 1, 0.36, 1);
       --m-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
       --deck-canvas: #0b0b0d;
       --deck-surface: #151517;
       --deck-surface-subtle: #111114;
       --deck-border: rgba(255, 255, 255, 0.10);
       --deck-top-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      --deck-active-shadow: 0 22px 48px -18px rgba(0, 0, 0, 0.55);
       --deck-ink: #f4f4f5;
       --deck-ink-secondary: #d4d4d8;
       --deck-ink-muted: #a1a1aa;
@@ -440,6 +443,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --deck-surface-subtle: #efefe9;
       --deck-border: rgba(12, 12, 9, 0.10);
       --deck-top-highlight: none;
+      --deck-active-shadow: 0 20px 44px -18px rgba(12, 12, 9, 0.16);
       --deck-ink: #0c0c09;
       --deck-ink-secondary: #3f3f46;
       --deck-ink-muted: #52525b;
@@ -1015,39 +1019,89 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     #personaOverviewDeck {{
-      --slide-w: min(660px, 84vw);
-      --slide-gap: 24px;
+      --slide-w: min(560px, 78vw);
+      --slide-gap: 0px;
+      --cf-step-x: min(350px, 44vw);
+      --cf-step-z: 90px;
+      --cf-angle: 16deg;
+      --cf-scale-neighbor: 0.85;
     }}
 
     #ditlStageDeck {{
-      --slide-w: min(920px, 90vw);
-      --slide-gap: 24px;
+      --slide-w: min(860px, 84vw);
+      --slide-gap: 0px;
+      --cf-step-x: min(470px, 48vw);
+      --cf-step-z: 90px;
+      --cf-angle: 9deg;
+      --cf-scale-neighbor: 0.88;
     }}
 
     .deck-viewport {{
+      perspective: 1200px;
       overflow: hidden;
       width: 100%;
       position: relative;
       touch-action: pan-y;
       outline: none;
-      padding: 8px 0;
+      padding: 24px 0 28px;
     }}
 
     .deck-track {{
-      display: flex;
-      align-items: stretch;
-      gap: var(--slide-gap, 24px);
-      transition: transform var(--m-slide) var(--m-ease-out);
-      transform: translate3d(calc(50% - var(--slide-w, 660px) / 2 - var(--deck-idx, 0) * (var(--slide-w, 660px) + var(--slide-gap, 24px))), 0, 0);
+      position: relative;
+      width: 100%;
+      transform-style: preserve-3d;
+      display: grid;
+      place-items: center;
+      transform: translate3d(var(--drag-x, 0px), 0, 0);
+      transition: transform var(--m-coverflow) var(--m-spring);
       will-change: transform;
     }}
 
+    .deck-track.is-dragging {{
+      transition: none;
+    }}
+
     .deck-slide {{
-      flex: 0 0 var(--slide-w, 660px);
-      width: var(--slide-w, 660px);
+      grid-area: 1 / 1;
+      width: var(--slide-w);
       position: relative;
-      opacity: 0.35;
-      transition: opacity var(--m-slide) var(--m-ease-out);
+      transform-style: preserve-3d;
+      transition: transform var(--m-coverflow) var(--m-spring), opacity var(--m-coverflow) var(--m-spring);
+      will-change: transform, opacity;
+      opacity: 0;
+      z-index: 1;
+      pointer-events: none;
+    }}
+
+    .deck-slide.is-active,
+    .deck-slide[data-pos="0"] {{
+      transform: translate3d(0, 0, 0) scale(1) rotateY(0deg);
+      opacity: 1;
+      z-index: 20;
+      pointer-events: auto;
+    }}
+
+    .deck-slide.is-active .persona-overview-card,
+    .deck-slide[data-pos="0"] .persona-overview-card {{
+      box-shadow: var(--deck-active-shadow);
+    }}
+
+    .deck-slide.is-prev-1,
+    .deck-slide[data-pos="-1"] {{
+      transform: translate3d(calc(var(--cf-step-x) * -1), 0, -90px) scale(var(--cf-scale-neighbor)) rotateY(var(--cf-angle));
+      opacity: 0.78;
+      z-index: 12;
+      pointer-events: auto;
+      cursor: pointer;
+    }}
+
+    .deck-slide.is-next-1,
+    .deck-slide[data-pos="1"] {{
+      transform: translate3d(var(--cf-step-x), 0, -90px) scale(var(--cf-scale-neighbor)) rotateY(calc(var(--cf-angle) * -1));
+      opacity: 0.78;
+      z-index: 12;
+      pointer-events: auto;
+      cursor: pointer;
     }}
 
     .deck-slide.is-neighbor {{
@@ -1055,8 +1109,36 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       cursor: pointer;
     }}
 
-    .deck-slide.is-active {{
-      opacity: 1;
+    .deck-slide.is-prev-2,
+    .deck-slide[data-pos="-2"] {{
+      transform: translate3d(calc(var(--cf-step-x) * -1.48), 0, -170px) scale(0.74) rotateY(calc(var(--cf-angle) * 1.35));
+      opacity: 0.38;
+      z-index: 6;
+      pointer-events: none;
+    }}
+
+    .deck-slide.is-next-2,
+    .deck-slide[data-pos="2"] {{
+      transform: translate3d(calc(var(--cf-step-x) * 1.48), 0, -170px) scale(0.74) rotateY(calc(var(--cf-angle) * -1.35));
+      opacity: 0.38;
+      z-index: 6;
+      pointer-events: none;
+    }}
+
+    .deck-slide.is-prev-far,
+    .deck-slide[data-pos="prev-far"] {{
+      transform: translate3d(calc(var(--cf-step-x) * -1.75), 0, -240px) scale(0.68) rotateY(calc(var(--cf-angle) * 1.5));
+      opacity: 0;
+      z-index: 1;
+      pointer-events: none;
+    }}
+
+    .deck-slide.is-next-far,
+    .deck-slide[data-pos="next-far"] {{
+      transform: translate3d(calc(var(--cf-step-x) * 1.75), 0, -240px) scale(0.68) rotateY(calc(var(--cf-angle) * -1.5));
+      opacity: 0;
+      z-index: 1;
+      pointer-events: none;
     }}
 
     .deck-slide-content {{
@@ -3058,6 +3140,16 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       #ditlStageDeck {{
         --slide-w: 100%;
         --slide-gap: 0px;
+        --cf-step-x: 104%;
+        --cf-angle: 0deg;
+        --cf-scale-neighbor: 0.92;
+      }}
+      .deck-slide.is-prev-2,
+      .deck-slide.is-next-2,
+      .deck-slide.is-prev-far,
+      .deck-slide.is-next-far {{
+        opacity: 0;
+        pointer-events: none;
       }}
       .deck-peek-overlay {{
         display: none !important;

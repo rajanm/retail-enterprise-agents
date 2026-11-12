@@ -737,6 +737,22 @@ def test_ditl_stage_deck_and_theater_sync():
     assert "ditlStageIdx = stageIdx" in html
 
 
+def test_apple_music_coverflow_3d_css():
+    html = build_portal_html([], {})
+    for snippet in [
+        "perspective: 1200px",
+        "transform-style: preserve-3d",
+        "rotateY(",
+        "--m-coverflow: 380ms",
+        "is-prev-1",
+        "is-next-1",
+        "is-prev-far",
+        "is-next-far",
+    ]:
+        assert snippet in html, f"Missing Cover Flow 3D CSS snippet: {snippet}"
+
+
+
 
 
 
