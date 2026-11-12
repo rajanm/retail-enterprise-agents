@@ -346,7 +346,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
       /* Scoped Minimalist Deck & Surface Tokens (Dark Theme) */
       --m-slide: 240ms;
-      --m-coverflow: 380ms;
+      --m-coverflow: 4000ms;
       --m-spring: cubic-bezier(0.22, 1, 0.36, 1);
       --m-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
       --deck-canvas: #0b0b0d;
@@ -1197,22 +1197,22 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .deck-slide.is-active.is-flip-next {{
-      animation: coverFlipNext 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation: coverFlipNext 4000ms cubic-bezier(0.16, 1, 0.3, 1) both;
       z-index: 24;
     }}
 
     .deck-slide.is-active.is-flip-prev {{
-      animation: coverFlipPrev 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation: coverFlipPrev 4000ms cubic-bezier(0.16, 1, 0.3, 1) both;
       z-index: 24;
     }}
 
     .deck-slide.is-leaving-prev {{
-      animation: coverTuckLeft 360ms var(--m-spring) both;
+      animation: coverTuckLeft 3200ms var(--m-spring) both;
       z-index: 10;
     }}
 
     .deck-slide.is-leaving-next {{
-      animation: coverTuckRight 360ms var(--m-spring) both;
+      animation: coverTuckRight 3200ms var(--m-spring) both;
       z-index: 10;
     }}
 
@@ -1291,14 +1291,14 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .deck-slide.is-active.is-flip-prev .persona-overview-card::before,
     .deck-slide.is-active.is-flip-next .ditl-stage-slide::before,
     .deck-slide.is-active.is-flip-prev .ditl-stage-slide::before {{
-      animation: borderRimTrace 1050ms cubic-bezier(0.22, 1, 0.36, 1) 80ms 1 both;
+      animation: borderRimTrace 4000ms cubic-bezier(0.22, 1, 0.36, 1) 100ms 1 both;
     }}
 
     .deck-slide.is-active.is-flip-next .persona-overview-card,
     .deck-slide.is-active.is-flip-prev .persona-overview-card,
     .deck-slide.is-active.is-flip-next .ditl-stage-slide,
     .deck-slide.is-active.is-flip-prev .ditl-stage-slide {{
-      animation: borderBloomSettle 1050ms cubic-bezier(0.22, 1, 0.36, 1) 80ms 1 both;
+      animation: borderBloomSettle 4000ms cubic-bezier(0.22, 1, 0.36, 1) 100ms 1 both;
     }}
 
     .deck-slide .persona-overview-card::after,
@@ -1318,12 +1318,12 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .deck-slide.is-active.is-flip-prev .persona-overview-card::after,
     .deck-slide.is-active.is-flip-next .ditl-stage-slide::after,
     .deck-slide.is-active.is-flip-prev .ditl-stage-slide::after {{
-      animation: cardArrivalSheen 560ms cubic-bezier(0.16, 1, 0.3, 1) 120ms 1 both;
+      animation: cardArrivalSheen 2800ms cubic-bezier(0.16, 1, 0.3, 1) 400ms 1 both;
     }}
 
     .deck-slide.is-active.is-flip-next .conduit-rail-fill,
     .deck-slide.is-active.is-flip-prev .conduit-rail-fill {{
-      animation: conduitRailDraw 380ms cubic-bezier(0.16, 1, 0.3, 1) 140ms 1 both;
+      animation: conduitRailDraw 2000ms cubic-bezier(0.16, 1, 0.3, 1) 400ms 1 both;
     }}
 
     .deck-slide.is-active .persona-overview-card,

@@ -743,7 +743,7 @@ def test_apple_music_coverflow_3d_css():
         "perspective: 1200px",
         "transform-style: preserve-3d",
         "rotateY(",
-        "--m-coverflow: 380ms",
+        "--m-coverflow: 4000ms",
         "is-prev-1",
         "is-next-1",
         "is-prev-far",
