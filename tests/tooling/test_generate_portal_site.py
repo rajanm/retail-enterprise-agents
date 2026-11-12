@@ -502,6 +502,19 @@ def test_portal_wcag_tokens_typography_and_heading_hierarchy():
     assert "flex: 1" not in card_desc_block.group(1)
 
 
+def test_portal_keyboard_accessibility_and_reduced_motion():
+    html = build_portal_html([], {})
+    for modal_id in ("videoModal", "archModal", "stageTheaterModal"):
+        assert re.search(rf'id="{modal_id}"[^>]*role="dialog"[^>]*aria-modal="true"', html), (
+            f"Modal {modal_id} missing role='dialog' and aria-modal='true'"
+        )
+    assert "prefers-reduced-motion" in html
+    assert "aria-expanded" in html
+    assert "openAccessibleModal" in html
+    assert "closeAccessibleModal" in html
+
+
+
 def test_zero_modifications_to_scaffold_agents_and_demos():
     res = subprocess.run(
         ["git", "status", "--porcelain"],

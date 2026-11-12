@@ -2838,6 +2838,18 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         grid-template-columns: 1fr;
       }}
     }}
+
+    @media (prefers-reduced-motion: reduce) {{
+      *, *::before, *::after {{
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }}
+      .motion-pulse-dot {{
+        animation: none !important;
+      }}
+    }}
   </style>
 </head>
 <body>
@@ -2979,7 +2991,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
   </main>
 
   <!-- Video Player Modal -->
-  <div class="modal-backdrop" id="videoModal">
+  <div class="modal-backdrop" id="videoModal" role="dialog" aria-modal="true" aria-labelledby="modalAgentTitle">
     <div class="modal-dialog">
       <div class="modal-header">
         <div class="modal-title-wrap">
@@ -3039,11 +3051,11 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
   </div>
 
   <!-- Architecture Blueprint Modal -->
-  <div class="modal-backdrop" id="archModal">
+  <div class="modal-backdrop" id="archModal" role="dialog" aria-modal="true" aria-labelledby="archModalTitle">
     <div class="modal-dialog" style="max-width: 1020px;">
       <div class="modal-header">
         <div class="modal-title-wrap">
-          <h2 class="modal-title">📐 Retail Enterprise Multi-Agent Architecture</h2>
+          <h2 id="archModalTitle" class="modal-title">📐 Retail Enterprise Multi-Agent Architecture</h2>
           <span style="font-size:0.8rem; color:var(--text-secondary);">Enterprise 4-Tier Google ADK & Gemini Enterprise Topology</span>
         </div>
         <button class="modal-close" id="archCloseBtn" aria-label="Close architecture modal">✕</button>
@@ -3199,7 +3211,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
   </div>
 
   <!-- Full-Screen Stage Focus Theater Modal -->
-  <div class="modal-backdrop stage-theater-backdrop" id="stageTheaterModal">
+  <div class="modal-backdrop stage-theater-backdrop" id="stageTheaterModal" role="dialog" aria-modal="true" aria-labelledby="theaterPersonaTitle">
     <div class="modal-dialog stage-theater-dialog" id="stageTheaterDialog">
       <div class="stage-theater-header">
         <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
@@ -3397,6 +3409,13 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     // Motion Animation Choreography (Motion library + native Web Animations API fallback)
     function runMotionChoreography(container) {{
       if (!container) return;
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {{
+        container.querySelectorAll('.auto-fill-bar').forEach(bar => {{
+          const targetW = bar.getAttribute('data-target-width') || bar.style.width;
+          bar.style.width = targetW;
+        }});
+        return;
+      }}
       const cards = container.querySelectorAll('.persona-overview-card, .ditl-stage-card, .agent-card');
       const taskTiles = container.querySelectorAll('.task-tile');
       const flowSteps = container.querySelectorAll('.flow-step-card');
@@ -3657,6 +3676,22 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         const flowStepCards = stageCard.querySelectorAll('.flow-step-card');
         const taskTiles = stageCard.querySelectorAll('.task-tile');
 
+        // Set ARIA role, tabindex and keyboard activation on all interactive flow and task nodes
+        const allInteractiveNodes = [...conduitNodes, ...flowStepCards, ...taskTiles];
+        allInteractiveNodes.forEach(node => {{
+          node.setAttribute('tabindex', '0');
+          node.setAttribute('role', 'button');
+          if (!node.hasAttribute('aria-pressed')) {{
+            node.setAttribute('aria-pressed', 'false');
+          }}
+          node.addEventListener('keydown', (e) => {{
+            if (e.key === 'Enter' || e.key === ' ') {{
+              e.preventDefault();
+              node.click();
+            }}
+          }});
+        }});
+
         const stepElements = conduitNodes.length ? conduitNodes : flowStepCards;
 
         stepElements.forEach(stepElem => {{
@@ -3706,13 +3741,17 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           stepElem.addEventListener('click', (e) => {{
             if (e.target.closest('.conduit-demo-btn')) return;
             const wasPinned = stepElem.classList.contains('is-pinned');
-            stageCard.querySelectorAll('.task-tile.is-pinned, .conduit-node.is-pinned').forEach(el => {{
+            stageCard.querySelectorAll('.task-tile.is-pinned, .conduit-node.is-pinned, .flow-step-card.is-pinned').forEach(el => {{
               el.classList.remove('is-pinned');
+              el.setAttribute('aria-pressed', 'false');
               const chip = el.querySelector('.task-pin-chip');
               if (chip) chip.textContent = 'Click to pin focus';
             }});
             if (!wasPinned) {{
               stepElem.classList.add('is-pinned');
+              stepElem.setAttribute('aria-pressed', 'true');
+            }} else {{
+              stepElem.setAttribute('aria-pressed', 'false');
             }}
             applyProminentSpotlight();
           }});
@@ -3758,22 +3797,65 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           tile.addEventListener('click', (e) => {{
             if (e.target.closest('button')) return;
             const wasPinned = tile.classList.contains('is-pinned');
-            stageCard.querySelectorAll('.task-tile.is-pinned, .conduit-node.is-pinned').forEach(el => {{
+            stageCard.querySelectorAll('.task-tile.is-pinned, .conduit-node.is-pinned, .flow-step-card.is-pinned').forEach(el => {{
               el.classList.remove('is-pinned');
+              el.setAttribute('aria-pressed', 'false');
               const chip = el.querySelector('.task-pin-chip');
               if (chip) chip.textContent = 'Click to pin focus';
             }});
             if (!wasPinned) {{
               tile.classList.add('is-pinned');
+              tile.setAttribute('aria-pressed', 'true');
               const chip = tile.querySelector('.task-pin-chip');
               if (chip) chip.textContent = '📌 Pinned Focus';
               applyProminentSpotlight(tile);
             }} else {{
+              tile.setAttribute('aria-pressed', 'false');
               applyProminentSpotlight(null);
             }}
           }});
         }});
       }});
+    }}
+
+    // Modal Accessibility & Focus Management
+    let lastFocusedEl = null;
+
+    function getFocusableElements(container) {{
+      if (!container) return [];
+      const selector = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+      return Array.from(container.querySelectorAll(selector)).filter(el => {{
+        return el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0;
+      }});
+    }}
+
+    function openAccessibleModal(modalEl, focusSelector) {{
+      if (!modalEl) return;
+      lastFocusedEl = document.activeElement;
+      modalEl.classList.add('open');
+      document.body.style.overflow = 'hidden';
+
+      setTimeout(() => {{
+        const focusTarget = focusSelector ? modalEl.querySelector(focusSelector) : null;
+        if (focusTarget && typeof focusTarget.focus === 'function') {{
+          focusTarget.focus();
+        }} else {{
+          const focusables = getFocusableElements(modalEl);
+          if (focusables.length > 0) focusables[0].focus();
+        }}
+      }}, 50);
+    }}
+
+    function closeAccessibleModal(modalEl) {{
+      if (!modalEl) return;
+      modalEl.classList.remove('open');
+      document.body.style.overflow = '';
+      if (lastFocusedEl && typeof lastFocusedEl.focus === 'function') {{
+        try {{
+          lastFocusedEl.focus();
+        }} catch (e) {{}}
+        lastFocusedEl = null;
+      }}
     }}
 
     // Full-Screen Stage Focus Theater Modal Handlers
@@ -3786,8 +3868,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       theaterPersonaTitle.textContent = `${{p.title}} — Stage Focus Theater`;
 
       renderStageTheater();
-      stageTheaterModal.classList.add('open');
-      document.body.style.overflow = 'hidden';
+      openAccessibleModal(stageTheaterModal, '#theaterStageTabs button');
 
       if (stageTheaterDialog && window.Motion && typeof window.Motion.animate === 'function') {{
         try {{
@@ -3801,8 +3882,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     function closeStageTheater() {{
-      stageTheaterModal.classList.remove('open');
-      document.body.style.overflow = '';
+      closeAccessibleModal(stageTheaterModal);
     }}
 
     function switchTheaterStage(stageIdx) {{
@@ -4504,7 +4584,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
             ${{promptItems ? `
               <div class="prompts-container">
-                <button class="prompts-toggle" onclick="togglePrompts(this)">
+                <button class="prompts-toggle" onclick="togglePrompts(this)" aria-expanded="false">
                   <span>💬 Sample Business Questions (${{agent.prompts.length}})</span>
                   <span class="toggle-icon">▼</span>
                 </button>
@@ -4533,12 +4613,15 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     function togglePrompts(btn) {{
       const list = btn.nextElementSibling;
       const icon = btn.querySelector('.toggle-icon');
-      if (list.classList.contains('open')) {{
+      const isOpen = list.classList.contains('open');
+      if (isOpen) {{
         list.classList.remove('open');
-        icon.textContent = '▼';
+        btn.setAttribute('aria-expanded', 'false');
+        if (icon) icon.textContent = '▼';
       }} else {{
         list.classList.add('open');
-        icon.textContent = '▲';
+        btn.setAttribute('aria-expanded', 'true');
+        if (icon) icon.textContent = '▲';
       }}
     }}
 
@@ -4635,14 +4718,12 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         `;
       }}
 
-      videoModal.classList.add('open');
-      document.body.style.overflow = 'hidden';
+      openAccessibleModal(videoModal, '#modalCloseBtn');
       modalVideo.play().catch(() => {{}});
     }}
 
     function closeVideoModal() {{
-      videoModal.classList.remove('open');
-      document.body.style.overflow = '';
+      closeAccessibleModal(videoModal);
       modalVideo.pause();
       modalVideo.src = '';
     }}
@@ -4654,13 +4735,11 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     // Architecture Modal Handlers
     function openArchModal() {{
-      archModal.classList.add('open');
-      document.body.style.overflow = 'hidden';
+      openAccessibleModal(archModal, '#archCloseBtn');
     }}
 
     function closeArchModal() {{
-      archModal.classList.remove('open');
-      document.body.style.overflow = '';
+      closeAccessibleModal(archModal);
     }}
 
     archBtn.addEventListener('click', openArchModal);
@@ -4676,8 +4755,10 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       }});
     }}
 
-    // ESC key listener for modals
+    // Global keyboard listener: ESC, modal Tab trapping, Theater arrow navigation, global search
     document.addEventListener('keydown', (e) => {{
+      const openModal = [stageTheaterModal, videoModal, archModal].find(m => m && m.classList.contains('open'));
+
       if (e.key === 'Escape') {{
         if (videoModal && videoModal.classList.contains('open')) {{
           closeVideoModal();
@@ -4685,6 +4766,69 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           closeStageTheater();
         }} else if (archModal && archModal.classList.contains('open')) {{
           closeArchModal();
+        }}
+        return;
+      }}
+
+      // Modal focus trap for Tab / Shift+Tab
+      if (e.key === 'Tab' && openModal) {{
+        const focusables = getFocusableElements(openModal);
+        if (focusables.length === 0) {{
+          e.preventDefault();
+          return;
+        }}
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (e.shiftKey) {{
+          if (document.activeElement === first || !openModal.contains(document.activeElement)) {{
+            e.preventDefault();
+            last.focus();
+          }}
+        }} else {{
+          if (document.activeElement === last || !openModal.contains(document.activeElement)) {{
+            e.preventDefault();
+            first.focus();
+          }}
+        }}
+        return;
+      }}
+
+      // Theater stage navigation with ArrowLeft / ArrowRight
+      if (stageTheaterModal && stageTheaterModal.classList.contains('open')) {{
+        const p = PERSONA_MAP[activePersona];
+        if (p && p.day_in_the_life && p.day_in_the_life.length > 0) {{
+          const maxStages = p.day_in_the_life.length;
+          if (e.key === 'ArrowRight') {{
+            e.preventDefault();
+            switchTheaterStage((maximizedStageIdx + 1) % maxStages);
+            return;
+          }} else if (e.key === 'ArrowLeft') {{
+            e.preventDefault();
+            switchTheaterStage((maximizedStageIdx - 1 + maxStages) % maxStages);
+            return;
+          }}
+        }}
+      }}
+
+      // Global search shortcut: '/' or 'Cmd+K' / 'Ctrl+K'
+      const tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+      const isInput = tag === 'input' || tag === 'textarea' || (document.activeElement && document.activeElement.isContentEditable);
+      if (!openModal) {{
+        if (e.key === '/' && !isInput) {{
+          e.preventDefault();
+          const searchInput = document.getElementById('searchInput');
+          if (searchInput) {{
+            searchInput.focus();
+            searchInput.select();
+          }}
+        }} else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {{
+          e.preventDefault();
+          const searchInput = document.getElementById('searchInput');
+          if (searchInput) {{
+            searchInput.focus();
+            searchInput.select();
+          }}
         }}
       }}
     }});
