@@ -680,5 +680,28 @@ def test_shared_deck_controller_and_monochrome_svg():
         assert symbol in html, f"Missing deck controller symbol/attribute: {symbol}"
 
 
+def test_persona_overview_single_card_deck():
+    html = build_portal_html([], {})
+    render_fn_match = re.search(
+        r"function renderPersonaExperience\(\)\s*\{(.*?)\n    function renderAgents\(\)",
+        html,
+        re.DOTALL,
+    )
+    assert render_fn_match is not None
+    body = render_fn_match.group(1)
+
+    assert "id: 'personaOverviewDeck'" in body or 'id="personaOverviewDeck"' in body
+    assert "persona-overview-grid" not in body, (
+        "Overview multi-column grid must be replaced by single-card deck"
+    )
+    assert "getPersonaSvgIcon(" in body
+    assert "persona-horizons-inline" in body
+    assert "clearPersonaSearch()" in body
+    # No decorative emojis inside Persona View renderPersonaExperience()
+    for emoji in ["👤", "⏱️", "⚡", "🌅", "🔍", "👥"]:
+        assert emoji not in body, f"Unexpected emoji {emoji} in renderPersonaExperience()"
+
+
+
 
 

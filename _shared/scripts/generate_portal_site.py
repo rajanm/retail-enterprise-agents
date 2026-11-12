@@ -4653,7 +4653,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       personaExperienceContainer.style.display = 'block';
 
       if (activePersona === 'all') {{
-        // State A: 10-Persona Transformation Overview Grid
+        // State A: 10-Persona Transformation Overview Deck
         const query = searchQuery.toLowerCase().trim();
         const filteredPersonas = PERSONA_ARCHETYPES.filter(p => {{
           if (!query) return true;
@@ -4680,24 +4680,22 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         if (filteredPersonas.length === 0) {{
           personaExperienceContainer.innerHTML = `
             <div class="persona-overview-header">
-              <h2 class="persona-overview-title">
-                <span>👤</span> 10 Retail Enterprise Persona Archetypes
-              </h2>
+              <h2 class="persona-overview-title">10 Retail Enterprise Persona Archetypes</h2>
               <p class="persona-overview-subtitle">
                 Explore how Gemini Enterprise Agents transform daily workflows across retail leadership, merchandising, supply chain, store operations, and digital roles.
               </p>
             </div>
-            <div class="no-results" style="display: block; padding: 48px 24px; text-align: center;">
-              <div style="font-size: 2.5rem; margin-bottom: 12px;">🔍</div>
-              <h3 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 8px;">No matching persona archetypes found</h3>
-              <p style="color: var(--text-secondary); margin-bottom: 16px;">Try adjusting your search terms or clearing the search filter.</p>
-              <button class="btn-persona-cta" onclick="resetFilters()" style="margin: 0 auto;">Clear Search</button>
+            <div class="deck-empty-state">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--deck-ink-muted); margin-bottom: 4px;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <h3 style="font-size: 1.1rem; font-weight: 600; color: var(--deck-ink); margin: 0;">No matching persona archetypes</h3>
+              <p style="color: var(--deck-ink-secondary); font-size: 0.9rem; margin: 0; max-width: 44ch;">Try adjusting your search terms or clearing the search filter.</p>
+              <button type="button" class="btn-persona-cta" onclick="clearPersonaSearch()" style="margin-top: 8px;">Clear Search</button>
             </div>
           `;
           return;
         }}
 
-        const cardsHtml = filteredPersonas.map(p => {{
+        const slidesHtml = filteredPersonas.map(p => {{
           const count = AGENTS_DATA.filter(a => (a.persona_archetypes || []).includes(p.id)).length;
           const dist = p.task_distribution || {{
             unchanged_pct: 25,
@@ -4710,19 +4708,18 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             <div class="persona-overview-card" data-persona-id="${{p.id}}">
               <div class="persona-card-header">
                 <div class="persona-card-title-wrap">
-                  <span class="persona-card-icon">${{p.icon}}</span>
+                  <span class="persona-card-icon">${{getPersonaSvgIcon(p.id)}}</span>
                   <h3 class="persona-card-title">${{htmlEscape(p.title)}}</h3>
                 </div>
                 <span class="persona-agent-badge">${{count}} agents</span>
               </div>
               <div class="persona-card-subtitle">${{htmlEscape(p.subtitle)}}</div>
               <p class="persona-card-summary">${{htmlEscape(p.roles_summary)}}</p>
-
-              <div class="persona-metrics-row">
-                <span class="persona-metric-pill">⏱️ <strong>${{htmlEscape(p.hours_saved)}}</strong></span>
-                <span class="persona-metric-pill">⚡ <strong>${{htmlEscape(p.decision_speed)}}</strong></span>
+              <div class="persona-horizons-inline">
+                <span>${{htmlEscape(p.hours_saved)}}</span>
+                <span aria-hidden="true">·</span>
+                <span>${{htmlEscape(p.decision_speed)}}</span>
               </div>
-
               <div class="task-dist-container">
                 <div class="task-dist-labels">
                   <span title="Unchanged: ${{dist.unchanged_pct}}%"><span class="state-dot dot-unchanged"></span> Unchanged</span>
@@ -4739,19 +4736,23 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                   <div class="seg-retired" style="width: ${{dist.retired_pct}}%;" title="Retired Manual Tasks: ${{dist.retired_pct}}%"></div>
                 </div>
               </div>
-
-              <button class="btn-persona-cta" onclick="selectPersona('${{p.id}}')">
-                <span>🌅</span> View Day in the Life →
-              </button>
+              <button type="button" class="btn-persona-cta" onclick="selectPersona('${{p.id}}', true)">View Day in the Life →</button>
             </div>
           `;
-        }}).join('');
+        }});
+
+        const clampedOverviewIdx = Math.max(0, Math.min(overviewDeckIdx, filteredPersonas.length - 1));
+        const deckHtml = renderDeckShell({{
+          id: 'personaOverviewDeck',
+          slidesHtml,
+          activeIdx: clampedOverviewIdx,
+          labels: filteredPersonas.map(p => p.title),
+          prevNoun: 'persona'
+        }});
 
         personaExperienceContainer.innerHTML = `
           <div class="persona-overview-header">
-            <h2 class="persona-overview-title">
-              <span>👤</span> 10 Retail Enterprise Persona Archetypes
-            </h2>
+            <h2 class="persona-overview-title">10 Retail Enterprise Persona Archetypes</h2>
             <p class="persona-overview-subtitle">
               Explore how Gemini Enterprise Agents transform daily workflows across retail leadership, merchandising, supply chain, store operations, and digital roles.
             </p>
@@ -4766,10 +4767,19 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               </div>
             </div>
           </div>
-          <div class="persona-overview-grid" id="personaOverviewGrid">
-            ${{cardsHtml}}
-          </div>
+          ${{deckHtml}}
         `;
+
+        initDeckController(document.getElementById('personaOverviewDeck'), {{
+          total: filteredPersonas.length,
+          initialIdx: clampedOverviewIdx,
+          labels: filteredPersonas.map(p => p.title),
+          prevNoun: 'persona',
+          onChange: (idx) => {{
+            overviewDeckIdx = idx;
+            syncUrlHash();
+          }}
+        }});
         runMotionChoreography(personaExperienceContainer);
       }} else {{
         // State B: Day-in-the-Life Storyboard for specific archetype
@@ -4866,7 +4876,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                   <span class="stage-flow-title">
                     <span class="static-status-dot"></span> Recommended Agent Execution Flow (${{flow.length}} Sequenced Steps)
                   </span>
-                  <span class="stage-flow-hint">⚡ Hover or click any task, state pill, or step to spotlight linked agents · Click 🎬 Watch Demo for 1080p video</span>
+                  <span class="stage-flow-hint">Hover or click any task, state pill, or step to spotlight linked agents · Click 🎬 Watch Demo for 1080p video</span>
                 </div>
                 <div class="flow-conduit-track" style="--conduit-cols: ${{flow.length}};">
                   <div class="conduit-rail-line">
@@ -4883,8 +4893,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
           // 3. Stage Header Horizon Badge & Maximize Stage Button
           const horizonBadge = ditlStateMode === 'before'
-            ? `<span class="ditl-stage-horizon manual-mode">⏱️ Manual: ${{htmlEscape(stage.time_before)}}</span>`
-            : `<span class="ditl-stage-horizon">⏱️ ${{htmlEscape(stage.time_before)}} → ⚡ ${{htmlEscape(stage.time_after)}}</span>`;
+            ? `<span class="ditl-stage-horizon manual-mode">Manual: ${{htmlEscape(stage.time_before)}}</span>`
+            : `<span class="ditl-stage-horizon">${{htmlEscape(stage.time_before)}} → ${{htmlEscape(stage.time_after)}}</span>`;
 
           return `
             <div class="ditl-stage-card">
@@ -4901,7 +4911,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               <div class="task-bundle-wrap">
                 <div class="task-bundle-title">
                   <span>${{ditlStateMode === 'before' ? 'Manual Task Bundle (Baseline)' : '5-State Task Transformation Bundle (6 Tasks)'}}</span>
-                  <span>${{ditlStateMode === 'before' ? '⏱️ Legacy Manual Effort' : '⚡ AI-Augmented Horizon'}}</span>
+                  <span>${{ditlStateMode === 'before' ? 'Legacy Manual Effort' : 'AI-Augmented Horizon'}}</span>
                 </div>
                 <div class="task-bundle-grid">
                   ${{taskTilesHtml}}
@@ -4917,15 +4927,14 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         const searchHintBannerHtml = queryTrimmed ? `
           <div class="ditl-search-hint-banner" style="background: var(--badge-bg); border: 1px solid var(--badge-border); border-radius: 10px; padding: 10px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 0.85rem; color: var(--text-primary); flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span>🔍</span>
               <span>Searching across all 100 agents — click 'All Personas' or 'Browse by Domain' to view matching agents</span>
             </div>
             <div style="display: flex; gap: 8px; align-items: center;">
               <button type="button" class="btn-header" onclick="selectPersona('all')" style="padding: 6px 12px; font-size: 0.8rem; cursor: pointer;">
-                👥 All Personas
+                All Personas
               </button>
               <button type="button" class="btn-header" onclick="setViewMode('domain')" style="padding: 6px 12px; font-size: 0.8rem; cursor: pointer;">
-                🏬 Browse by Domain
+                Browse by Domain
               </button>
             </div>
           </div>
@@ -4941,16 +4950,16 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                 </h2>
                 <div class="ditl-subtitle">${{htmlEscape(p.subtitle)}}</div>
                 <div class="ditl-stat-pills">
-                  <span class="ditl-stat-pill">⏱️ <strong>${{htmlEscape(p.hours_saved)}}</strong></span>
-                  <span class="ditl-stat-pill">⚡ <strong>${{htmlEscape(p.decision_speed)}}</strong></span>
-                  <span class="ditl-stat-pill">🤖 <strong>${{htmlEscape(p.automated_label || 'Automated: Data, SQL & Visuals')}}</strong></span>
-                  <span class="ditl-stat-pill">✨ <strong>${{htmlEscape(p.augmented_label || 'Augmented: Strategy & Sign-Off')}}</strong></span>
-                  <span class="ditl-stat-pill">👥 <strong>${{count}} Agents</strong></span>
+                  <span class="ditl-stat-pill"><strong>${{htmlEscape(p.hours_saved)}}</strong></span>
+                  <span class="ditl-stat-pill"><strong>${{htmlEscape(p.decision_speed)}}</strong></span>
+                  <span class="ditl-stat-pill"><strong>${{htmlEscape(p.automated_label || 'Automated: Data, SQL & Visuals')}}</strong></span>
+                  <span class="ditl-stat-pill"><strong>${{htmlEscape(p.augmented_label || 'Augmented: Strategy & Sign-Off')}}</strong></span>
+                  <span class="ditl-stat-pill"><strong>${{count}} Agents</strong></span>
                 </div>
               </div>
               <div class="ditl-header-right">
                 <button class="btn-header" id="backToAllPersonasBtn" onclick="selectPersona('all')">
-                  <span>👥</span> ← All Personas Overview
+                  ← All Personas Overview
                 </button>
                 <button class="btn-header" id="ditlToggleBtn" onclick="toggleDitlStoryboard()">
                   ${{ditlCollapsed ? '▼ Show Storyboard' : '▲ Hide Storyboard'}}
@@ -5236,6 +5245,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     searchInput.addEventListener('input', (e) => {{
       searchQuery = e.target.value;
       searchClear.style.display = searchQuery ? 'block' : 'none';
+      if (viewMode === 'persona' && activePersona === 'all') {{
+        overviewDeckIdx = 0;
+      }}
       renderPersonaExperience();
       renderAgents();
       syncUrlHash();
@@ -5245,6 +5257,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       searchInput.value = '';
       searchQuery = '';
       searchClear.style.display = 'none';
+      if (viewMode === 'persona' && activePersona === 'all') {{
+        overviewDeckIdx = 0;
+      }}
       renderPersonaExperience();
       renderAgents();
       syncUrlHash();
