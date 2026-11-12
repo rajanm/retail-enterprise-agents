@@ -223,6 +223,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .video-wrapper {{
       position: relative;
       width: 100%;
+      aspect-ratio: 16 / 9;
       background: #000;
       border: 1px solid var(--border-faint);
       border-radius: 12px;
@@ -243,6 +244,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       color: #e2e8f0;
       font-size: 0.9rem;
       z-index: 2;
+    }}
+
+    #videoLoadingState {{
+      pointer-events: none;
     }}
 
     .btn-header {{
@@ -427,6 +432,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             if (loadingState) loadingState.style.display = 'none';
             if (errorState) errorState.style.display = 'flex';
           }};
+
+          if (video.readyState >= 2) hideLoading();
 
           video.addEventListener('loadedmetadata', seekToOffset);
           video.addEventListener('loadeddata', () => {{

@@ -760,6 +760,16 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       color: #0f172a;
     }}
 
+    [data-theme="light"] .view-mode-btn.active {{
+      background: #0369a1;
+      color: #ffffff;
+    }}
+
+    [data-theme="light"] .view-mode-btn.active .domain-count {{
+      background: rgba(255, 255, 255, 0.22);
+      color: #ffffff;
+    }}
+
     .view-mode-hint {{
       font-size: 0.8rem;
       color: var(--text-muted);
@@ -2618,6 +2628,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .video-container {{
       position: relative;
       width: 100%;
+      aspect-ratio: 16 / 9;
       background: #000;
       border-radius: 12px;
       overflow: hidden;
@@ -2637,6 +2648,10 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       color: #e2e8f0;
       font-size: 0.9rem;
       z-index: 2;
+    }}
+
+    #videoLoadingState {{
+      pointer-events: none;
     }}
 
     .video-container video {{
@@ -2861,6 +2876,12 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       .site-header {{
         position: static;
       }}
+      .hero,
+      .main-container,
+      .toolbar {{
+        min-width: 0;
+        max-width: 100%;
+      }}
       .hero-title {{
         font-size: 1.85rem;
       }}
@@ -2870,6 +2891,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       .stat-row {{
         display: flex;
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
         gap: 8px;
         padding-bottom: 4px;
       }}
@@ -2883,6 +2906,15 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       .header-actions {{
         width: 100%;
         justify-content: space-between;
+      }}
+      .view-mode-toggle {{
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }}
+      .results-bar {{
+        flex-wrap: wrap;
+        gap: 8px;
       }}
       .domain-pills {{
         flex-wrap: nowrap;
