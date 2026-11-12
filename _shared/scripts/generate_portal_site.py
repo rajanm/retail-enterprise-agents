@@ -4531,6 +4531,25 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       if (searchInput) searchInput.focus();
     }}
 
+    function getDeckRelInfo(idx, activeIdx) {{
+      const rel = idx - activeIdx;
+      if (rel === 0) {{
+        return {{ rel, cls: 'is-active', dataPos: '0', isActive: true }};
+      }} else if (rel === -1) {{
+        return {{ rel, cls: 'is-prev-1 is-neighbor', dataPos: '-1', isActive: false }};
+      }} else if (rel === 1) {{
+        return {{ rel, cls: 'is-next-1 is-neighbor', dataPos: '1', isActive: false }};
+      }} else if (rel === -2) {{
+        return {{ rel, cls: 'is-prev-2', dataPos: '-2', isActive: false }};
+      }} else if (rel === 2) {{
+        return {{ rel, cls: 'is-next-2', dataPos: '2', isActive: false }};
+      }} else if (rel < -2) {{
+        return {{ rel, cls: 'is-prev-far', dataPos: 'prev-far', isActive: false }};
+      }} else {{
+        return {{ rel, cls: 'is-next-far', dataPos: 'next-far', isActive: false }};
+      }}
+    }}
+
     function renderDeckShell({{ id, slidesHtml, activeIdx, labels, prevNoun, emptyHtml }}) {{
       const total = labels.length;
       if (total === 0) {{
@@ -4543,14 +4562,13 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       const nextTarget = safeIdx < total - 1 ? labels[safeIdx + 1] : '';
 
       const wrappedSlides = slidesHtml.map((innerHtml, idx) => {{
-        const isActive = idx === safeIdx;
-        const isNeighbor = !isActive && Math.abs(idx - safeIdx) === 1;
-        const cls = isActive ? 'is-active' : (isNeighbor ? 'is-neighbor' : '');
-        const inertAttr = isActive ? '' : 'inert aria-hidden="true"';
+        const relInfo = getDeckRelInfo(idx, safeIdx);
+        const inertAttr = relInfo.isActive ? '' : 'inert aria-hidden="true"';
+        const overlayDisplay = Math.abs(relInfo.rel) === 1 ? '' : 'style="display: none;"';
         return `
-          <div class="deck-slide ${{cls}}" data-slide-idx="${{idx}}">
+          <div class="deck-slide ${{relInfo.cls}}" data-slide-idx="${{idx}}" data-pos="${{relInfo.dataPos}}">
             <div class="deck-slide-content" ${{inertAttr}}>${{innerHtml}}</div>
-            ${{!isActive ? `<button type="button" class="deck-peek-overlay" data-peek-idx="${{idx}}" tabindex="-1" aria-hidden="true" title="Go to ${{htmlEscape(labels[idx] || '')}}"></button>` : ''}}
+            <button type="button" class="deck-peek-overlay" data-peek-idx="${{idx}}" tabindex="-1" aria-hidden="true" title="Go to ${{htmlEscape(labels[idx] || '')}}" ${{overlayDisplay}}></button>
           </div>
         `;
       }}).join('');
@@ -4595,6 +4613,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       if (!deckEl || total <= 0) return null;
       let currentIdx = Math.max(0, Math.min(initialIdx || 0, total - 1));
       const viewport = deckEl.querySelector('.deck-viewport');
+      const track = deckEl.querySelector('.deck-track');
       const slides = Array.from(deckEl.querySelectorAll('.deck-slide'));
       const dots = Array.from(deckEl.querySelectorAll('.deck-dot'));
       const prevBtn = deckEl.querySelector('.deck-prev-btn');
@@ -4607,14 +4626,17 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         deckEl.style.setProperty('--deck-idx', String(clamped));
 
         slides.forEach((slide, idx) => {{
-          const isActive = idx === clamped;
-          const isNeighbor = !isActive && Math.abs(idx - clamped) === 1;
-          slide.classList.toggle('is-active', isActive);
-          slide.classList.toggle('is-neighbor', isNeighbor);
+          const relInfo = getDeckRelInfo(idx, clamped);
+          slide.classList.remove('is-active', 'is-prev-1', 'is-next-1', 'is-prev-2', 'is-next-2', 'is-prev-far', 'is-next-far', 'is-neighbor');
+          relInfo.cls.split(' ').forEach(c => {{
+            if (c) slide.classList.add(c);
+          }});
+          slide.setAttribute('data-pos', relInfo.dataPos);
+
           const content = slide.querySelector('.deck-slide-content');
           const overlay = slide.querySelector('.deck-peek-overlay');
           if (content) {{
-            if (isActive) {{
+            if (relInfo.isActive) {{
               content.removeAttribute('inert');
               content.removeAttribute('aria-hidden');
             }} else {{
@@ -4623,7 +4645,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             }}
           }}
           if (overlay) {{
-            overlay.style.display = isActive ? 'none' : '';
+            overlay.style.display = Math.abs(relInfo.rel) === 1 ? '' : 'none';
           }}
         }});
 
@@ -4694,28 +4716,73 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       if (viewport) viewport.addEventListener('keydown', onDeckKey);
       if (controlsEl) controlsEl.addEventListener('keydown', onDeckKey);
 
-      // Horizontal touch / pointer swipe without fighting vertical scroll
+      // Horizontal touch / pointer swipe with interactive drag-follow
       if (viewport) {{
         let pointerStartX = null;
         let pointerStartY = null;
+        let isDragging = false;
+        let dragRafId = null;
+        let currentDragDx = 0;
+
         viewport.addEventListener('pointerdown', (e) => {{
           if (e.target.closest('button, a, input, [data-task-idx], .conduit-node')) return;
           pointerStartX = e.clientX;
           pointerStartY = e.clientY;
+          isDragging = false;
+          currentDragDx = 0;
         }});
+
+        viewport.addEventListener('pointermove', (e) => {{
+          if (pointerStartX === null || pointerStartY === null) return;
+          const dx = e.clientX - pointerStartX;
+          const dy = e.clientY - pointerStartY;
+          if (!isDragging) {{
+            if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.2) {{
+              isDragging = true;
+              if (track) track.classList.add('is-dragging');
+            }}
+          }}
+          if (isDragging && track) {{
+            const clampedDx = Math.max(-120, Math.min(120, dx));
+            currentDragDx = clampedDx;
+            if (!dragRafId) {{
+              dragRafId = requestAnimationFrame(() => {{
+                track.style.setProperty('--drag-x', `${{currentDragDx}}px`);
+                dragRafId = null;
+              }});
+            }}
+          }}
+        }});
+
+        const cleanupDrag = () => {{
+          if (dragRafId) {{
+            cancelAnimationFrame(dragRafId);
+            dragRafId = null;
+          }}
+          if (track) {{
+            track.classList.remove('is-dragging');
+            track.style.setProperty('--drag-x', '0px');
+          }}
+        }};
+
         viewport.addEventListener('pointerup', (e) => {{
           if (pointerStartX === null || pointerStartY === null) return;
           const dx = e.clientX - pointerStartX;
           const dy = e.clientY - pointerStartY;
           pointerStartX = null;
           pointerStartY = null;
+          isDragging = false;
+          cleanupDrag();
           if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2) {{
             setDeckIndex(dx < 0 ? currentIdx + 1 : currentIdx - 1);
           }}
         }});
+
         viewport.addEventListener('pointercancel', () => {{
           pointerStartX = null;
           pointerStartY = null;
+          isDragging = false;
+          cleanupDrag();
         }});
       }}
 

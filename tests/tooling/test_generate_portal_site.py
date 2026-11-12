@@ -752,6 +752,26 @@ def test_apple_music_coverflow_3d_css():
         assert snippet in html, f"Missing Cover Flow 3D CSS snippet: {snippet}"
 
 
+def test_coverflow_relative_classes_and_drag_physics():
+    html = build_portal_html([], {})
+    for symbol in [
+        "is-prev-1",
+        "is-next-1",
+        "is-prev-2",
+        "is-next-2",
+        "is-prev-far",
+        "is-next-far",
+        "pointermove",
+        "--drag-x",
+    ]:
+        assert symbol in html, f"Missing Cover Flow controller symbol: {symbol}"
+    assert "getDeckRelInfo" in html
+    assert 'data-pos="0"' in html
+    assert 'data-pos="1"' in html
+    assert "track.classList.add('is-dragging')" in html
+    assert "track.style.setProperty('--drag-x'" in html
+
+
 
 
 
