@@ -3,8 +3,10 @@
 import json
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 import pytest
 import yaml
 
@@ -59,6 +61,22 @@ def test_extract_agent_metadata_for_sample_agents(table_registry_data):
     assert meta_hr["domain"] == "human_resources"
     assert meta_hr["location"] == "us-east4"
     assert len(meta_hr["prompts"]) >= 3
+
+
+def test_all_100_agents_extract_clean_kpis(table_registry_data):
+    agents = table_registry_data.get("agents", {})
+    missing_kpis = []
+    dirty_kpis = []
+    for agent_name, agent_info in agents.items():
+        meta = extract_agent_metadata(agent_name, agent_info["domain"], agent_info, REPO_ROOT)
+        kpis = meta.get("kpis", [])
+        if not (1 <= len(kpis) <= 4):
+            missing_kpis.append((agent_name, len(kpis)))
+        for k in kpis:
+            if "**" in k or "`" in k:
+                dirty_kpis.append((agent_name, k))
+    assert not missing_kpis, f"Agents missing parsed KPIs: {missing_kpis[:5]}"
+    assert not dirty_kpis, f"KPIs with raw markdown syntax: {dirty_kpis[:5]}"
 
 
 def test_generated_index_html_file_exists_and_is_valid():
@@ -468,6 +486,98 @@ def test_v5_interactive_states_conduit_and_fullscreen_theater():
     assert "switchTheaterStage" in content
 
 
+def test_portal_wcag_tokens_typography_and_heading_hierarchy():
+    html = build_portal_html([], {})
+    # Minimum 0.75rem (12px) on stat/task micro-labels
+    assert "font-size: 0.68rem" not in html
+    assert "font-size: 0.66rem" not in html
+    assert "font-size: 0.64rem" not in html
+    # Accessible active button contrast (no #ffffff on #10b981 or #818cf8)
+    assert "background: #10b981" not in html
+    assert "#ffffff" in html
+    # Visible/semantic h2 before h3 agent cards & balanced headings
+    assert "<h2 " in html
+    assert "text-wrap: balance" in html
+    # .card-desc must not flex-expand past -webkit-line-clamp: 4
+    card_desc_block = re.search(r"\.card-desc\s*\{([^}]*)\}", html)
+    assert card_desc_block is not None
+    assert "flex: 1" not in card_desc_block.group(1)
+
+
+def test_portal_keyboard_accessibility_and_reduced_motion():
+    html = build_portal_html([], {})
+    for modal_id in ("videoModal", "archModal", "stageTheaterModal"):
+        assert re.search(rf'id="{modal_id}"[^>]*role="dialog"[^>]*aria-modal="true"', html), (
+            f"Modal {modal_id} missing role='dialog' and aria-modal='true'"
+        )
+    assert "prefers-reduced-motion" in html
+    assert "aria-expanded" in html
+    assert "openAccessibleModal" in html
+    assert "closeAccessibleModal" in html
+
+    # Finding 1: Nested interactive element guard so Watch Demo button is not hijacked by step keydown
+    assert "e.target.closest('button, a, input, select, textarea')" in html
+
+    # Finding 2: Per-modal focus stack, proper modal z-order precedence, and Theater arrow navigation guard
+    assert "modalFocusStack = new Map()" in html
+    assert "[videoModal, archModal, stageTheaterModal]" in html
+    assert "openModal === stageTheaterModal" in html
+    assert "anyModalOpen" in html
+
+    # Finding 3: resetTaskStateFilter clears aria-pressed across flow-step-card.is-pinned as well
+    assert ".task-tile.is-pinned, .conduit-node.is-pinned, .flow-step-card.is-pinned" in html
+    assert "el.setAttribute('aria-pressed', 'false')" in html
+
+
+def test_portal_responsive_layout_and_persona_nav_dedup():
+    html = build_portal_html([], {})
+    assert "min-height: 44px" in html
+    assert "position: static" in html
+    assert "overflow-x: auto" in html
+    # In Persona Overview (activePersona === 'all'), personaPills should be hidden
+    assert "activePersona === 'all' ? 'none' : 'flex'" in html
+
+
+def test_portal_spotlight_floor_and_url_hash_state():
+    html = build_portal_html([], {})
+    dimmed_block = re.search(r"\.motion-dimmed\s*\{([^}]*)\}", html)
+    assert dimmed_block is not None
+    assert "opacity: 0.5" in dimmed_block.group(1) or "opacity: 0.50" in dimmed_block.group(1)
+    assert "grayscale" not in dimmed_block.group(1)
+    assert "syncUrlHash" in html
+    assert "restoreStateFromHash" in html
+    # Safe dataset comparison for urlDomain to avoid DOMException
+    assert "b.dataset.domain === urlDomain" in html
+    # Clean reset on omitted hash or omitted params
+    assert "searchQuery = (urlQ !== null && urlQ !== undefined) ? urlQ : ''" in html
+
+
+def test_generated_portal_js_syntax_is_valid():
+    node_bin = shutil.which("node")
+    if not node_bin:
+        pytest.skip("node binary not found on system")
+    html = build_portal_html([], {})
+    inline_scripts = re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", html, re.DOTALL)
+    assert inline_scripts, "Expected at least one inline <script> block in portal HTML"
+
+    for idx, script_content in enumerate(inline_scripts):
+        if not script_content.strip():
+            continue
+        with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8") as f:
+            f.write(script_content)
+            f.flush()
+            res = subprocess.run(
+                [node_bin, "--check", f.name],
+                capture_output=True,
+                text=True,
+            )
+            assert res.returncode == 0, (
+                f"JavaScript syntax error in inline <script> block {idx}:\n"
+                f"Exit code: {res.returncode}\n"
+                f"stderr:\n{res.stderr}\n"
+            )
+
+
 def test_zero_modifications_to_scaffold_agents_and_demos():
     res = subprocess.run(
         ["git", "status", "--porcelain"],
@@ -479,8 +589,10 @@ def test_zero_modifications_to_scaffold_agents_and_demos():
     allowed_files = {
         "_shared/scripts/persona_catalog.py",
         "_shared/scripts/generate_portal_site.py",
+        "_shared/scripts/generate_demo_html.py",
         "index.html",
         "tests/tooling/test_generate_portal_site.py",
+        "tests/tooling/test_generate_demo_html.py",
     }
     unexpected_changes = []
     for line in res.stdout.splitlines():
@@ -489,11 +601,209 @@ def test_zero_modifications_to_scaffold_agents_and_demos():
         file_path = line[3:].strip().strip('"')
         if " -> " in file_path:
             file_path = file_path.split(" -> ")[1].strip().strip('"')
-        if file_path not in allowed_files:
+        if file_path not in allowed_files and not (file_path.startswith("demos/") and file_path.endswith(".html")):
             unexpected_changes.append((line[:2], file_path))
 
     assert not unexpected_changes, (
         f"Unexpected changes detected in git status outside allowed files: {unexpected_changes}"
     )
+
+
+def test_portal_video_modal_has_loading_and_error_states():
+    html = build_portal_html([], {})
+    assert 'id="videoLoadingState"' in html
+    assert 'id="videoErrorState"' in html
+    assert "loadeddata" in html
+
+
+def test_minimalist_persona_tokens_and_deck_css():
+    html = build_portal_html([], {})
+
+    # Scoped minimalist theme tokens (light & dark)
+    for token_snippet in [
+        "--m-slide: 240ms",
+        "--deck-canvas: #0b0b0d",
+        "--deck-surface: #151517",
+        "--deck-ink: #f4f4f5",
+        "--deck-accent: #38bdf8",
+        "inset 0 1px 0 rgba(255, 255, 255, 0.06)",
+        "--deck-canvas: #f4f4f1",
+        "--deck-surface: #ffffff",
+        "--deck-ink: #0c0c09",
+        "--deck-accent: #0369a1",
+    ]:
+        assert token_snippet in html, f"Missing minimalist theme token snippet: {token_snippet}"
+
+    # Apple Music deck geometry & responsive single-card mobile track
+    for selector in [
+        ".deck-viewport",
+        ".deck-track",
+        ".deck-slide",
+        ".deck-slide-content",
+        ".deck-peek-overlay",
+        ".deck-controls",
+        ".deck-nav-btn",
+        ".deck-scrubber",
+        ".deck-dot",
+        ".deck-counter",
+        "--slide-w: 100%",
+        "--slide-gap: 0px",
+        "touch-action: pan-y",
+        "tabular-nums",
+    ]:
+        assert selector in html, f"Missing deck CSS rule/selector: {selector}"
+
+    # Pulsing dot loop animation removed; replaced by static status dot
+    assert "@keyframes pulseDot" not in html, "Infinite pulseDot keyframes must be removed"
+    assert ".motion-pulse-dot" not in html, ".motion-pulse-dot must be removed"
+    assert ".static-status-dot" in html, "Expected static .static-status-dot indicator"
+
+
+def test_shared_deck_controller_and_monochrome_svg():
+    html = build_portal_html([], {})
+
+    for symbol in [
+        "function getPersonaSvgIcon(",
+        'stroke="currentColor"',
+        'stroke-width="1.5"',
+        "function renderDeckShell(",
+        "function initDeckController(",
+        "function clearPersonaSearch(",
+        "deck-slide-content",
+        "deck-peek-overlay",
+        "setDeckIndex",
+        "ArrowLeft",
+        "ArrowRight",
+        "pointerdown",
+        "pointerup",
+    ]:
+        assert symbol in html, f"Missing deck controller symbol/attribute: {symbol}"
+
+
+def test_persona_overview_single_card_deck():
+    html = build_portal_html([], {})
+    render_fn_match = re.search(
+        r"function renderPersonaExperience\(\)\s*\{(.*?)\n    function renderAgents\(\)",
+        html,
+        re.DOTALL,
+    )
+    assert render_fn_match is not None
+    body = render_fn_match.group(1)
+
+    assert "id: 'personaOverviewDeck'" in body or 'id="personaOverviewDeck"' in body
+    assert "persona-overview-grid" not in body, (
+        "Overview multi-column grid must be replaced by single-card deck"
+    )
+    assert "getPersonaSvgIcon(" in body
+    assert "persona-horizons-inline" in body
+    assert "clearPersonaSearch()" in body
+    # No decorative emojis inside Persona View renderPersonaExperience()
+    for emoji in ["👤", "⏱️", "⚡", "🌅", "🔍", "👥"]:
+        assert emoji not in body, f"Unexpected emoji {emoji} in renderPersonaExperience()"
+
+
+def test_ditl_stage_deck_and_theater_sync():
+    html = build_portal_html([], {})
+    render_fn_match = re.search(
+        r"function renderPersonaExperience\(\)\s*\{(.*?)\n    function renderAgents\(\)",
+        html,
+        re.DOTALL,
+    )
+    assert render_fn_match is not None
+    body = render_fn_match.group(1)
+
+    for snippet in [
+        "id: 'ditlStageDeck'",
+        "ditl-stage-slide ditl-stage-card",
+        "openStageTheater(ditlStageIdx)",
+        "← All Personas",
+        "static-status-dot",
+        "state-dot dot-augmented",
+        "state-dot dot-automated",
+        "state-dot dot-new",
+        "state-dot dot-retired",
+    ]:
+        assert snippet in body, f"Missing State B snippet in renderPersonaExperience(): {snippet}"
+
+    # Ensure emojis in State B and Stage Theater were replaced with clean SVGs / state dots
+    for emoji in ["🟫", "🟪", "🟦", "🟨", "◌", "🎬", "📋", "⏱️", "⚡", "📌"]:
+        assert emoji not in body, f"Unexpected emoji {emoji} in renderPersonaExperience()"
+
+    # Verify Theater and URL hash sync (pidx / stage)
+    assert "params.set('pidx'" in html
+    assert "params.set('stage'" in html
+    assert "params.get('pidx')" in html
+    assert "params.get('stage')" in html
+    assert "ditlStageIdx = stageIdx" in html
+
+
+def test_apple_music_coverflow_3d_css():
+    html = build_portal_html([], {})
+    for snippet in [
+        "perspective: 1200px",
+        "transform-style: preserve-3d",
+        "rotateY(",
+        "--m-coverflow: 4000ms",
+        "is-prev-1",
+        "is-next-1",
+        "is-prev-far",
+        "is-next-far",
+    ]:
+        assert snippet in html, f"Missing Cover Flow 3D CSS snippet: {snippet}"
+
+
+def test_coverflow_relative_classes_and_drag_physics():
+    html = build_portal_html([], {})
+    for symbol in [
+        "is-prev-1",
+        "is-next-1",
+        "is-prev-2",
+        "is-next-2",
+        "is-prev-far",
+        "is-next-far",
+        "pointermove",
+        "--drag-x",
+    ]:
+        assert symbol in html, f"Missing Cover Flow controller symbol: {symbol}"
+    assert "getDeckRelInfo" in html
+    assert 'data-pos="0"' in html
+    assert 'data-pos="1"' in html
+    assert "track.classList.add('is-dragging')" in html
+    assert "track.style.setProperty('--drag-x'" in html
+
+
+def test_coverflow_faint_neighbors_flip_and_maximize_revert():
+    html = build_portal_html([], {})
+    for snippet in [
+        "opacity: 0.34",
+        "saturate(0.15)",
+        "scale(1.04)",
+        "@keyframes coverFlipNext",
+        "@keyframes coverFlipPrev",
+        "@keyframes coverTuckLeft",
+        "@keyframes coverTuckRight",
+        "@keyframes cardArrivalSheen",
+        "@keyframes conduitRailDraw",
+        "@property --glow-angle",
+        "@keyframes borderRimTrace",
+        "@keyframes borderBloomSettle",
+        "conic-gradient(",
+        "--deck-glow-shadow",
+        "is-flip-next",
+        "is-flip-prev",
+        "is-leaving-prev",
+        "is-leaving-next",
+        "is-deck-maximized",
+        "toggleDeckMaximize",
+        "deck-card-focus-btn",
+        "Maximize",
+        "Revert",
+    ]:
+        assert snippet in html, f"Missing Cover Flow polish snippet: {snippet}"
+
+
+
+
+
 
 

@@ -1,5 +1,6 @@
 """Unit tests for _shared/scripts/generate_demo_html.py."""
 
+import re
 import sys
 from pathlib import Path
 import pytest
@@ -28,6 +29,12 @@ def test_get_agent_info_existing_agent():
     assert len(info["subtitle"]) > 10
 
 
+def test_get_agent_info_strips_markdown_syntax():
+    info = get_agent_info("assortment_planning", "merchandising")
+    assert "**" not in info["subtitle"]
+    assert "`" not in info["subtitle"]
+
+
 def test_generate_html_showcase_output(tmp_path):
     output_dir = tmp_path / "demos"
     html_file = generate_html_showcase(
@@ -47,4 +54,25 @@ def test_generate_html_showcase_output(tmp_path):
     assert "cart_checkout_analytics.mp4#t=10" in content
     assert "timeupdate" in content
     assert 'target="_blank"' not in content
+
+
+def test_demo_html_accessibility_and_typography(tmp_path):
+    html_file = generate_html_showcase("cart_checkout_analytics", "e_commerce", tmp_path / "demos")
+    content = html_file.read_text(encoding="utf-8")
+    assert "text-wrap: balance" in content
+    assert "max-width: 72ch" in content or "max-width: 68ch" in content
+    # Avoid nested bordered cards inside .container
+    turns_block = re.search(r"\.turns-section\s*\{([^}]*)\}", content)
+    assert turns_block is not None
+    assert "border: 1px solid" not in turns_block.group(1)
+
+
+def test_demo_html_video_loading_and_single_source(tmp_path):
+    html_file = generate_html_showcase("cart_checkout_analytics", "e_commerce", tmp_path / "demos")
+    content = html_file.read_text(encoding="utf-8")
+    assert 'id="videoLoadingState"' in content
+    assert 'id="videoErrorState"' in content
+    assert '<video id="demoVideo" controls' in content
+    assert '<source src="cart_checkout_analytics.mp4#t=10" type="video/mp4">' in content
+
 

@@ -80,6 +80,21 @@ DOMAIN_ORDER = [
 ]
 
 
+def strip_inline_markdown(text: str) -> str:
+    """Strips inline Markdown links, bold/italic markers, and code backticks."""
+    cleaned = re.sub(r"\[(.*?)\]\(.*?\)", r"\1", text)
+    cleaned = cleaned.replace("**", "").replace("`", "").strip()
+    return re.sub(r"\s+", " ", cleaned)
+
+
+def markdown_inline_to_html(text: str) -> str:
+    """Converts inline markdown (bold, code, links) to safe HTML."""
+    out = re.sub(r"\[(.*?)\]\((.*?)\)", r'<a href="\2">\1</a>', text)
+    out = re.sub(r"\*\*(.*?)\*\*", r"<strong>\1</strong>", out)
+    out = re.sub(r"`(.*?)`", r"<code>\1</code>", out)
+    return out
+
+
 def extract_agent_metadata(agent_name: str, domain: str, reg_agent: dict, repo_root: Path) -> dict:
     """Extracts rich metadata, KPIs, prompts, personas, and transformations for an agent from its README.md."""
     readme_path = repo_root / "domains" / domain / "agents" / agent_name / "README.md"
@@ -124,15 +139,28 @@ def extract_agent_metadata(agent_name: str, domain: str, reg_agent: dict, repo_r
                 if len(cleaned) > 20:
                     description = cleaned
                     
-        # 2. Extract KPIs from KPI table
-        kpi_table_match = re.search(r"\|\s*Metric\s*\|\s*Definition\s*\|\s*Target\s*\|.*?\n((?:\|.*?\n)+)", content, re.IGNORECASE)
+        # 2. Extract KPIs from Key Metrics Tracked table (supports all 3 domain table schemas)
+        kpi_table_match = re.search(
+            r"\|\s*Metric(?:\s*/\s*KPI)?\s*\|([^\n]+)\n((?:\|.*?\n)+)",
+            content,
+            re.IGNORECASE,
+        )
         if kpi_table_match:
-            rows = kpi_table_match.group(1).strip().split("\n")
+            header_rest = kpi_table_match.group(1)
+            header_cols = [c.strip().lower() for c in header_rest.split("|") if c.strip()]
+            target_idx = 2
+            if len(header_cols) >= 2:
+                if "target" in header_cols[0] or "benchmark" in header_cols[0]:
+                    target_idx = 1
+                else:
+                    target_idx = 2
+
+            rows = kpi_table_match.group(2).strip().split("\n")
             for row in rows:
                 cols = [c.strip() for c in row.split("|")[1:-1]]
-                if len(cols) >= 3 and cols[0] and not cols[0].startswith("---") and cols[0] != ":---":
-                    metric_name = cols[0].replace("**", "").strip()
-                    target = cols[2].replace("**", "").strip()
+                if len(cols) >= 3 and cols[0] and not cols[0].startswith("---") and not cols[0].startswith(":---"):
+                    metric_name = strip_inline_markdown(cols[0])
+                    target = strip_inline_markdown(cols[target_idx]) if len(cols) > target_idx else ""
                     if metric_name and target:
                         kpis.append(f"{metric_name}: {target}")
                     elif metric_name:
@@ -253,8 +281,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --border-subtle: #1e293b;
       --border-focus: #38bdf8;
       --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
       --accent-blue: #38bdf8;
       --accent-blue-hover: #0284c7;
       --accent-indigo: #818cf8;
@@ -313,8 +341,28 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
       --task-retired-bg: rgba(148, 163, 184, 0.04);
       --task-retired-border: rgba(148, 163, 184, 0.24);
-      --task-retired-text: #64748b;
-      --task-retired-dot: #64748b;
+      --task-retired-text: #94a3b8;
+      --task-retired-dot: #94a3b8;
+
+      /* Scoped Minimalist Deck & Surface Tokens (Dark Theme) */
+      --m-slide: 240ms;
+      --m-coverflow: 4000ms;
+      --m-spring: cubic-bezier(0.22, 1, 0.36, 1);
+      --m-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+      --deck-canvas: #0b0b0d;
+      --deck-surface: #151517;
+      --deck-surface-subtle: #111114;
+      --deck-border: rgba(255, 255, 255, 0.10);
+      --deck-top-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      --deck-active-shadow: 0 22px 48px -18px rgba(0, 0, 0, 0.55);
+      --deck-glow-peak: #ffffff;
+      --deck-glow-shadow: 0 16px 44px -4px rgba(56, 189, 248, 0.42), 0 0 0 1.5px rgba(56, 189, 248, 0.55);
+      --deck-sheen: linear-gradient(112deg, transparent 20%, rgba(255, 255, 255, 0.13) 48%, rgba(56, 189, 248, 0.12) 52%, transparent 80%);
+      --deck-ink: #f4f4f5;
+      --deck-ink-secondary: #d4d4d8;
+      --deck-ink-muted: #a1a1aa;
+      --deck-accent: #38bdf8;
+      --deck-accent-ink: #0b0b0d;
     }}
 
     [data-theme="light"] {{
@@ -327,18 +375,18 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --border-color: #cbd5e1;
       --border-faint: #cbd5e1;
       --border-subtle: #e2e8f0;
-      --border-focus: #0284c7;
+      --border-focus: #0369a1;
       --text-primary: #0f172a;
       --text-secondary: #475569;
-      --text-muted: #64748b;
-      --accent-blue: #0284c7;
-      --accent-blue-hover: #0369a1;
+      --text-muted: #475569;
+      --accent-blue: #0369a1;
+      --accent-blue-hover: #075985;
       --accent-indigo: #6366f1;
       --accent-emerald: #059669;
       --accent-amber: #d97706;
       --badge-bg: #e0f2fe;
       --badge-border: #bae6fd;
-      --badge-text: #0284c7;
+      --badge-text: #0369a1;
       --kpi-bg: #d1fae5;
       --kpi-border: #a7f3d0;
       --kpi-text: #065f46;
@@ -376,9 +424,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --task-augmented-stack-2: rgba(147, 51, 234, 0.11);
 
       --task-automated-bg: #e0f2fe;
-      --task-automated-border: #0284c7;
+      --task-automated-border: #0369a1;
       --task-automated-text: #0c4a6e;
-      --task-automated-dot: #0284c7;
+      --task-automated-dot: #0369a1;
       --task-automated-stack-1: rgba(2, 132, 199, 0.22);
       --task-automated-stack-2: rgba(2, 132, 199, 0.11);
 
@@ -389,8 +437,24 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
       --task-retired-bg: #f4f3ee;
       --task-retired-border: #c4bfb3;
-      --task-retired-text: #78716c;
+      --task-retired-text: #57534e;
       --task-retired-dot: #a8a29e;
+
+      /* Scoped Minimalist Deck & Surface Tokens (Light Theme) */
+      --deck-canvas: #f4f4f1;
+      --deck-surface: #ffffff;
+      --deck-surface-subtle: #efefe9;
+      --deck-border: rgba(12, 12, 9, 0.10);
+      --deck-top-highlight: none;
+      --deck-active-shadow: 0 20px 44px -18px rgba(12, 12, 9, 0.16);
+      --deck-glow-peak: #38bdf8;
+      --deck-glow-shadow: 0 14px 38px -4px rgba(3, 105, 161, 0.30), 0 0 0 1.5px rgba(3, 105, 161, 0.45);
+      --deck-sheen: linear-gradient(112deg, transparent 20%, rgba(255, 255, 255, 0.52) 48%, rgba(3, 105, 161, 0.12) 52%, transparent 80%);
+      --deck-ink: #0c0c09;
+      --deck-ink-secondary: #3f3f46;
+      --deck-ink-muted: #52525b;
+      --deck-accent: #0369a1;
+      --deck-accent-ink: #ffffff;
     }}
 
     * {{
@@ -400,7 +464,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     body {{
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: 'Google Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: var(--bg-primary);
       color: var(--text-primary);
       min-height: 100vh;
@@ -498,14 +562,26 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .btn-primary-header:hover {{
-      background: var(--accent-blue-hover);
-      border-color: var(--accent-blue-hover);
+      background: #075985;
+      border-color: #075985;
+      color: #ffffff !important;
+    }}
+
+    [data-theme="light"] .btn-primary-header {{
+      background: #0369a1;
+      border-color: #0369a1;
+      color: #ffffff !important;
+    }}
+
+    [data-theme="light"] .btn-primary-header:hover {{
+      background: #075985;
+      border-color: #075985;
       color: #ffffff !important;
     }}
 
     /* Hero Section */
     .hero {{
-      padding: 48px 24px 32px;
+      padding: 24px 24px 18px;
       max-width: 1360px;
       margin: 0 auto;
       width: 100%;
@@ -523,28 +599,26 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       background: var(--badge-bg);
       border: 1px solid var(--badge-border);
       color: var(--accent-blue);
-      margin-bottom: 16px;
+      margin-bottom: 10px;
     }}
 
     .hero-title {{
       font-family: 'Google Sans', sans-serif;
-      font-size: 2.5rem;
+      font-size: 2.15rem;
       font-weight: 700;
       letter-spacing: -0.02em;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
       color: var(--text-primary);
     }}
 
     .hero-title span {{
-      background: linear-gradient(135deg, var(--accent-blue), var(--accent-indigo));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--accent-blue);
     }}
 
     .hero-desc {{
-      max-width: 820px;
-      margin: 0 auto 28px;
-      font-size: 1.05rem;
+      max-width: 68ch;
+      margin: 0 auto 18px;
+      font-size: 0.98rem;
       color: var(--text-secondary);
       line-height: 1.6;
     }}
@@ -552,9 +626,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     /* Stat Counters */
     .stat-row {{
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 12px;
-      max-width: 1080px;
+      max-width: 980px;
       margin: 0 auto;
     }}
 
@@ -581,7 +655,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .stat-label {{
-      font-size: 0.68rem;
+      font-size: 0.75rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -603,8 +677,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       background: var(--bg-secondary);
       border: 1px solid var(--border-faint);
       border-radius: 14px;
-      padding: 18px;
-      margin-bottom: 28px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
       box-shadow: var(--shadow-card);
     }}
 
@@ -646,6 +720,12 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .search-input:focus {{
       border-color: var(--border-focus);
       box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+    }}
+
+    .search-input::placeholder,
+    #searchInput::placeholder {{
+      color: var(--text-secondary);
+      opacity: 0.9;
     }}
 
     .search-clear {{
@@ -714,6 +794,16 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .view-mode-btn.active .domain-count {{
       background: rgba(15, 23, 42, 0.25);
       color: #0f172a;
+    }}
+
+    [data-theme="light"] .view-mode-btn.active {{
+      background: #0369a1;
+      color: #ffffff;
+    }}
+
+    [data-theme="light"] .view-mode-btn.active .domain-count {{
+      background: rgba(255, 255, 255, 0.22);
+      color: #ffffff;
     }}
 
     .view-mode-hint {{
@@ -799,11 +889,11 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .persona-btn.active {{
-      background: var(--accent-indigo);
+      background: #4338ca;
       color: #ffffff;
-      border-color: var(--accent-indigo);
+      border-color: #4338ca;
       font-weight: 700;
-      box-shadow: 0 2px 8px rgba(129, 140, 248, 0.35);
+      box-shadow: 0 2px 8px rgba(67, 56, 202, 0.35);
     }}
 
     .persona-btn.active .domain-count {{
@@ -811,32 +901,692 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       color: #ffffff;
     }}
 
-    /* Persona Experience Container & Overview Grid */
-    #personaExperienceContainer {{
+    /* Persona View Container & Cards */
+    #personaExperienceContainer,
+    .persona-view-shell {{
+      background: var(--deck-canvas);
+      color: var(--deck-ink);
+      border-radius: 0;
+      padding: 24px 0;
       margin-bottom: 28px;
     }}
 
+    .persona-view-shell p,
+    .persona-card-summary,
+    .persona-overview-subtitle,
+    .ditl-subtitle {{
+      font-size: 1rem;
+      line-height: 1.5;
+      max-width: 54ch;
+      color: var(--deck-ink-secondary);
+    }}
+
     .persona-overview-header {{
-      margin-bottom: 18px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }}
 
     .persona-overview-title {{
       font-family: 'Google Sans', sans-serif;
-      font-size: 1.45rem;
+      font-size: 1.5rem;
       font-weight: 700;
-      color: var(--text-primary);
+      color: var(--deck-ink);
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 4px;
+      letter-spacing: -0.02em;
     }}
 
     .persona-overview-subtitle {{
-      font-size: 0.9rem;
-      color: var(--text-secondary);
+      font-size: 1rem;
+      color: var(--deck-ink-secondary);
       line-height: 1.5;
+      max-width: 62ch;
     }}
 
+    /* 5-State Task Bundle Legend Key & 5-Segment Distribution Bar */
+    .task-bundle-key-bar {{
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin-top: 8px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }}
+
+    .task-bundle-key-title {{
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--deck-ink-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }}
+
+    .task-bundle-key-items {{
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }}
+
+    .task-bundle-key-chip {{
+      background: transparent !important;
+      border: none !important;
+      padding: 2px 4px !important;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--deck-ink-secondary);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      line-height: 1.2;
+    }}
+
+    .persona-overview-header .task-bundle-key-chip {{
+      background: transparent !important;
+      border: none !important;
+      padding: 2px 4px !important;
+      cursor: default;
+    }}
+
+    .state-dot {{
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }}
+
+    .state-dot.dot-unchanged {{ background: var(--task-unchanged-dot); }}
+    .state-dot.dot-augmented {{ background: var(--task-augmented-dot); }}
+    .state-dot.dot-automated {{ background: var(--task-automated-dot); }}
+    .state-dot.dot-new {{ background: var(--task-new-dot); }}
+    .state-dot.dot-retired {{ background: var(--task-retired-dot); border: 1px dashed var(--task-retired-border); }}
+
+    .task-bundle-key-chip.key-unchanged {{ color: var(--deck-ink); }}
+    .task-bundle-key-chip.key-augmented {{ color: var(--deck-ink); }}
+    .task-bundle-key-chip.key-automated {{ color: var(--deck-ink); }}
+    .task-bundle-key-chip.key-new {{ color: var(--deck-ink); }}
+    .task-bundle-key-chip.key-retired {{ color: var(--deck-ink-muted); }}
+
+    /* Apple Music–Style Deck Geometry */
+    .deck-shell {{
+      position: relative;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }}
+
+    #personaOverviewDeck {{
+      --slide-w: min(580px, 78vw);
+      --slide-gap: 0px;
+      --cf-step-x: min(370px, 44vw);
+      --cf-step-z: 90px;
+      --cf-angle: 22deg;
+      --cf-scale-neighbor: 0.76;
+    }}
+
+    #ditlStageDeck {{
+      --slide-w: min(880px, 82vw);
+      --slide-gap: 0px;
+      --cf-step-x: min(560px, 55vw);
+      --cf-step-z: 90px;
+      --cf-angle: 13deg;
+      --cf-scale-neighbor: 0.78;
+    }}
+
+    #ditlStageDeck .deck-slide {{
+      background: var(--deck-canvas);
+      border-radius: 16px;
+      padding: 0;
+    }}
+
+    #ditlStageDeck .deck-slide.is-prev-2,
+    #ditlStageDeck .deck-slide[data-pos="-2"],
+    #ditlStageDeck .deck-slide.is-next-2,
+    #ditlStageDeck .deck-slide[data-pos="2"] {{
+      opacity: 0;
+    }}
+
+    .deck-viewport {{
+      perspective: 1200px;
+      overflow: hidden;
+      width: 100%;
+      position: relative;
+      touch-action: pan-y;
+      outline: none;
+      padding: 34px 0 38px;
+    }}
+
+    .deck-track {{
+      position: relative;
+      width: 100%;
+      transform-style: preserve-3d;
+      display: grid;
+      place-items: center;
+      transform: translate3d(var(--drag-x, 0px), 0, 0);
+      transition: transform var(--m-coverflow) var(--m-spring);
+      will-change: transform;
+    }}
+
+    .deck-track.is-dragging {{
+      transition: none;
+    }}
+
+    .deck-slide {{
+      grid-area: 1 / 1;
+      width: var(--slide-w);
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform var(--m-coverflow) var(--m-spring), opacity var(--m-coverflow) var(--m-spring), filter var(--m-coverflow) var(--m-spring);
+      will-change: transform, opacity;
+      opacity: 0;
+      z-index: 1;
+      pointer-events: none;
+    }}
+
+    .deck-slide.is-active,
+    .deck-slide[data-pos="0"] {{
+      transform: translate3d(0, 0, 24px) scale(1.04) rotateY(0deg);
+      opacity: 1;
+      filter: none;
+      z-index: 20;
+      pointer-events: auto;
+    }}
+
+    @keyframes coverFlipNext {{
+      0% {{
+        transform: translate3d(var(--cf-step-x, 370px), 0, -90px) scale(var(--cf-scale-neighbor, 0.76)) rotateY(calc(var(--cf-angle, 22deg) * -1));
+        opacity: 0.34;
+        filter: saturate(0.15);
+      }}
+      52% {{
+        transform: translate3d(calc(var(--cf-step-x, 370px) * 0.08), 0, 74px) scale(1.07) rotateY(4deg);
+        opacity: 1;
+        filter: none;
+      }}
+      100% {{
+        transform: translate3d(0, 0, 24px) scale(1.04) rotateY(0deg);
+        opacity: 1;
+        filter: none;
+      }}
+    }}
+
+    @keyframes coverFlipPrev {{
+      0% {{
+        transform: translate3d(calc(var(--cf-step-x, 370px) * -1), 0, -90px) scale(var(--cf-scale-neighbor, 0.76)) rotateY(var(--cf-angle, 22deg));
+        opacity: 0.34;
+        filter: saturate(0.15);
+      }}
+      52% {{
+        transform: translate3d(calc(var(--cf-step-x, 370px) * -0.08), 0, 74px) scale(1.07) rotateY(-4deg);
+        opacity: 1;
+        filter: none;
+      }}
+      100% {{
+        transform: translate3d(0, 0, 24px) scale(1.04) rotateY(0deg);
+        opacity: 1;
+        filter: none;
+      }}
+    }}
+
+    @keyframes coverTuckLeft {{
+      0% {{
+        transform: translate3d(0, 0, 24px) scale(1.04) rotateY(0deg);
+        opacity: 1;
+        filter: none;
+      }}
+      48% {{
+        transform: translate3d(calc(var(--cf-step-x, 370px) * -0.58), 0, -135px) scale(0.82) rotateY(calc(var(--cf-angle, 22deg) * 1.15));
+        opacity: 0.62;
+        filter: saturate(0.4);
+      }}
+      100% {{
+        transform: translate3d(calc(var(--cf-step-x, 370px) * -1), 0, -90px) scale(var(--cf-scale-neighbor, 0.76)) rotateY(var(--cf-angle, 22deg));
+        opacity: 0.34;
+        filter: saturate(0.15);
+      }}
+    }}
+
+    @keyframes coverTuckRight {{
+      0% {{
+        transform: translate3d(0, 0, 24px) scale(1.04) rotateY(0deg);
+        opacity: 1;
+        filter: none;
+      }}
+      48% {{
+        transform: translate3d(calc(var(--cf-step-x, 370px) * 0.58), 0, -135px) scale(0.82) rotateY(calc(var(--cf-angle, 22deg) * -1.15));
+        opacity: 0.62;
+        filter: saturate(0.4);
+      }}
+      100% {{
+        transform: translate3d(var(--cf-step-x, 370px), 0, -90px) scale(var(--cf-scale-neighbor, 0.76)) rotateY(calc(var(--cf-angle, 22deg) * -1));
+        opacity: 0.34;
+        filter: saturate(0.15);
+      }}
+    }}
+
+    @keyframes cardArrivalSheen {{
+      0% {{
+        opacity: 0;
+        transform: translateX(-115%);
+      }}
+      25% {{
+        opacity: 1;
+      }}
+      100% {{
+        opacity: 0;
+        transform: translateX(115%);
+      }}
+    }}
+
+    @keyframes conduitRailDraw {{
+      0% {{
+        transform: scaleX(0);
+      }}
+      100% {{
+        transform: scaleX(1);
+      }}
+    }}
+
+    .deck-slide.is-active.is-flip-next {{
+      animation: coverFlipNext 4000ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      z-index: 24;
+    }}
+
+    .deck-slide.is-active.is-flip-prev {{
+      animation: coverFlipPrev 4000ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      z-index: 24;
+    }}
+
+    .deck-slide.is-leaving-prev {{
+      animation: coverTuckLeft 3200ms var(--m-spring) both;
+      z-index: 10;
+    }}
+
+    .deck-slide.is-leaving-next {{
+      animation: coverTuckRight 3200ms var(--m-spring) both;
+      z-index: 10;
+    }}
+
+    @property --glow-angle {{
+      syntax: '<angle>';
+      initial-value: 0deg;
+      inherits: false;
+    }}
+
+    @keyframes borderRimTrace {{
+      0% {{
+        --glow-angle: 0deg;
+        opacity: 0;
+      }}
+      12% {{
+        opacity: 1;
+      }}
+      78% {{
+        opacity: 1;
+      }}
+      100% {{
+        --glow-angle: 360deg;
+        opacity: 0;
+      }}
+    }}
+
+    @keyframes borderBloomSettle {{
+      0% {{
+        box-shadow: var(--deck-active-shadow);
+      }}
+      32% {{
+        box-shadow: var(--deck-glow-shadow);
+      }}
+      100% {{
+        box-shadow: var(--deck-active-shadow);
+      }}
+    }}
+
+    .deck-slide .persona-overview-card,
+    .deck-slide .ditl-stage-slide {{
+      position: relative;
+      overflow: hidden;
+    }}
+
+    .deck-slide .ditl-stage-slide {{
+      border-radius: 16px;
+      padding: 16px 20px;
+    }}
+
+    .deck-slide .persona-overview-card::before,
+    .deck-slide .ditl-stage-slide::before {{
+      content: '';
+      position: absolute;
+      inset: 0;
+      padding: 2.5px;
+      border-radius: inherit;
+      background: conic-gradient(
+        from var(--glow-angle, 0deg),
+        transparent 0deg,
+        transparent 160deg,
+        var(--deck-accent) 235deg,
+        var(--deck-glow-peak) 295deg,
+        var(--deck-accent) 335deg,
+        transparent 360deg
+      );
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 6;
+    }}
+
+    .deck-slide.is-active.is-flip-next .persona-overview-card::before,
+    .deck-slide.is-active.is-flip-prev .persona-overview-card::before,
+    .deck-slide.is-active.is-flip-next .ditl-stage-slide::before,
+    .deck-slide.is-active.is-flip-prev .ditl-stage-slide::before {{
+      animation: borderRimTrace 4000ms cubic-bezier(0.22, 1, 0.36, 1) 100ms 1 both;
+    }}
+
+    .deck-slide.is-active.is-flip-next .persona-overview-card,
+    .deck-slide.is-active.is-flip-prev .persona-overview-card,
+    .deck-slide.is-active.is-flip-next .ditl-stage-slide,
+    .deck-slide.is-active.is-flip-prev .ditl-stage-slide {{
+      animation: borderBloomSettle 4000ms cubic-bezier(0.22, 1, 0.36, 1) 100ms 1 both;
+    }}
+
+    .deck-slide .persona-overview-card::after,
+    .deck-slide .ditl-stage-slide::after {{
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: inherit;
+      background: var(--deck-sheen);
+      opacity: 0;
+      transform: translateX(-115%);
+      z-index: 4;
+    }}
+
+    .deck-slide.is-active.is-flip-next .persona-overview-card::after,
+    .deck-slide.is-active.is-flip-prev .persona-overview-card::after,
+    .deck-slide.is-active.is-flip-next .ditl-stage-slide::after,
+    .deck-slide.is-active.is-flip-prev .ditl-stage-slide::after {{
+      animation: cardArrivalSheen 2800ms cubic-bezier(0.16, 1, 0.3, 1) 400ms 1 both;
+    }}
+
+    .deck-slide.is-active.is-flip-next .conduit-rail-fill,
+    .deck-slide.is-active.is-flip-prev .conduit-rail-fill {{
+      animation: conduitRailDraw 2000ms cubic-bezier(0.16, 1, 0.3, 1) 400ms 1 both;
+    }}
+
+    .deck-slide.is-active .persona-overview-card,
+    .deck-slide[data-pos="0"] .persona-overview-card {{
+      box-shadow: var(--deck-active-shadow);
+    }}
+
+    .deck-slide.is-prev-1,
+    .deck-slide[data-pos="-1"] {{
+      transform: translate3d(calc(var(--cf-step-x) * -1), 0, -90px) scale(var(--cf-scale-neighbor)) rotateY(var(--cf-angle));
+      opacity: 0.34;
+      filter: saturate(0.15);
+      z-index: 12;
+      pointer-events: auto;
+      cursor: pointer;
+    }}
+
+    .deck-slide.is-next-1,
+    .deck-slide[data-pos="1"] {{
+      transform: translate3d(var(--cf-step-x), 0, -90px) scale(var(--cf-scale-neighbor)) rotateY(calc(var(--cf-angle) * -1));
+      opacity: 0.34;
+      filter: saturate(0.15);
+      z-index: 12;
+      pointer-events: auto;
+      cursor: pointer;
+    }}
+
+    .deck-slide.is-neighbor {{
+      opacity: 0.34;
+      filter: saturate(0.15);
+      cursor: pointer;
+    }}
+
+    .deck-slide.is-neighbor:hover {{
+      opacity: 0.56;
+      filter: saturate(0.45);
+    }}
+
+    .deck-slide:not(.is-active) .persona-card-title,
+    .deck-slide:not(.is-active) .ditl-stage-title {{
+      font-weight: 500;
+      color: var(--deck-ink-muted);
+    }}
+
+    .deck-slide:not(.is-active) .persona-card-subtitle,
+    .deck-slide:not(.is-active) .task-tile-label,
+    .deck-slide:not(.is-active) .flow-step-action {{
+      color: var(--deck-ink-muted);
+      font-weight: 400;
+    }}
+
+    .deck-slide:not(.is-active) .btn-persona-cta,
+    .deck-slide:not(.is-active) .conduit-demo-btn {{
+      background: var(--deck-surface-subtle);
+      color: var(--deck-ink-muted);
+      border-color: var(--deck-border);
+    }}
+
+    .deck-slide.is-prev-2,
+    .deck-slide[data-pos="-2"] {{
+      transform: translate3d(calc(var(--cf-step-x) * -1.48), 0, -170px) scale(0.64) rotateY(calc(var(--cf-angle) * 1.3));
+      opacity: 0.14;
+      filter: saturate(0.1);
+      z-index: 6;
+      pointer-events: none;
+    }}
+
+    .deck-slide.is-next-2,
+    .deck-slide[data-pos="2"] {{
+      transform: translate3d(calc(var(--cf-step-x) * 1.48), 0, -170px) scale(0.64) rotateY(calc(var(--cf-angle) * -1.3));
+      opacity: 0.14;
+      filter: saturate(0.1);
+      z-index: 6;
+      pointer-events: none;
+    }}
+
+    .deck-shell.is-deck-maximized {{
+      --slide-w: min(1080px, 94vw);
+    }}
+
+    .deck-shell.is-deck-maximized .deck-slide:not(.is-active) {{
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transform: translate3d(0, 0, -240px) scale(0.75) !important;
+    }}
+
+    .deck-shell.is-deck-maximized .deck-slide.is-active,
+    .deck-shell.is-deck-maximized .deck-slide[data-pos="0"] {{
+      transform: translate3d(0, 0, 0) scale(1) rotateY(0deg) !important;
+      width: 100%;
+      max-width: min(1080px, 94vw);
+    }}
+
+    .deck-card-focus-btn {{
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      min-height: 32px;
+      border-radius: 6px;
+      background: var(--deck-surface-subtle);
+      border: 1px solid var(--deck-border);
+      color: var(--deck-ink-secondary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    }}
+
+    .deck-card-focus-btn:hover,
+    .deck-card-focus-btn[aria-pressed="true"] {{
+      border-color: var(--deck-accent);
+      color: var(--deck-accent);
+    }}
+
+    .deck-slide.is-prev-far,
+    .deck-slide[data-pos="prev-far"] {{
+      transform: translate3d(calc(var(--cf-step-x) * -1.75), 0, -240px) scale(0.68) rotateY(calc(var(--cf-angle) * 1.5));
+      opacity: 0;
+      z-index: 1;
+      pointer-events: none;
+    }}
+
+    .deck-slide.is-next-far,
+    .deck-slide[data-pos="next-far"] {{
+      transform: translate3d(calc(var(--cf-step-x) * 1.75), 0, -240px) scale(0.68) rotateY(calc(var(--cf-angle) * -1.5));
+      opacity: 0;
+      z-index: 1;
+      pointer-events: none;
+    }}
+
+    .deck-slide-content {{
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }}
+
+    .deck-peek-overlay {{
+      display: none;
+    }}
+
+    @media (min-width: 769px) {{
+      .deck-slide.is-neighbor .deck-peek-overlay {{
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        display: block;
+      }}
+    }}
+
+    .deck-controls {{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      margin-top: 8px;
+      padding: 8px 0;
+    }}
+
+    .deck-nav-btn {{
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      min-height: 44px;
+      border-radius: 50%;
+      background: var(--deck-surface);
+      border: 1px solid var(--deck-border);
+      color: var(--deck-ink);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--deck-top-highlight);
+      transition: all 0.15s ease;
+    }}
+
+    .deck-nav-btn:hover:not(:disabled) {{
+      background: var(--deck-surface-subtle);
+      border-color: var(--deck-accent);
+      color: var(--deck-accent);
+    }}
+
+    .deck-nav-btn:disabled,
+    .deck-nav-btn[aria-disabled="true"] {{
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+    }}
+
+    .deck-scrubber-wrap {{
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }}
+
+    .deck-scrubber {{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }}
+
+    .deck-dot {{
+      width: 8px;
+      height: 8px;
+      min-width: 8px;
+      min-height: 8px;
+      border-radius: 9999px;
+      background: var(--deck-border);
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      position: relative;
+      transition: all var(--m-slide) var(--m-ease-out);
+    }}
+
+    .deck-dot::before {{
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      min-width: 44px;
+      min-height: 44px;
+    }}
+
+    .deck-dot:hover {{
+      background: var(--deck-ink-muted);
+    }}
+
+    .deck-dot.is-active {{
+      width: 20px;
+      background: var(--deck-accent);
+    }}
+
+    .deck-counter {{
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--deck-ink-muted);
+      letter-spacing: 0.05em;
+      min-width: 60px;
+      text-align: center;
+    }}
+
+    .deck-empty-state {{
+      padding: 48px 24px;
+      text-align: center;
+      border: 1px dashed var(--deck-border);
+      border-radius: 14px;
+      background: var(--deck-surface);
+      color: var(--deck-ink-secondary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }}
+
+    /* Persona Overview Card & Details */
     .persona-overview-grid {{
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
@@ -844,28 +1594,23 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .persona-overview-card {{
-      background: var(--bg-card);
-      border: 1px solid var(--border-faint);
+      background: var(--deck-surface);
+      border: 1px solid var(--deck-border);
       border-radius: 14px;
-      padding: 20px;
+      padding: 24px;
       display: flex;
       flex-direction: column;
-      box-shadow: var(--shadow-card);
-      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: var(--deck-top-highlight);
       position: relative;
-    }}
-
-    .persona-overview-card:hover {{
-      transform: translateY(-3px);
-      border-color: var(--border-focus);
-      box-shadow: 0 14px 28px -6px rgba(0, 0, 0, 0.35);
+      width: 100%;
+      height: 100%;
     }}
 
     .persona-card-header {{
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      gap: 10px;
+      gap: 12px;
       margin-bottom: 8px;
     }}
 
@@ -876,45 +1621,64 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .persona-card-icon {{
-      font-size: 1.6rem;
-      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--deck-accent);
+      flex-shrink: 0;
+    }}
+
+    .persona-svg-icon {{
+      display: block;
+      color: currentColor;
     }}
 
     .persona-card-title {{
       font-family: 'Google Sans', sans-serif;
-      font-size: 1.15rem;
+      font-size: 1.25rem;
       font-weight: 700;
-      color: var(--text-primary);
+      color: var(--deck-ink);
+      text-wrap: balance;
     }}
 
     .persona-agent-badge {{
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       font-weight: 700;
       padding: 3px 8px;
       border-radius: 6px;
-      background: var(--persona-pill-bg);
-      border: 1px solid var(--persona-pill-border);
-      color: var(--persona-pill-text);
+      background: var(--deck-surface-subtle);
+      border: 1px solid var(--deck-border);
+      color: var(--deck-ink-secondary);
       font-family: 'JetBrains Mono', monospace;
       white-space: nowrap;
     }}
 
     .persona-card-subtitle {{
-      font-size: 0.84rem;
+      font-size: 0.88rem;
       font-weight: 600;
-      color: var(--accent-blue);
-      margin-bottom: 6px;
+      color: var(--deck-accent);
+      margin-bottom: 8px;
     }}
 
     .persona-card-summary {{
+      font-size: 0.95rem;
+      color: var(--deck-ink-secondary);
+      line-height: 1.5;
+      margin-bottom: 16px;
+      max-width: 54ch;
+    }}
+
+    .persona-horizons-inline {{
+      display: flex;
+      align-items: center;
+      gap: 8px;
       font-size: 0.82rem;
-      color: var(--text-secondary);
-      line-height: 1.45;
-      margin-bottom: 14px;
-      flex: 1;
+      font-weight: 600;
+      color: var(--deck-ink-muted);
+      margin-bottom: 16px;
     }}
 
     .persona-metrics-row {{
@@ -923,15 +1687,15 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       flex-wrap: wrap;
       margin-bottom: 14px;
       padding: 8px 12px;
-      background: var(--bg-surface);
+      background: var(--deck-surface-subtle);
       border-radius: 8px;
-      border: 1px solid var(--border-faint);
+      border: 1px solid var(--deck-border);
     }}
 
     .persona-metric-pill {{
       font-size: 0.76rem;
       font-weight: 600;
-      color: var(--text-primary);
+      color: var(--deck-ink);
       display: inline-flex;
       align-items: center;
       gap: 4px;
@@ -948,10 +1712,10 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .auto-aug-legend {{
       display: flex;
       justify-content: space-between;
-      font-size: 0.74rem;
+      font-size: 0.75rem;
       font-weight: 600;
       margin-bottom: 6px;
-      color: var(--text-secondary);
+      color: var(--deck-ink-muted);
     }}
 
     .auto-aug-legend .auto-text {{
@@ -967,8 +1731,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       height: 8px;
       border-radius: 9999px;
       overflow: hidden;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-faint);
+      background: var(--deck-surface-subtle);
+      border: 1px solid var(--deck-border);
     }}
 
     .auto-fill-bar {{
@@ -983,189 +1747,147 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       transition: width 0.6s ease-out;
     }}
 
-    /* 5-State Task Bundle Legend Key & 5-Segment Distribution Bar */
-    .task-bundle-key-bar {{
-      background: var(--bg-card);
-      border: 1px solid var(--border-faint);
-      border-radius: 10px;
-      padding: 10px 14px;
-      margin-top: 12px;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }}
-
-    .task-bundle-key-title {{
-      font-size: 0.76rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }}
-
-    .task-bundle-key-items {{
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-    }}
-
-    .task-bundle-key-chip {{
-      font-size: 0.72rem;
-      font-weight: 600;
-      padding: 3px 8px;
-      border-radius: 6px;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      line-height: 1.2;
-    }}
-
-    .task-bundle-key-chip.key-unchanged {{
-      background: var(--task-unchanged-bg);
-      border: 1px solid var(--task-unchanged-border);
-      color: var(--task-unchanged-text);
-    }}
-
-    .task-bundle-key-chip.key-augmented {{
-      background: var(--task-augmented-bg);
-      border: 1px solid var(--task-augmented-border);
-      color: var(--task-augmented-text);
-    }}
-
-    .task-bundle-key-chip.key-automated {{
-      background: var(--task-automated-bg);
-      border: 1px solid var(--task-automated-border);
-      color: var(--task-automated-text);
-    }}
-
-    .task-bundle-key-chip.key-new {{
-      background: var(--task-new-bg);
-      border: 1px solid var(--task-new-border);
-      color: var(--task-new-text);
-    }}
-
-    .task-bundle-key-chip.key-retired {{
-      background: var(--task-retired-bg);
-      border: 1px solid var(--task-retired-border);
-      color: var(--task-retired-text);
-    }}
-
     .task-dist-container {{
-      margin-bottom: 16px;
+      margin-bottom: 20px;
     }}
 
     .task-dist-labels {{
       display: flex;
-      justify-content: space-between;
-      font-size: 0.70rem;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: var(--text-secondary);
+      gap: 12px;
       flex-wrap: wrap;
-      gap: 4px;
+      margin-bottom: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--deck-ink-muted);
+    }}
+
+    .task-dist-labels span {{
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
     }}
 
     .task-dist-bar {{
       display: flex;
-      height: 8px;
+      height: 6px;
       border-radius: 9999px;
       overflow: hidden;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-faint);
+      background: var(--deck-surface-subtle);
+      gap: 1px;
     }}
 
-    .task-dist-bar .seg-unchanged {{
-      background: var(--task-unchanged-border);
-      height: 100%;
-    }}
-
-    .task-dist-bar .seg-augmented {{
-      background: var(--task-augmented-border);
-      height: 100%;
-    }}
-
-    .task-dist-bar .seg-automated {{
-      background: var(--task-automated-border);
-      height: 100%;
-    }}
-
-    .task-dist-bar .seg-new {{
-      background: var(--task-new-border);
-      height: 100%;
-    }}
-
-    .task-dist-bar .seg-retired {{
-      background: var(--task-retired-border);
-      height: 100%;
-    }}
+    .task-dist-bar .seg-unchanged {{ background: var(--task-unchanged-dot); }}
+    .task-dist-bar .seg-augmented {{ background: var(--task-augmented-dot); }}
+    .task-dist-bar .seg-automated {{ background: var(--task-automated-dot); }}
+    .task-dist-bar .seg-new {{ background: var(--task-new-dot); }}
+    .task-dist-bar .seg-retired {{ background: var(--task-retired-dot); }}
 
     .btn-persona-cta {{
-      width: 100%;
+      margin-top: auto;
+      padding: 10px 18px;
+      border-radius: 8px;
+      background: var(--deck-accent);
+      color: var(--deck-accent-ink);
+      border: 1px solid var(--deck-accent);
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      background: var(--bg-surface);
-      color: var(--text-primary);
-      padding: 9px 14px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      border: 1px solid var(--border-color);
-      cursor: pointer;
       transition: all 0.15s ease;
-      font-family: inherit;
+      min-height: 44px;
     }}
 
     .btn-persona-cta:hover {{
-      background: var(--accent-blue);
-      border-color: var(--accent-blue);
-      color: #0f172a;
-      transform: translateY(-1px);
+      opacity: 0.92;
     }}
 
     /* Day in the Life Storyboard */
     .ditl-banner {{
-      background: var(--bg-card);
-      border: 1px solid var(--border-faint);
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: var(--shadow-card);
-      margin-bottom: 20px;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      padding: 0;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }}
 
     .ditl-header {{
       display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }}
+
+    .ditl-header-top-row {{
+      display: flex;
       justify-content: space-between;
       align-items: flex-start;
       gap: 16px;
-      margin-bottom: 20px;
       flex-wrap: wrap;
     }}
 
     .ditl-header-left {{
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
       flex: 1;
-      min-width: 280px;
+    }}
+
+    .ditl-back-btn {{
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      background: var(--deck-surface);
+      border: 1px solid var(--deck-border);
+      color: var(--deck-ink);
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      width: fit-content;
+      min-height: 44px;
+      transition: all 0.15s ease;
+    }}
+
+    .ditl-back-btn:hover {{
+      background: var(--deck-surface-subtle);
+      border-color: var(--deck-accent);
+      color: var(--deck-accent);
     }}
 
     .ditl-title {{
       font-family: 'Google Sans', sans-serif;
-      font-size: 1.4rem;
+      font-size: 1.45rem;
       font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 4px;
+      color: var(--deck-ink);
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      letter-spacing: -0.02em;
     }}
 
     .ditl-subtitle {{
-      font-size: 0.88rem;
-      color: var(--text-secondary);
-      margin-bottom: 12px;
+      font-size: 0.95rem;
+      color: var(--deck-ink-secondary);
+      line-height: 1.5;
+      max-width: 54ch;
+    }}
+
+    .ditl-horizons-inline {{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--deck-ink-muted);
+      flex-wrap: wrap;
     }}
 
     .ditl-stat-pills {{
@@ -1175,302 +1897,23 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .ditl-stat-pill {{
-      font-size: 0.76rem;
+      font-size: 0.75rem;
       font-weight: 600;
+      color: var(--deck-ink-secondary);
+      background: var(--deck-surface-subtle);
+      border: 1px solid var(--deck-border);
       padding: 4px 10px;
-      border-radius: 9999px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-faint);
-      color: var(--text-primary);
+      border-radius: 6px;
       display: inline-flex;
       align-items: center;
       gap: 4px;
+    }}
+
+    .ditl-stat-pill strong {{
+      color: var(--deck-accent);
     }}
 
     .ditl-header-right {{
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }}
-
-    .ditl-grid {{
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-      margin-top: 14px;
-    }}
-
-    @media (max-width: 900px) {{
-      .ditl-grid {{
-        grid-template-columns: 1fr;
-      }}
-    }}
-
-    .ditl-stage-card {{
-      background: var(--bg-surface);
-      border: 1px solid var(--border-faint);
-      border-radius: 12px;
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      transition: transform 0.15s ease, border-color 0.15s ease;
-    }}
-
-    .ditl-stage-card:hover {{
-      border-color: var(--border-focus);
-    }}
-
-    .ditl-stage-top {{
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-    }}
-
-    .ditl-time-stage {{
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: var(--text-primary);
-    }}
-
-    .ditl-mode-badge {{
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }}
-
-    .ditl-mode-badge.automated {{
-      background: var(--with-bg);
-      border: 1px solid var(--with-border);
-      color: var(--with-text);
-    }}
-
-    .ditl-mode-badge.augmented {{
-      background: var(--aug-bg);
-      border: 1px solid var(--aug-border);
-      color: var(--aug-text);
-    }}
-
-    .ditl-compare-grid {{
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }}
-
-    @media (max-width: 600px) {{
-      .ditl-compare-grid {{
-        grid-template-columns: 1fr;
-      }}
-    }}
-
-    .ditl-without {{
-      background: var(--without-bg);
-      border: 1px solid var(--without-border);
-      color: var(--without-text);
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 0.8rem;
-      line-height: 1.45;
-    }}
-
-    .ditl-with {{
-      background: var(--with-bg);
-      border: 1px solid var(--with-border);
-      color: var(--with-text);
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 0.8rem;
-      line-height: 1.45;
-    }}
-
-    .ditl-compare-header {{
-      font-weight: 700;
-      font-size: 0.74rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 4px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }}
-
-    .ditl-time-tag,
-    .ditl-time-badge {{
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      opacity: 0.9;
-    }}
-
-    .ditl-split-box {{
-      background: var(--bg-card);
-      border: 1px solid var(--border-faint);
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 0.78rem;
-      line-height: 1.45;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }}
-
-    .ditl-split-box strong {{
-      color: var(--text-primary);
-    }}
-
-    .ditl-agent-chips {{
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      align-items: center;
-      padding-top: 4px;
-    }}
-
-    .ditl-agent-chips-label {{
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }}
-
-    .ditl-agent-chip {{
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      color: var(--text-primary);
-      padding: 4px 9px;
-      border-radius: 6px;
-      font-size: 0.74rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      transition: all 0.15s ease;
-      font-family: inherit;
-    }}
-
-    .ditl-agent-chip:hover {{
-      background: var(--accent-blue);
-      border-color: var(--accent-blue);
-      color: #0f172a;
-      transform: translateY(-1px);
-    }}
-
-    /* 2-State Switcher Controls Bar */
-    .ditl-controls-row {{
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px solid var(--border-faint);
-      flex-wrap: wrap;
-    }}
-
-    .ditl-state-switcher {{
-      display: inline-flex;
-      background: var(--bg-surface);
-      border: 1.5px solid var(--border-color);
-      border-radius: 10px;
-      padding: 3px;
-      gap: 4px;
-    }}
-
-    .ditl-state-btn {{
-      padding: 7px 14px;
-      border-radius: 8px;
-      border: 1.5px solid var(--border-color);
-      background: var(--bg-card);
-      color: var(--text-secondary);
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }}
-
-    .ditl-state-btn:hover {{
-      color: var(--text-primary);
-      transform: translateY(-1px);
-      border-color: var(--border-focus);
-    }}
-
-    .ditl-state-btn.active-before {{
-      background: #dc2626 !important;
-      border-color: #b91c1c !important;
-      color: #ffffff !important;
-      font-weight: 700;
-      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.28);
-    }}
-
-    .ditl-state-btn.active-after {{
-      background: #10b981 !important;
-      border-color: #059669 !important;
-      color: #ffffff !important;
-      font-weight: 700;
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.30);
-    }}
-
-    .mode-radio-dot {{
-      font-size: 0.85rem;
-      line-height: 1;
-    }}
-
-    /* Interactive 5-State Filter Pills */
-    .ditl-state-filter-pill {{
-      cursor: pointer;
-      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-      border-width: 1.5px !important;
-      user-select: none;
-    }}
-
-    .ditl-state-filter-pill:hover {{
-      transform: translateY(-2px) scale(1.02);
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-    }}
-
-    .ditl-state-filter-pill.active-filter {{
-      border-width: 2px !important;
-      font-weight: 800 !important;
-      transform: translateY(-2px);
-      box-shadow: 0 0 0 3px var(--border-focus), 0 6px 14px rgba(0, 0, 0, 0.18) !important;
-    }}
-
-    .pill-check-ind {{
-      font-size: 0.72rem;
-      font-weight: 800;
-      margin-right: 2px;
-    }}
-
-    .filter-reset-pill {{
-      font-size: 0.70rem;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 6px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-color);
-      color: var(--text-muted);
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.15s ease;
-    }}
-
-    .filter-reset-pill:hover {{
-      background: var(--without-bg);
-      border-color: var(--without-border);
-      color: var(--without-text);
-    }}
-
-    .ditl-stage-top-right {{
       display: flex;
       align-items: center;
       gap: 8px;
@@ -1479,61 +1922,213 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .stage-maximize-btn {{
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      padding: 4px 9px;
-      border-radius: 6px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      color: var(--text-primary);
-      font-size: 0.72rem;
-      font-weight: 600;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      background: var(--deck-surface);
+      border: 1px solid var(--deck-border);
+      color: var(--deck-ink);
+      font-size: 0.82rem;
+      font-weight: 700;
       cursor: pointer;
       font-family: inherit;
+      white-space: nowrap;
+      min-height: 44px;
       transition: all 0.15s ease;
     }}
 
     .stage-maximize-btn:hover {{
-      background: var(--accent-blue);
-      border-color: var(--accent-blue);
-      color: #0f172a;
-      transform: translateY(-1px);
+      background: var(--deck-surface-subtle);
+      border-color: var(--deck-accent);
+      color: var(--deck-accent);
+    }}
+
+    .ditl-controls-row {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding-top: 8px;
+      border-top: 1px solid var(--deck-border);
+    }}
+
+    .ditl-state-switcher {{
+      display: inline-flex;
+      background: var(--deck-surface);
+      border: 1px solid var(--deck-border);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 2px;
+    }}
+
+    .ditl-state-btn {{
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--deck-ink-muted);
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 38px;
+      transition: all 0.15s ease;
+    }}
+
+    .ditl-state-btn:hover {{
+      color: var(--deck-ink);
+    }}
+
+    .ditl-state-btn.active-before {{
+      background: #b91c1c;
+      color: #ffffff;
+    }}
+
+    .ditl-state-btn.active-after {{
+      background: #065f46;
+      color: #ffffff;
+    }}
+
+    .mode-radio-dot {{
+      font-size: 0.75rem;
+    }}
+
+    .ditl-state-filter-pill {{
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--deck-border);
+      background: var(--deck-surface);
+      color: var(--deck-ink-secondary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      min-height: 34px;
+      transition: all 0.15s ease;
+    }}
+
+    .ditl-state-filter-pill:hover {{
+      border-color: var(--deck-accent);
+      color: var(--deck-ink);
+    }}
+
+    .ditl-state-filter-pill.active-filter {{
+      border-color: var(--deck-accent);
+      background: var(--deck-surface-subtle);
+      color: var(--deck-ink);
+      font-weight: 700;
+    }}
+
+    .pill-check-ind {{
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 800;
+    }}
+
+    .filter-reset-pill {{
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px dashed var(--deck-border);
+      background: transparent;
+      color: var(--deck-ink-muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      min-height: 34px;
+      transition: all 0.15s ease;
+    }}
+
+    .filter-reset-pill:hover {{
+      color: var(--deck-accent);
+      border-color: var(--deck-accent);
+    }}
+
+    .ditl-grid {{
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }}
+
+    @media (max-width: 900px) {{
+      .ditl-grid {{
+        grid-template-columns: 1fr;
+      }}
+    }}
+
+    /* Stage Slide Card — Open & Borderless on --deck-canvas */
+    .ditl-stage-card,
+    .ditl-stage-slide {{
+      border: none;
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+    }}
+
+    .ditl-stage-header-row {{
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      flex-wrap: wrap;
+    }}
+
+    .ditl-stage-title {{
+      font-family: 'Google Sans', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--deck-ink);
+      letter-spacing: -0.01em;
+    }}
+
+    .ditl-stage-stagepill {{
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--deck-ink-muted);
+      font-family: 'JetBrains Mono', monospace;
     }}
 
     .ditl-stage-horizon {{
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.74rem;
-      font-weight: 700;
-      padding: 4px 9px;
-      border-radius: 6px;
-      background: var(--badge-bg);
-      border: 1px solid var(--badge-border);
-      color: var(--badge-text);
-      white-space: nowrap;
-      flex-shrink: 0;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--deck-ink-muted);
     }}
 
     .ditl-stage-horizon.manual-mode {{
-      background: var(--without-bg);
-      border-color: var(--without-border);
-      color: var(--without-text);
+      color: var(--deck-ink-muted);
     }}
 
-    /* 3×2 Task-Bundle Grid */
-    .task-bundle-wrap {{
+    .ditl-stage-top-right {{
       display: flex;
-      flex-direction: column;
+      align-items: center;
       gap: 8px;
     }}
 
-    .task-bundle-title {{
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+    .task-bundle-wrap {{
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
+      gap: 10px;
+    }}
+
+    .task-bundle-title {{
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--deck-ink-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }}
 
     .task-bundle-grid {{
@@ -1555,109 +2150,94 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .task-tile {{
-      border-radius: 10px;
-      padding: 10px 12px;
+      background: var(--deck-surface);
+      border: 1px solid var(--deck-border);
+      border-radius: 9px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
       gap: 8px;
-      min-height: 88px;
-      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-      position: relative;
       cursor: pointer;
-      outline: none;
+      text-align: left;
+      font-family: inherit;
+      position: relative;
+      box-shadow: none;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     }}
 
     .task-tile:focus-visible {{
-      box-shadow: 0 0 0 2.5px var(--border-focus);
+      outline: 2px solid var(--deck-accent);
+      outline-offset: 2px;
     }}
 
     .task-tile-top {{
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       gap: 6px;
     }}
 
     .task-state-tag {{
-      font-size: 0.68rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      line-height: 1.2;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.75rem;
+      font-weight: 600;
     }}
 
     .task-step-ref {{
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.66rem;
-      font-weight: 800;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: rgba(0, 0, 0, 0.10);
-      color: inherit;
-      white-space: nowrap;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--deck-ink-muted);
     }}
 
     .task-tile-label {{
-      font-size: 0.80rem;
-      line-height: 1.35;
+      font-size: 0.85rem;
       font-weight: 600;
+      color: var(--deck-ink);
+      line-height: 1.4;
     }}
 
     .task-tile-footer {{
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.64rem;
-      color: var(--text-muted);
+      margin-top: auto;
       padding-top: 4px;
-      border-top: 1px dashed rgba(0, 0, 0, 0.08);
+      font-size: 0.75rem;
+      color: var(--deck-ink-muted);
     }}
 
     .task-pin-chip {{
-      font-size: 0.64rem;
-      font-weight: 600;
-      opacity: 0.75;
+      font-size: 0.75rem;
+      color: var(--deck-ink-muted);
     }}
 
     .task-tile.is-pinned .task-pin-chip {{
-      opacity: 1;
-      font-weight: 800;
-      color: var(--accent-blue);
+      color: var(--deck-accent);
+      font-weight: 700;
     }}
 
-    /* Task States */
     .task-tile.state-unchanged {{
-      background: var(--task-unchanged-bg);
-      border: 1px solid var(--task-unchanged-border);
-      color: var(--task-unchanged-text);
+      border-color: var(--task-unchanged-border);
     }}
 
     .task-tile.state-augmented {{
-      background: var(--task-augmented-bg);
-      border: 1px solid var(--task-augmented-border);
-      color: var(--task-augmented-text);
-      box-shadow: 0 2px 0 0 var(--task-augmented-stack-1), 0 4px 0 0 var(--task-augmented-stack-2);
+      border-color: var(--task-augmented-border);
     }}
 
     .task-tile.state-automated {{
-      background: var(--task-automated-bg);
-      border: 1px solid var(--task-automated-border);
-      color: var(--task-automated-text);
-      box-shadow: 0 2px 0 0 var(--task-automated-stack-1), 0 4px 0 0 var(--task-automated-stack-2);
+      border-color: var(--task-automated-border);
     }}
 
     .task-tile.state-new {{
-      background: var(--task-new-bg);
-      border: 1px solid var(--task-new-border);
-      color: var(--task-new-text);
+      border-color: var(--task-new-border);
     }}
 
     .task-tile.state-retired {{
-      background: var(--task-retired-bg);
       border: 1px dashed var(--task-retired-border);
-      color: var(--task-retired-text);
-      opacity: 0.75;
+      opacity: 0.7;
     }}
 
     .task-tile.state-retired .task-tile-label {{
@@ -1665,23 +2245,22 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .task-tile.state-dormant {{
-      background: var(--task-retired-bg);
       border: 1px dashed var(--task-retired-border);
-      color: var(--task-retired-text);
-      opacity: 0.65;
+      opacity: 0.6;
     }}
 
     /* Prominent Motion Spotlighting & Dimming */
     .motion-spotlight {{
-      transform: translateY(-4px) scale(1.03) !important;
+      transform: translateY(-2px) scale(1.02) !important;
       z-index: 6 !important;
-      box-shadow: 0 0 0 2.5px var(--border-focus), 0 14px 28px -6px rgba(37, 99, 235, 0.28) !important;
+      border-color: var(--deck-accent) !important;
+      box-shadow: 0 0 0 2px var(--deck-accent) !important;
     }}
 
     .motion-dimmed {{
-      opacity: 0.26 !important;
-      filter: grayscale(45%);
-      transform: scale(0.96);
+      opacity: 0.50 !important;
+      filter: none;
+      transform: none;
       pointer-events: auto;
     }}
 
@@ -1689,7 +2268,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .stage-flow-section {{
       margin-top: 12px;
       padding-top: 14px;
-      border-top: 1px solid var(--border-faint);
+      border-top: 1px solid var(--deck-border);
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -1706,7 +2285,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .stage-flow-title {{
       font-size: 0.76rem;
       font-weight: 700;
-      color: var(--text-primary);
+      color: var(--deck-ink);
       text-transform: uppercase;
       letter-spacing: 0.04em;
       display: flex;
@@ -1714,30 +2293,25 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       gap: 6px;
     }}
 
-    .motion-pulse-dot {{
-      width: 7px;
-      height: 7px;
+    .static-status-dot {{
+      width: 6px;
+      height: 6px;
       border-radius: 9999px;
       background: var(--accent-emerald);
-      box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
-      animation: pulseDot 1.8s infinite;
       display: inline-block;
+      flex-shrink: 0;
     }}
 
-    @keyframes pulseDot {{
-      0% {{
-        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
-      }}
-      70% {{
-        box-shadow: 0 0 0 6px rgba(52, 211, 153, 0);
-      }}
-      100% {{
-        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
-      }}
+    .persona-view-shell :focus-visible,
+    #personaExperienceContainer :focus-visible,
+    #stageTheaterModal :focus-visible {{
+      outline: 2px solid var(--deck-accent) !important;
+      outline-offset: 2px !important;
+      transition: none !important;
     }}
 
     .stage-flow-hint {{
-      font-size: 0.68rem;
+      font-size: 0.75rem;
       color: var(--text-muted);
       font-weight: 500;
     }}
@@ -1836,8 +2410,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .conduit-step-card {{
-      background: var(--bg-card);
-      border: 1.5px solid var(--border-color);
+      background: var(--deck-surface);
+      border: 1px solid var(--deck-border);
       border-radius: 10px;
       padding: 10px 12px;
       display: flex;
@@ -1849,20 +2423,21 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
       flex: 1;
+      box-shadow: none;
     }}
 
     .conduit-step-card:hover,
     .conduit-step-card.active-step,
     .conduit-node.active-step .conduit-step-card {{
-      background: var(--bg-surface);
-      border-color: var(--border-focus);
+      background: var(--deck-surface-subtle);
+      border-color: var(--deck-accent);
       transform: translateY(-2px);
       box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.22);
     }}
 
     .conduit-linked-badge {{
       display: none;
-      font-size: 0.62rem;
+      font-size: 0.75rem;
       font-weight: 800;
       color: var(--accent-emerald);
       background: var(--kpi-bg);
@@ -1884,8 +2459,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .flow-step-card {{
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
+      background: var(--deck-surface);
+      border: 1px solid var(--deck-border);
       border-radius: 9px;
       padding: 8px 10px;
       display: flex;
@@ -1896,18 +2471,19 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       font-family: inherit;
       transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
+      box-shadow: none;
     }}
 
     .flow-step-card:hover,
     .flow-step-card.active-step {{
-      background: var(--bg-surface);
-      border-color: var(--border-focus);
+      background: var(--deck-surface-subtle);
+      border-color: var(--deck-accent);
       transform: translateY(-2px);
       box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.2);
     }}
 
     .flow-step-card.active-step {{
-      box-shadow: 0 0 0 2px var(--border-focus), 0 6px 14px -2px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 0 0 2px var(--deck-accent), 0 6px 14px -2px rgba(0, 0, 0, 0.25);
     }}
 
     .flow-step-top {{
@@ -1919,14 +2495,14 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     .flow-step-badge {{
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.66rem;
+      font-size: 0.75rem;
       font-weight: 800;
       color: var(--accent-blue);
       letter-spacing: 0.04em;
     }}
 
     .flow-demo-pill {{
-      font-size: 0.64rem;
+      font-size: 0.75rem;
       font-weight: 700;
       color: var(--text-muted);
       display: inline-flex;
@@ -1935,7 +2511,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .flow-step-action {{
-      font-size: 0.74rem;
+      font-size: 0.75rem;
       font-weight: 700;
       color: var(--text-primary);
       line-height: 1.3;
@@ -1948,7 +2524,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .flow-step-agent {{
-      font-size: 0.71rem;
+      font-size: 0.75rem;
       font-weight: 500;
       color: var(--text-secondary);
       line-height: 1.32;
@@ -1969,7 +2545,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       background: var(--bg-surface);
       border: 1.5px solid var(--border-color);
       color: var(--text-primary);
-      font-size: 0.70rem;
+      font-size: 0.75rem;
       font-weight: 700;
       cursor: pointer;
       font-family: inherit;
@@ -1994,8 +2570,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       width: 96vw !important;
       max-height: 94vh !important;
       overflow-y: auto;
-      background: var(--bg-card);
-      border: 1.5px solid var(--border-focus);
+      background: var(--deck-canvas);
+      border: 1px solid var(--deck-border);
       border-radius: 18px;
       box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.45);
       display: flex;
@@ -2009,8 +2585,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       gap: 14px;
       flex-wrap: wrap;
       padding: 16px 24px;
-      border-bottom: 1px solid var(--border-color);
-      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--deck-border);
+      background: var(--deck-surface);
       position: sticky;
       top: 0;
       z-index: 10;
@@ -2026,26 +2602,27 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .theater-stage-tab {{
       padding: 6px 12px;
       border-radius: 8px;
-      border: 1.5px solid var(--border-color);
-      background: var(--bg-surface);
-      color: var(--text-secondary);
+      border: 1px solid var(--deck-border);
+      background: var(--deck-surface);
+      color: var(--deck-ink-secondary);
       font-size: 0.78rem;
       font-weight: 700;
       cursor: pointer;
       font-family: inherit;
       white-space: nowrap;
       transition: all 0.15s ease;
+      min-height: 38px;
     }}
 
     .theater-stage-tab:hover {{
-      color: var(--text-primary);
-      border-color: var(--border-focus);
+      color: var(--deck-ink);
+      border-color: var(--deck-accent);
     }}
 
     .theater-stage-tab.active {{
-      background: var(--accent-blue);
-      border-color: var(--accent-blue);
-      color: #0f172a;
+      background: var(--deck-accent);
+      border-color: var(--deck-accent);
+      color: var(--deck-accent-ink);
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     }}
 
@@ -2054,6 +2631,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       display: flex;
       flex-direction: column;
       gap: 20px;
+      background: var(--deck-canvas);
     }}
 
     /* Results Header */
@@ -2063,6 +2641,14 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       align-items: center;
       margin-bottom: 20px;
       padding: 0 4px;
+    }}
+
+    .results-section-heading {{
+      font-family: 'Google Sans', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-wrap: balance;
     }}
 
     .results-count {{
@@ -2133,7 +2719,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       font-weight: 700;
       padding: 3px 8px;
       border-radius: 6px;
@@ -2150,6 +2736,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       color: var(--text-primary);
       margin-bottom: 8px;
       line-height: 1.35;
+      text-wrap: balance;
     }}
 
     .card-desc {{
@@ -2157,7 +2744,6 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       color: var(--text-secondary);
       line-height: 1.5;
       margin-bottom: 16px;
-      flex: 1;
       display: -webkit-box;
       -webkit-line-clamp: 4;
       -webkit-box-orient: vertical;
@@ -2405,11 +2991,13 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      gap: 5px;
       background: none;
       color: var(--text-muted);
-      padding: 8px;
+      padding: 8px 10px;
       border-radius: 8px;
-      font-size: 1rem;
+      font-size: 0.8rem;
+      font-weight: 500;
       text-decoration: none;
       border: 1px solid transparent;
       transition: all 0.15s ease;
@@ -2536,11 +3124,30 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .video-container {{
       position: relative;
       width: 100%;
+      aspect-ratio: 16 / 9;
       background: #000;
       border-radius: 12px;
       overflow: hidden;
       margin-bottom: 20px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }}
+
+    .video-status-overlay {{
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: #0b1120;
+      color: #e2e8f0;
+      font-size: 0.9rem;
+      z-index: 2;
+    }}
+
+    #videoLoadingState {{
+      pointer-events: none;
     }}
 
     .video-container video {{
@@ -2687,6 +3294,16 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       font-size: 0.84rem;
     }}
 
+    .arch-item code,
+    .modal-turns-list code {{
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      background: var(--bg-primary);
+      padding: 1px 5px;
+      border-radius: 4px;
+      border: 1px solid var(--border-faint);
+    }}
+
     .arch-subagents-row {{
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -2752,6 +3369,15 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     /* Responsive adjustments */
     @media (max-width: 768px) {{
+      .site-header {{
+        position: static;
+      }}
+      .hero,
+      .main-container,
+      .toolbar {{
+        min-width: 0;
+        max-width: 100%;
+      }}
       .hero-title {{
         font-size: 1.85rem;
       }}
@@ -2759,7 +3385,15 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         grid-template-columns: 1fr;
       }}
       .stat-row {{
-        grid-template-columns: repeat(2, 1fr);
+        display: flex;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+        gap: 8px;
+        padding-bottom: 4px;
+      }}
+      .stat-card {{
+        flex: 0 0 132px;
       }}
       .header-inner {{
         flex-direction: column;
@@ -2769,8 +3403,93 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         width: 100%;
         justify-content: space-between;
       }}
+      .view-mode-toggle {{
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }}
+      .results-bar {{
+        flex-wrap: wrap;
+        gap: 8px;
+      }}
+      .domain-pills {{
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 6px;
+      }}
+      .domain-btn {{
+        flex: 0 0 auto;
+        min-height: 44px;
+      }}
+      .persona-pills {{
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 6px;
+      }}
+      .persona-btn {{
+        flex: 0 0 auto;
+        min-height: 44px;
+      }}
+      .view-mode-btn,
+      .btn-header,
+      .btn-watch,
+      .btn-showcase,
+      .btn-doc,
+      .persona-chip,
+      .modal-close,
+      .stage-maximize-btn,
+      .ditl-state-btn,
+      .deck-nav-btn,
+      .ditl-back-btn,
+      .btn-persona-cta,
+      .deck-card-focus-btn {{
+        min-height: 44px;
+      }}
+      .view-mode-btn {{
+        white-space: nowrap;
+        font-size: 0.8rem;
+        padding: 8px 12px;
+      }}
+      .deck-slide.is-active,
+      .deck-slide[data-pos="0"] {{
+        transform: translate3d(0, 0, 0) scale(1) rotateY(0deg);
+      }}
+      #personaOverviewDeck,
+      #ditlStageDeck {{
+        --slide-w: 100%;
+        --slide-gap: 0px;
+        --cf-step-x: 104%;
+        --cf-angle: 0deg;
+        --cf-scale-neighbor: 0.92;
+      }}
+      .deck-slide.is-prev-2,
+      .deck-slide.is-next-2,
+      .deck-slide.is-prev-far,
+      .deck-slide.is-next-far {{
+        opacity: 0;
+        pointer-events: none;
+      }}
+      .deck-peek-overlay {{
+        display: none !important;
+      }}
       .persona-overview-grid {{
         grid-template-columns: 1fr;
+      }}
+    }}
+
+    @media (prefers-reduced-motion: reduce) {{
+      *, *::before, *::after {{
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }}
+      .deck-track,
+      .deck-slide {{
+        transition-duration: 0ms !important;
+        animation: none !important;
       }}
     }}
   </style>
@@ -2892,6 +3611,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     <!-- Results Header -->
     <div class="results-bar">
+      <h2 class="results-section-heading">Agent Directory</h2>
       <div class="results-count" id="resultsCount">
         Showing <strong>{total_agents}</strong> of {total_agents} enterprise agents
       </div>
@@ -2913,7 +3633,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
   </main>
 
   <!-- Video Player Modal -->
-  <div class="modal-backdrop" id="videoModal">
+  <div class="modal-backdrop" id="videoModal" role="dialog" aria-modal="true" aria-labelledby="modalAgentTitle">
     <div class="modal-dialog">
       <div class="modal-header">
         <div class="modal-title-wrap">
@@ -2927,6 +3647,11 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       </div>
       <div class="modal-body">
         <div class="video-container">
+          <div id="videoLoadingState" class="video-status-overlay">Loading 1080p walkthrough…</div>
+          <div id="videoErrorState" class="video-status-overlay" style="display: none;">
+            <span>Unable to stream video preview.</span>
+            <a id="videoFallbackLink" href="#" download class="btn-header">Download MP4</a>
+          </div>
           <video id="modalVideo" src="" controls playsinline preload="auto">
             Your browser does not support HTML5 video.
           </video>
@@ -2957,7 +3682,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             <li><strong>Turn 1 (Data Insights):</strong> BigQuery Conversational Analytics natural language to SQL quantitative execution.</li>
             <li><strong>Turn 2 (Market Grounding):</strong> Live Google Search grounding against external industry benchmarks and regulatory statistics.</li>
             <li><strong>Turn 3 (Visual Analytics):</strong> Python Matplotlib visual chart generation with KPI callouts.</li>
-            <li><strong>Turn 4 (Canvas Presentation):</strong> Executive 4-slide slide deck generated in Gemini Enterprise Canvas.</li>
+            <li><strong>Turn 4 (Canvas Presentation):</strong> Executive 4-slide deck generated in Gemini Enterprise Canvas.</li>
           </ul>
         </div>
       </div>
@@ -2973,11 +3698,11 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
   </div>
 
   <!-- Architecture Blueprint Modal -->
-  <div class="modal-backdrop" id="archModal">
+  <div class="modal-backdrop" id="archModal" role="dialog" aria-modal="true" aria-labelledby="archModalTitle">
     <div class="modal-dialog" style="max-width: 1020px;">
       <div class="modal-header">
         <div class="modal-title-wrap">
-          <h2 class="modal-title">📐 Retail Enterprise Multi-Agent Architecture</h2>
+          <h2 id="archModalTitle" class="modal-title">📐 Retail Enterprise Multi-Agent Architecture</h2>
           <span style="font-size:0.8rem; color:var(--text-secondary);">Enterprise 4-Tier Google ADK & Gemini Enterprise Topology</span>
         </div>
         <button class="modal-close" id="archCloseBtn" aria-label="Close architecture modal">✕</button>
@@ -3022,15 +3747,15 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             <div class="arch-layer-grid">
               <div class="arch-item">
                 <strong>Declarative ADK Framework</strong>
-                Zero-boilerplate root orchestrators (`root_agent.yaml`)
+                Zero-boilerplate root orchestrators (<code>root_agent.yaml</code>)
               </div>
               <div class="arch-item">
                 <strong>Multi-Region Hosting</strong>
-                `us-central1` & `us-east4` hosting containers with auto-scaling
+                <code>us-central1</code> & <code>us-east4</code> hosting containers with auto-scaling
               </div>
               <div class="arch-item">
                 <strong>Global Model Inference</strong>
-                `gemini-3.5-flash` with low latency via global inference endpoint
+                <code>gemini-3.5-flash</code> with low latency via global inference endpoint
               </div>
               <div class="arch-item">
                 <strong>Lifecycle Callbacks</strong>
@@ -3043,7 +3768,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
           <!-- Tier 3: Parallel Sub-Agents -->
           <div class="arch-subagents-row">
-            <div class="arch-layer-card" style="border-top: 3px solid var(--accent-emerald);">
+            <div class="arch-layer-card">
               <div class="arch-layer-header">
                 <div class="arch-layer-title" style="font-size:0.95rem;">
                   <span>📊</span> Sub-Agent 3A: BigQuery Data Insights
@@ -3061,12 +3786,12 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                 </div>
                 <div class="arch-item">
                   <strong>Matplotlib Chart Generator</strong>
-                  Serverless visual chart rendering (`render_chart`)
+                  Serverless visual chart rendering (<code>render_chart</code>)
                 </div>
               </div>
             </div>
 
-            <div class="arch-layer-card" style="border-top: 3px solid var(--accent-blue);">
+            <div class="arch-layer-card">
               <div class="arch-layer-header">
                 <div class="arch-layer-title" style="font-size:0.95rem;">
                   <span>🌐</span> Sub-Agent 3B: Market Context & Grounding
@@ -3093,7 +3818,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           <div class="arch-arrow">▼</div>
 
           <!-- Tier 4 -->
-          <div class="arch-layer-card" style="border-top: 3px solid var(--accent-indigo);">
+          <div class="arch-layer-card">
             <div class="arch-layer-header">
               <div class="arch-layer-title">
                 <span>🗄️</span> Tier 4: Enterprise Retail Data Lakehouse
@@ -3103,11 +3828,11 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             <div class="arch-layer-grid">
               <div class="arch-item">
                 <strong>Enterprise Dataset</strong>
-                `retail_ent_agents` multi-tenant retail schema
+                <code>retail_ent_agents</code> multi-tenant retail schema
               </div>
               <div class="arch-item">
                 <strong>300+ Partitioned Tables</strong>
-                Structured namespace: `&lt;domain_id&gt;_&lt;agent_id&gt;_&lt;table_name&gt;`
+                Structured namespace: <code>&lt;domain_id&gt;_&lt;agent_id&gt;_&lt;table_name&gt;</code>
               </div>
               <div class="arch-item">
                 <strong>IAM Table Allowlisting</strong>
@@ -3121,7 +3846,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           <h3>🚀 Key Architectural Pillars</h3>
           <ul class="modal-turns-list">
             <li><strong>Declarative ADK Architecture:</strong> Zero-code orchestrator models bind BigQuery tools and Google Search tools with strict domain separation.</li>
-            <li><strong>Global Low-Latency Inference:</strong> `gemini-3.5-flash` global routing delivers ~30% faster time-to-first-token than regional clusters.</li>
+            <li><strong>Global Low-Latency Inference:</strong> <code>gemini-3.5-flash</code> global routing delivers ~30% faster time-to-first-token than regional clusters.</li>
             <li><strong>Dual Sub-Agent Pattern:</strong> Quantitative BigQuery queries and qualitative market grounding execute in specialized sub-agent contexts for hallucination-free answers.</li>
           </ul>
         </div>
@@ -3133,12 +3858,12 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
   </div>
 
   <!-- Full-Screen Stage Focus Theater Modal -->
-  <div class="modal-backdrop stage-theater-backdrop" id="stageTheaterModal">
+  <div class="modal-backdrop stage-theater-backdrop" id="stageTheaterModal" role="dialog" aria-modal="true" aria-labelledby="theaterPersonaTitle">
     <div class="modal-dialog stage-theater-dialog" id="stageTheaterDialog">
       <div class="stage-theater-header">
         <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
           <div style="display:flex; align-items:center; gap:8px;">
-            <span id="theaterPersonaIcon" style="font-size:1.4rem;">👤</span>
+            <span id="theaterPersonaIcon" style="display:inline-flex; align-items:center;"></span>
             <span id="theaterPersonaTitle" style="font-family:'Google Sans',sans-serif; font-size:1.05rem; font-weight:700; color:var(--text-primary);">Persona Focus Theater</span>
           </div>
           <div class="stage-theater-tabs" id="theaterStageTabs">
@@ -3171,9 +3896,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         100 Enterprise Agents across 9 Strategic Retail Domains. Powered by Google ADK, Gemini Enterprise, and BigQuery.
       </p>
       <div class="footer-links">
-        <a href="https://github.com/rajanm/retail-enterprise-agents" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub Repository</a>
-        <a href="https://github.com/rajanm/retail-enterprise-agents/blob/master/README.md" target="_blank" rel="noopener noreferrer" class="footer-link">Project Documentation</a>
-        <a href="https://github.com/rajanm/retail-enterprise-agents/blob/master/ARCHITECTURE.md" target="_blank" rel="noopener noreferrer" class="footer-link">Architecture Reference</a>
+        <a href="https://github.com/rajanm/retail-enterprise-agents" class="footer-link">GitHub Repository</a>
+        <a href="https://github.com/rajanm/retail-enterprise-agents/blob/master/README.md" class="footer-link">Project Documentation</a>
+        <a href="https://github.com/rajanm/retail-enterprise-agents/blob/master/ARCHITECTURE.md" class="footer-link">Architecture Reference</a>
       </div>
     </div>
   </footer>
@@ -3195,8 +3920,27 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     let activeDomain = 'all';
     const PERSONA_ARCHETYPES = {personas_json};
     const PERSONA_MAP = Object.fromEntries(PERSONA_ARCHETYPES.map(p => [p.id, p]));
+    const PERSONA_ALIASES = {{
+      vp_merchandising: 'merchandising_buyers',
+      c_suite_exec: 'exec_leadership',
+      supply_chain_dir: 'supply_chain_logistics',
+      store_ops_dir: 'store_field_ops',
+      ecommerce_lead: 'ecommerce_digital',
+      cfo_finance_vp: 'finance_fpa',
+      cmo_marketing_vp: 'marketing_loyalty',
+      customer_care_dir: 'customer_care_cx',
+      chro_hr_vp: 'hr_esg_compliance',
+      cso_esg_dir: 'hr_esg_compliance'
+    }};
+    for (const [alias, realId] of Object.entries(PERSONA_ALIASES)) {{
+      if (PERSONA_MAP[realId] && !PERSONA_MAP[alias]) {{
+        PERSONA_MAP[alias] = PERSONA_MAP[realId];
+      }}
+    }}
     let viewMode = 'domain';
     let activePersona = 'all';
+    let overviewDeckIdx = 0;
+    let ditlStageIdx = 0;
     let ditlCollapsed = false;
     let ditlStateMode = 'after';
     let activeTaskStateFilter = null; // null or 'unchanged' | 'augmented' | 'automated' | 'new' | 'retired'
@@ -3246,8 +3990,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     function resetTaskStateFilter() {{
       activeTaskStateFilter = null;
       hoveredTaskStateFilter = null;
-      document.querySelectorAll('.task-tile.is-pinned, .conduit-node.is-pinned').forEach(el => {{
+      document.querySelectorAll('.task-tile.is-pinned, .conduit-node.is-pinned, .flow-step-card.is-pinned').forEach(el => {{
         el.classList.remove('is-pinned');
+        el.setAttribute('aria-pressed', 'false');
         const chip = el.querySelector('.task-pin-chip');
         if (chip) chip.textContent = 'Click to pin focus';
       }});
@@ -3281,6 +4026,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     // Video Modal Elements
     const videoModal = document.getElementById('videoModal');
     const modalVideo = document.getElementById('modalVideo');
+    const videoLoadingState = document.getElementById('videoLoadingState');
+    const videoErrorState = document.getElementById('videoErrorState');
+    const videoFallbackLink = document.getElementById('videoFallbackLink');
     const modalAgentTitle = document.getElementById('modalAgentTitle');
     const modalDomainBadge = document.getElementById('modalDomainBadge');
     const modalRegionBadge = document.getElementById('modalRegionBadge');
@@ -3331,6 +4079,13 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     // Motion Animation Choreography (Motion library + native Web Animations API fallback)
     function runMotionChoreography(container) {{
       if (!container) return;
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {{
+        container.querySelectorAll('.auto-fill-bar').forEach(bar => {{
+          const targetW = bar.getAttribute('data-target-width') || bar.style.width;
+          bar.style.width = targetW;
+        }});
+        return;
+      }}
       const cards = container.querySelectorAll('.persona-overview-card, .ditl-stage-card, .agent-card');
       const taskTiles = container.querySelectorAll('.task-tile');
       const flowSteps = container.querySelectorAll('.flow-step-card');
@@ -3593,16 +4348,35 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
         const stepElements = conduitNodes.length ? conduitNodes : flowStepCards;
 
+        // Set ARIA role, tabindex and keyboard activation on top-level interactive flow steps and task tiles
+        const allInteractiveNodes = [...stepElements, ...taskTiles];
+        allInteractiveNodes.forEach(node => {{
+          node.setAttribute('tabindex', '0');
+          node.setAttribute('role', 'button');
+          if (!node.hasAttribute('aria-pressed')) {{
+            node.setAttribute('aria-pressed', 'false');
+          }}
+          node.addEventListener('keydown', (e) => {{
+            if (e.target.closest('button, a, input, select, textarea') && e.target !== node) return;
+            if (e.key === 'Enter' || e.key === ' ') {{
+              e.preventDefault();
+              node.click();
+            }}
+          }});
+        }});
+
         stepElements.forEach(stepElem => {{
           const stepVal = stepElem.getAttribute('data-step');
           if (!stepVal) return;
 
           const onEnter = () => {{
             if (activeTaskStateFilter || hoveredTaskStateFilter) return;
+            const hasPinned = stageCard.querySelector('.task-tile.is-pinned, .conduit-node.is-pinned, .flow-step-card.is-pinned');
+            if (hasPinned) return;
+
             stepElements.forEach(se => {{
               const isSelf = se === stepElem;
               se.classList.toggle('active-step', isSelf);
-              se.classList.toggle('motion-dimmed', !isSelf);
               const innerCard = se.classList.contains('flow-step-card') ? se : se.querySelector('.flow-step-card');
               if (innerCard) {{
                 innerCard.classList.toggle('motion-spotlight', isSelf);
@@ -3614,7 +4388,6 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               const indices = stepsAttr.split(',').map(s => s.trim()).filter(Boolean);
               if (indices.includes(stepVal)) {{
                 tile.classList.add('motion-spotlight');
-                tile.classList.remove('motion-dimmed');
                 if (window.Motion && typeof window.Motion.animate === 'function') {{
                   try {{
                     window.Motion.animate(tile, {{ scale: [0.98, 1.03] }}, {{ duration: 0.24, easing: 'ease-out' }});
@@ -3622,13 +4395,14 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                 }}
               }} else {{
                 tile.classList.remove('motion-spotlight');
-                tile.classList.add('motion-dimmed');
               }}
             }});
           }};
 
           const onLeave = () => {{
             if (activeTaskStateFilter || hoveredTaskStateFilter) return;
+            const hasPinned = stageCard.querySelector('.task-tile.is-pinned, .conduit-node.is-pinned, .flow-step-card.is-pinned');
+            if (hasPinned) return;
             applyProminentSpotlight();
           }};
 
@@ -3640,13 +4414,17 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           stepElem.addEventListener('click', (e) => {{
             if (e.target.closest('.conduit-demo-btn')) return;
             const wasPinned = stepElem.classList.contains('is-pinned');
-            stageCard.querySelectorAll('.task-tile.is-pinned, .conduit-node.is-pinned').forEach(el => {{
+            stageCard.querySelectorAll('.task-tile.is-pinned, .conduit-node.is-pinned, .flow-step-card.is-pinned').forEach(el => {{
               el.classList.remove('is-pinned');
+              el.setAttribute('aria-pressed', 'false');
               const chip = el.querySelector('.task-pin-chip');
               if (chip) chip.textContent = 'Click to pin focus';
             }});
             if (!wasPinned) {{
               stepElem.classList.add('is-pinned');
+              stepElem.setAttribute('aria-pressed', 'true');
+            }} else {{
+              stepElem.setAttribute('aria-pressed', 'false');
             }}
             applyProminentSpotlight();
           }});
@@ -3656,12 +4434,14 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           const stepsAttr = tile.getAttribute('data-steps') || '';
           const indices = stepsAttr.split(',').map(s => s.trim()).filter(Boolean);
 
-          tile.addEventListener('mouseenter', () => {{
+          const onEnter = () => {{
             if (activeTaskStateFilter || hoveredTaskStateFilter) return;
+            const hasPinned = stageCard.querySelector('.task-tile.is-pinned, .conduit-node.is-pinned, .flow-step-card.is-pinned');
+            if (hasPinned) return;
+
             taskTiles.forEach(t => {{
               const isSelf = t === tile;
               t.classList.toggle('motion-spotlight', isSelf);
-              t.classList.toggle('motion-dimmed', !isSelf);
             }});
             const matchedSteps = [];
             stepElements.forEach(stepElem => {{
@@ -3669,7 +4449,6 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               const isMatch = indices.includes(stepVal);
               const innerCard = stepElem.classList.contains('flow-step-card') ? stepElem : stepElem.querySelector('.flow-step-card');
               stepElem.classList.toggle('active-step', isMatch);
-              stepElem.classList.toggle('motion-dimmed', !isMatch);
               if (innerCard) {{
                 innerCard.classList.toggle('motion-spotlight', isMatch);
                 innerCard.classList.toggle('active-step', isMatch);
@@ -3681,28 +4460,38 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                 window.Motion.animate(matchedSteps, {{ scale: [0.98, 1.03] }}, {{ duration: 0.24, easing: 'ease-out' }});
               }} catch (e) {{}}
             }}
-          }});
+          }};
 
-          tile.addEventListener('mouseleave', () => {{
+          const onLeave = () => {{
             if (activeTaskStateFilter || hoveredTaskStateFilter) return;
+            const hasPinned = stageCard.querySelector('.task-tile.is-pinned, .conduit-node.is-pinned, .flow-step-card.is-pinned');
+            if (hasPinned) return;
             applyProminentSpotlight();
-          }});
+          }};
+
+          tile.addEventListener('mouseenter', onEnter);
+          tile.addEventListener('mouseleave', onLeave);
+          tile.addEventListener('focus', onEnter);
+          tile.addEventListener('blur', onLeave);
 
           // Click to Pin Focus
           tile.addEventListener('click', (e) => {{
             if (e.target.closest('button')) return;
             const wasPinned = tile.classList.contains('is-pinned');
-            stageCard.querySelectorAll('.task-tile.is-pinned, .conduit-node.is-pinned').forEach(el => {{
+            stageCard.querySelectorAll('.task-tile.is-pinned, .conduit-node.is-pinned, .flow-step-card.is-pinned').forEach(el => {{
               el.classList.remove('is-pinned');
+              el.setAttribute('aria-pressed', 'false');
               const chip = el.querySelector('.task-pin-chip');
               if (chip) chip.textContent = 'Click to pin focus';
             }});
             if (!wasPinned) {{
               tile.classList.add('is-pinned');
+              tile.setAttribute('aria-pressed', 'true');
               const chip = tile.querySelector('.task-pin-chip');
-              if (chip) chip.textContent = '📌 Pinned Focus';
+              if (chip) chip.textContent = 'Pinned Focus';
               applyProminentSpotlight(tile);
             }} else {{
+              tile.setAttribute('aria-pressed', 'false');
               applyProminentSpotlight(null);
             }}
           }});
@@ -3710,18 +4499,65 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       }});
     }}
 
+    // Modal Accessibility & Focus Management
+    const modalFocusStack = new Map();
+
+    function getFocusableElements(container) {{
+      if (!container) return [];
+      const selector = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+      return Array.from(container.querySelectorAll(selector)).filter(el => {{
+        return el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0;
+      }});
+    }}
+
+    function openAccessibleModal(modalEl, focusSelector) {{
+      if (!modalEl) return;
+      if (!modalEl.classList.contains('open')) {{
+        modalFocusStack.set(modalEl, document.activeElement);
+      }}
+      modalEl.classList.add('open');
+      document.body.style.overflow = 'hidden';
+
+      setTimeout(() => {{
+        const focusTarget = focusSelector ? modalEl.querySelector(focusSelector) : null;
+        if (focusTarget && typeof focusTarget.focus === 'function') {{
+          focusTarget.focus();
+        }} else {{
+          const focusables = getFocusableElements(modalEl);
+          if (focusables.length > 0) focusables[0].focus();
+        }}
+      }}, 50);
+    }}
+
+    function closeAccessibleModal(modalEl) {{
+      if (!modalEl) return;
+      modalEl.classList.remove('open');
+      const anyModalOpen = Boolean(document.querySelector('.modal-backdrop.open'));
+      if (!anyModalOpen) {{
+        document.body.style.overflow = '';
+      }}
+      const prevFocus = modalFocusStack.get(modalEl);
+      if (prevFocus && typeof prevFocus.focus === 'function') {{
+        try {{
+          prevFocus.focus();
+        }} catch (e) {{}}
+      }}
+      modalFocusStack.delete(modalEl);
+    }}
+
     // Full-Screen Stage Focus Theater Modal Handlers
     function openStageTheater(stageIdx) {{
+      applyProminentSpotlight(null);
       const p = PERSONA_MAP[activePersona];
       if (!p) return;
+      ditlStageIdx = stageIdx;
       maximizedStageIdx = stageIdx;
 
-      theaterPersonaIcon.textContent = p.icon || '👤';
+      theaterPersonaIcon.innerHTML = getPersonaSvgIcon(p.id);
       theaterPersonaTitle.textContent = `${{p.title}} — Stage Focus Theater`;
 
       renderStageTheater();
-      stageTheaterModal.classList.add('open');
-      document.body.style.overflow = 'hidden';
+      openAccessibleModal(stageTheaterModal, '#theaterStageTabs button');
 
       if (stageTheaterDialog && window.Motion && typeof window.Motion.animate === 'function') {{
         try {{
@@ -3735,13 +4571,18 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     function closeStageTheater() {{
-      stageTheaterModal.classList.remove('open');
-      document.body.style.overflow = '';
+      closeAccessibleModal(stageTheaterModal);
+      if (viewMode === 'persona' && activePersona !== 'all') {{
+        renderPersonaExperience();
+        syncUrlHash();
+      }}
     }}
 
     function switchTheaterStage(stageIdx) {{
       maximizedStageIdx = stageIdx;
+      ditlStageIdx = stageIdx;
       renderStageTheater();
+      syncUrlHash();
       if (stageTheaterBody && window.Motion && typeof window.Motion.animate === 'function') {{
         try {{
           window.Motion.animate(
@@ -3786,21 +4627,20 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         if (ditlStateMode === 'before') {{
           const isNew = t.state === 'new';
           const stateClass = isNew ? 'state-dormant' : 'state-unchanged';
-          const tagText = isNew ? '◌ NOT PERFORMED' : '🟫 MANUAL STEP';
           return `
             <div class="task-tile ${{stateClass}}" data-task-state="${{t.state}}" data-task-idx="${{tileIdx}}">
               <div class="task-tile-top">
-                <span class="task-state-tag">${{tagText}}</span>
+                <span class="task-state-tag"><span class="state-dot ${{isNew ? 'dot-retired' : 'dot-unchanged'}}"></span> ${{isNew ? 'Not Performed' : 'Manual Step'}}</span>
               </div>
               <div class="task-tile-label">${{htmlEscape(t.label)}}</div>
             </div>
           `;
         }} else {{
-          let stateTag = '🟫 UNCHANGED';
-          if (t.state === 'augmented') stateTag = '🟪 AUGMENTED';
-          else if (t.state === 'automated') stateTag = '🟦 AUTOMATED';
-          else if (t.state === 'new') stateTag = '🟨 NEW AI TASK';
-          else if (t.state === 'retired') stateTag = '◌ RETIRED';
+          let stateLabel = 'Unchanged';
+          if (t.state === 'augmented') stateLabel = 'Augmented';
+          else if (t.state === 'automated') stateLabel = 'Automated';
+          else if (t.state === 'new') stateLabel = 'New AI Task';
+          else if (t.state === 'retired') stateLabel = 'Retired';
 
           const stepIndicesStr = (t.step_indices || []).join(',');
           const stepRefHtml = t.steps_label ? `<span class="task-step-ref">${{htmlEscape(t.steps_label)}}</span>` : '';
@@ -3808,7 +4648,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           return `
             <div class="task-tile state-${{t.state}}" data-task-state="${{t.state}}" data-task-idx="${{tileIdx}}" data-steps="${{stepIndicesStr}}" tabindex="0">
               <div class="task-tile-top">
-                <span class="task-state-tag">${{stateTag}}</span>
+                <span class="task-state-tag"><span class="state-dot dot-${{t.state}}"></span> ${{stateLabel}}</span>
                 ${{stepRefHtml}}
               </div>
               <div class="task-tile-label">${{htmlEscape(t.label)}}</div>
@@ -3853,7 +4693,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                 </div>
                 <div class="flow-step-agent" title="${{htmlEscape(agentLabel)}}">${{htmlEscape(agentLabel)}}</div>
                 <button type="button" class="conduit-demo-btn" onclick="openVideoModal('${{f.slug}}')" title="Watch 1080p Demo for ${{htmlEscape(agentLabel)}}">
-                  <span>🎬</span> Watch Demo
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg> Watch Demo
                 </button>
               </div>
             </div>
@@ -3864,9 +4704,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           <div class="stage-flow-section">
             <div class="stage-flow-header">
               <span class="stage-flow-title">
-                <span class="motion-pulse-dot"></span> Recommended Agent Execution Flow (${{flow.length}} Sequenced Steps)
+                <span class="static-status-dot"></span> Recommended Agent Execution Flow (${{flow.length}} Sequenced Steps)
               </span>
-              <span class="stage-flow-hint">⚡ Hover or click any task, state pill, or step to spotlight linked agents · Click 🎬 Watch Demo for 1080p video</span>
+              <span class="stage-flow-hint">Hover or click any task, state pill, or step to spotlight linked agents · Click Watch Demo for 1080p video</span>
             </div>
             <div class="flow-conduit-track" style="--conduit-cols: ${{flow.length}};">
               <div class="conduit-rail-line">
@@ -3882,13 +4722,13 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       }}
 
       const horizonBadge = ditlStateMode === 'before'
-        ? `<span class="ditl-stage-horizon manual-mode">⏱️ Manual: ${{htmlEscape(stage.time_before)}}</span>`
-        : `<span class="ditl-stage-horizon">⏱️ ${{htmlEscape(stage.time_before)}} → ⚡ ${{htmlEscape(stage.time_after)}}</span>`;
+        ? `<span class="ditl-stage-horizon manual-mode">Manual: ${{htmlEscape(stage.time_before)}}</span>`
+        : `<span class="ditl-stage-horizon">${{htmlEscape(stage.time_before)}} → ${{htmlEscape(stage.time_after)}}</span>`;
 
       stageTheaterBody.innerHTML = `
         <div class="ditl-stage-card" style="box-shadow: none; border: none; padding: 0; background: transparent;">
           <div class="ditl-stage-top">
-            <span class="ditl-time-stage">📋 ${{htmlEscape(stage.time)}} · ${{htmlEscape(stage.stage)}}</span>
+            <span class="ditl-time-stage">${{htmlEscape(stage.time)}} · ${{htmlEscape(stage.stage)}}</span>
             <div class="ditl-stage-top-right">
               ${{horizonBadge}}
             </div>
@@ -3898,19 +4738,19 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             <span class="task-bundle-key-title">Filter by Task State:</span>
             <div class="task-bundle-key-items">
               <button type="button" class="task-bundle-key-chip key-unchanged ditl-state-filter-pill ${{activeTaskStateFilter === 'unchanged' ? 'active-filter' : ''}}" data-filter-state="unchanged" onclick="toggleTaskStateFilter('unchanged')" onmouseenter="previewTaskStateFilter('unchanged')" onmouseleave="clearPreviewTaskStateFilter()">
-                <span class="pill-check-ind">${{activeTaskStateFilter === 'unchanged' ? '✓' : '○'}}</span> 🟫 1. Tasks Unchanged
+                <span class="pill-check-ind">${{activeTaskStateFilter === 'unchanged' ? '✓' : '○'}}</span> <span class="state-dot dot-unchanged"></span> 1. Tasks Unchanged
               </button>
               <button type="button" class="task-bundle-key-chip key-augmented ditl-state-filter-pill ${{activeTaskStateFilter === 'augmented' ? 'active-filter' : ''}}" data-filter-state="augmented" onclick="toggleTaskStateFilter('augmented')" onmouseenter="previewTaskStateFilter('augmented')" onmouseleave="clearPreviewTaskStateFilter()">
-                <span class="pill-check-ind">${{activeTaskStateFilter === 'augmented' ? '✓' : '○'}}</span> 🟪 2. Tasks Augmented
+                <span class="pill-check-ind">${{activeTaskStateFilter === 'augmented' ? '✓' : '○'}}</span> <span class="state-dot dot-augmented"></span> 2. Tasks Augmented
               </button>
               <button type="button" class="task-bundle-key-chip key-automated ditl-state-filter-pill ${{activeTaskStateFilter === 'automated' ? 'active-filter' : ''}}" data-filter-state="automated" onclick="toggleTaskStateFilter('automated')" onmouseenter="previewTaskStateFilter('automated')" onmouseleave="clearPreviewTaskStateFilter()">
-                <span class="pill-check-ind">${{activeTaskStateFilter === 'automated' ? '✓' : '○'}}</span> 🟦 3. Tasks Automated
+                <span class="pill-check-ind">${{activeTaskStateFilter === 'automated' ? '✓' : '○'}}</span> <span class="state-dot dot-automated"></span> 3. Tasks Automated
               </button>
               <button type="button" class="task-bundle-key-chip key-new ditl-state-filter-pill ${{activeTaskStateFilter === 'new' ? 'active-filter' : ''}}" data-filter-state="new" onclick="toggleTaskStateFilter('new')" onmouseenter="previewTaskStateFilter('new')" onmouseleave="clearPreviewTaskStateFilter()">
-                <span class="pill-check-ind">${{activeTaskStateFilter === 'new' ? '✓' : '○'}}</span> 🟨 4. New Tasks Created by AI
+                <span class="pill-check-ind">${{activeTaskStateFilter === 'new' ? '✓' : '○'}}</span> <span class="state-dot dot-new"></span> 4. New Tasks Created by AI
               </button>
               <button type="button" class="task-bundle-key-chip key-retired ditl-state-filter-pill ${{activeTaskStateFilter === 'retired' ? 'active-filter' : ''}}" data-filter-state="retired" onclick="toggleTaskStateFilter('retired')" onmouseenter="previewTaskStateFilter('retired')" onmouseleave="clearPreviewTaskStateFilter()">
-                <span class="pill-check-ind">${{activeTaskStateFilter === 'retired' ? '✓' : '○'}}</span> ◌ 5. Retired Manual Tasks
+                <span class="pill-check-ind">${{activeTaskStateFilter === 'retired' ? '✓' : '○'}}</span> <span class="state-dot dot-retired"></span> 5. Retired Manual Tasks
               </button>
               <button type="button" class="filter-reset-pill" onclick="resetTaskStateFilter()" style="display: ${{activeTaskStateFilter ? 'inline-flex' : 'none'}};">
                 ✕ Reset Filter
@@ -3921,7 +4761,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           <div class="task-bundle-wrap">
             <div class="task-bundle-title">
               <span>${{ditlStateMode === 'before' ? 'Manual Task Bundle (Baseline)' : '5-State Task Transformation Bundle (6 Tasks)'}}</span>
-              <span>${{ditlStateMode === 'before' ? '⏱️ Legacy Manual Effort' : '⚡ AI-Augmented Horizon'}}</span>
+              <span>${{ditlStateMode === 'before' ? 'Legacy Manual Effort' : 'AI-Augmented Horizon'}}</span>
             </div>
             <div class="task-bundle-grid">
               ${{taskTilesHtml}}
@@ -3957,7 +4797,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         if (viewModeHint) viewModeHint.textContent = 'Organized by 9 enterprise retail business functions';
       }} else {{
         if (domainPills) domainPills.style.display = 'none';
-        if (personaPills) personaPills.style.display = 'flex';
+        if (personaPills) personaPills.style.display = activePersona === 'all' ? 'none' : 'flex';
         if (personaExperienceContainer) personaExperienceContainer.style.display = 'block';
         if (resultsBar) resultsBar.style.display = 'none';
         if (agentGrid) agentGrid.style.display = 'none';
@@ -3967,11 +4807,22 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
       renderPersonaExperience();
       renderAgents();
+      syncUrlHash();
     }}
 
     // Persona Selection
-    function selectPersona(personaId) {{
+    function selectPersona(personaId, fromOverviewCta = false) {{
       activePersona = personaId;
+      if (personaId !== 'all') {{
+        const foundIdx = PERSONA_ARCHETYPES.findIndex(p => p.id === personaId);
+        if (foundIdx >= 0) {{
+          overviewDeckIdx = foundIdx;
+        }}
+        ditlStageIdx = 0;
+      }}
+      if (personaPills) {{
+        personaPills.style.display = activePersona === 'all' ? 'none' : 'flex';
+      }}
       if (viewMode !== 'persona') {{
         setViewMode('persona');
       }}
@@ -3982,27 +4833,348 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
       renderPersonaExperience();
       renderAgents();
+      syncUrlHash();
+    }}
+
+    // Monochrome 1.5px-stroke SVG icons per persona archetype
+    function getPersonaSvgIcon(personaId) {{
+      const reverseAliases = {{
+        exec_leadership: 'c_suite_exec',
+        merchandising_buyers: 'vp_merchandising',
+        supply_chain_logistics: 'supply_chain_dir',
+        store_field_ops: 'store_ops_dir',
+        ecommerce_digital: 'ecommerce_lead',
+        finance_fpa: 'cfo_finance_vp',
+        marketing_loyalty: 'cmo_marketing_vp',
+        customer_care_cx: 'customer_care_dir',
+        hr_esg_compliance: 'chro_hr_vp'
+      }};
+      const key = reverseAliases[personaId] || personaId;
+      const paths = {{
+        c_suite_exec: '<path d="M3 20h18M5 20V9l7-5 7 5v11M9 20v-5h6v5"/>',
+        vp_merchandising: '<path d="M4 7h16l-1.5 11h-13L4 7zM9 7V5a3 3 0 0 1 6 0v2"/>',
+        supply_chain_dir: '<path d="M3 7h11v10H3zM14 10h4l3 3v4h-7v-7zM6.5 19a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm10.5 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/>',
+        store_ops_dir: '<path d="M3 10l1.5-5h15L21 10M4 10v9h16v-9M9 19v-5h6v5"/>',
+        ecommerce_lead: '<path d="M3 6h18v10H3zM8 20h8M12 16v4"/>',
+        cfo_finance_vp: '<path d="M4 19h16M7 16v-5M12 16V7M17 16v-8"/>',
+        cmo_marketing_vp: '<path d="M4 14l9-6v8l-9-2zm9-4l6-3v10l-6-3M7 15l1 4h2l-.5-3.5"/>',
+        customer_care_dir: '<path d="M4 12a8 8 0 0 1 16 0v4a2 2 0 0 1-2 2h-2v-5h4M4 13h4v5H6a2 2 0 0 1-2-2v-3z"/>',
+        chro_hr_vp: '<path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm6.5 1a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM4 19a5 5 0 0 1 10 0M15 19a4 4 0 0 1 5-3.8"/>',
+        cso_esg_dir: '<path d="M12 20c4.5 0 8-3.5 8-8 0-3.5-2-6.5-5-8-1 3.5-3.5 6-7 7.5C6.5 12 4 14.5 4 17a3 3 0 0 0 3 3h5z"/>',
+      }};
+      const d = paths[key] || paths[personaId] || '<circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/>';
+      return `<svg class="persona-svg-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${{d}}</svg>`;
+    }}
+
+    function formatSlideCounter(idx, total) {{
+      if (total <= 0) return '00 / 00';
+      return `${{String(idx + 1).padStart(2, '0')}} / ${{String(total).padStart(2, '0')}}`;
+    }}
+
+    function clearPersonaSearch() {{
+      searchQuery = '';
+      if (searchInput) searchInput.value = '';
+      if (searchClear) searchClear.style.display = 'none';
+      overviewDeckIdx = 0;
+      renderPersonaExperience();
+      syncUrlHash();
+      if (searchInput) searchInput.focus();
+    }}
+
+    function getDeckRelInfo(idx, activeIdx) {{
+      const rel = idx - activeIdx;
+      if (rel === 0) {{
+        return {{ rel, cls: 'is-active', dataPos: '0', isActive: true }};
+      }} else if (rel === -1) {{
+        return {{ rel, cls: 'is-prev-1 is-neighbor', dataPos: '-1', isActive: false }};
+      }} else if (rel === 1) {{
+        return {{ rel, cls: 'is-next-1 is-neighbor', dataPos: '1', isActive: false }};
+      }} else if (rel === -2) {{
+        return {{ rel, cls: 'is-prev-2', dataPos: '-2', isActive: false }};
+      }} else if (rel === 2) {{
+        return {{ rel, cls: 'is-next-2', dataPos: '2', isActive: false }};
+      }} else if (rel < -2) {{
+        return {{ rel, cls: 'is-prev-far', dataPos: 'prev-far', isActive: false }};
+      }} else {{
+        return {{ rel, cls: 'is-next-far', dataPos: 'next-far', isActive: false }};
+      }}
+    }}
+
+    function renderDeckShell({{ id, slidesHtml, activeIdx, labels, prevNoun, emptyHtml }}) {{
+      const total = labels.length;
+      if (total === 0) {{
+        return `<div class="deck-shell" id="${{id}}">${{emptyHtml || ''}}</div>`;
+      }}
+      const safeIdx = Math.max(0, Math.min(activeIdx, total - 1));
+      const prevDisabled = safeIdx <= 0 ? 'disabled aria-disabled="true"' : '';
+      const nextDisabled = safeIdx >= total - 1 ? 'disabled aria-disabled="true"' : '';
+      const prevTarget = safeIdx > 0 ? labels[safeIdx - 1] : '';
+      const nextTarget = safeIdx < total - 1 ? labels[safeIdx + 1] : '';
+
+      const wrappedSlides = slidesHtml.map((innerHtml, idx) => {{
+        const relInfo = getDeckRelInfo(idx, safeIdx);
+        const inertAttr = relInfo.isActive ? '' : 'inert aria-hidden="true"';
+        const overlayDisplay = Math.abs(relInfo.rel) === 1 ? '' : 'style="display: none;"';
+        return `
+          <div class="deck-slide ${{relInfo.cls}}" data-slide-idx="${{idx}}" data-pos="${{relInfo.dataPos}}">
+            <div class="deck-slide-content" ${{inertAttr}}>${{innerHtml}}</div>
+            <button type="button" class="deck-peek-overlay" data-peek-idx="${{idx}}" tabindex="-1" aria-hidden="true" title="Go to ${{htmlEscape(labels[idx] || '')}}" ${{overlayDisplay}}></button>
+          </div>
+        `;
+      }}).join('');
+
+      const dotsHtml = labels.map((lbl, idx) => `
+        <button type="button"
+          class="deck-dot ${{idx === safeIdx ? 'is-active' : ''}}"
+          role="tab"
+          aria-selected="${{idx === safeIdx ? 'true' : 'false'}}"
+          aria-label="${{htmlEscape(lbl)}}"
+          data-dot-idx="${{idx}}"
+          title="${{htmlEscape(lbl)}}">
+        </button>
+      `).join('');
+
+      return `
+        <div class="deck-shell" id="${{id}}" style="--deck-idx: ${{safeIdx}};">
+          <div class="deck-viewport" tabindex="0" role="region" aria-roledescription="carousel" aria-label="${{htmlEscape(prevNoun)}} deck">
+            <div class="deck-track">
+              ${{wrappedSlides}}
+            </div>
+          </div>
+          <div class="deck-controls">
+            <button type="button" class="deck-nav-btn deck-prev-btn" ${{prevDisabled}} aria-label="Previous ${{htmlEscape(prevNoun)}}${{prevTarget ? ': ' + htmlEscape(prevTarget) : ''}}">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <div class="deck-scrubber-wrap">
+              <div class="deck-scrubber" role="tablist" aria-label="${{htmlEscape(prevNoun)}} slides">
+                ${{dotsHtml}}
+              </div>
+              <div class="deck-counter" aria-live="polite">${{formatSlideCounter(safeIdx, total)}}</div>
+            </div>
+            <button type="button" class="deck-nav-btn deck-next-btn" ${{nextDisabled}} aria-label="Next ${{htmlEscape(prevNoun)}}${{nextTarget ? ': ' + htmlEscape(nextTarget) : ''}}">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }}
+
+    function initDeckController(deckEl, {{ total, initialIdx, labels, prevNoun, onChange }}) {{
+      if (!deckEl || total <= 0) return null;
+      let currentIdx = Math.max(0, Math.min(initialIdx || 0, total - 1));
+      const viewport = deckEl.querySelector('.deck-viewport');
+      const track = deckEl.querySelector('.deck-track');
+      const slides = Array.from(deckEl.querySelectorAll('.deck-slide'));
+      const dots = Array.from(deckEl.querySelectorAll('.deck-dot'));
+      const prevBtn = deckEl.querySelector('.deck-prev-btn');
+      const nextBtn = deckEl.querySelector('.deck-next-btn');
+      const counter = deckEl.querySelector('.deck-counter');
+
+      function setDeckIndex(nextIdx, emit = true) {{
+        const prevIdx = currentIdx;
+        const clamped = Math.max(0, Math.min(nextIdx, total - 1));
+        const flipDir = clamped > prevIdx ? 'is-flip-next' : (clamped < prevIdx ? 'is-flip-prev' : '');
+        currentIdx = clamped;
+        deckEl.style.setProperty('--deck-idx', String(clamped));
+
+        slides.forEach((slide, idx) => {{
+          const relInfo = getDeckRelInfo(idx, clamped);
+          const isOutgoing = emit && clamped !== prevIdx && idx === prevIdx;
+          slide.classList.remove('is-active', 'is-prev-1', 'is-next-1', 'is-prev-2', 'is-next-2', 'is-prev-far', 'is-next-far', 'is-neighbor', 'is-flip-next', 'is-flip-prev', 'is-leaving-prev', 'is-leaving-next');
+          relInfo.cls.split(' ').forEach(c => {{
+            if (c) slide.classList.add(c);
+          }});
+          if (relInfo.isActive && emit && flipDir) {{
+            void slide.offsetWidth;
+            slide.classList.add(flipDir);
+          }} else if (isOutgoing && flipDir) {{
+            void slide.offsetWidth;
+            slide.classList.add(flipDir === 'is-flip-next' ? 'is-leaving-prev' : 'is-leaving-next');
+          }}
+          slide.setAttribute('data-pos', relInfo.dataPos);
+
+          const content = slide.querySelector('.deck-slide-content');
+          const overlay = slide.querySelector('.deck-peek-overlay');
+          if (content) {{
+            if (relInfo.isActive) {{
+              content.removeAttribute('inert');
+              content.removeAttribute('aria-hidden');
+            }} else {{
+              content.setAttribute('inert', '');
+              content.setAttribute('aria-hidden', 'true');
+            }}
+          }}
+          if (overlay) {{
+            overlay.style.display = Math.abs(relInfo.rel) === 1 ? '' : 'none';
+          }}
+        }});
+
+        dots.forEach((dot, idx) => {{
+          const active = idx === clamped;
+          dot.classList.toggle('is-active', active);
+          dot.setAttribute('aria-selected', active ? 'true' : 'false');
+        }});
+
+        if (counter) {{
+          counter.textContent = formatSlideCounter(clamped, total);
+        }}
+
+        if (prevBtn) {{
+          const atStart = clamped <= 0;
+          prevBtn.disabled = atStart;
+          prevBtn.setAttribute('aria-disabled', atStart ? 'true' : 'false');
+          const prevLabel = clamped > 0 ? labels[clamped - 1] : '';
+          prevBtn.setAttribute('aria-label', `Previous ${{prevNoun}}${{prevLabel ? ': ' + prevLabel : ''}}`);
+        }}
+
+        if (nextBtn) {{
+          const atEnd = clamped >= total - 1;
+          nextBtn.disabled = atEnd;
+          nextBtn.setAttribute('aria-disabled', atEnd ? 'true' : 'false');
+          const nextLabel = clamped < total - 1 ? labels[clamped + 1] : '';
+          nextBtn.setAttribute('aria-label', `Next ${{prevNoun}}${{nextLabel ? ': ' + nextLabel : ''}}`);
+        }}
+
+        if (emit && typeof onChange === 'function') {{
+          onChange(clamped);
+        }}
+      }}
+
+      if (prevBtn) {{
+        prevBtn.addEventListener('click', () => setDeckIndex(currentIdx - 1));
+      }}
+      if (nextBtn) {{
+        nextBtn.addEventListener('click', () => setDeckIndex(currentIdx + 1));
+      }}
+      dots.forEach((dot) => {{
+        dot.addEventListener('click', () => {{
+          const targetIdx = parseInt(dot.getAttribute('data-dot-idx') || '0', 10);
+          setDeckIndex(targetIdx);
+        }});
+      }});
+      deckEl.querySelectorAll('.deck-peek-overlay').forEach((overlay) => {{
+        overlay.addEventListener('click', () => {{
+          const targetIdx = parseInt(overlay.getAttribute('data-peek-idx') || '0', 10);
+          setDeckIndex(targetIdx);
+        }});
+      }});
+
+      const controlsEl = deckEl.querySelector('.deck-controls');
+      const onDeckKey = (e) => {{
+        const openModal = [videoModal, archModal, stageTheaterModal].find(m => m && m.classList.contains('open'));
+        if (openModal) return;
+        const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+        if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') return;
+        if (e.key === 'ArrowLeft') {{
+          e.preventDefault();
+          setDeckIndex(currentIdx - 1);
+        }} else if (e.key === 'ArrowRight') {{
+          e.preventDefault();
+          setDeckIndex(currentIdx + 1);
+        }}
+      }};
+      if (viewport) viewport.addEventListener('keydown', onDeckKey);
+      if (controlsEl) controlsEl.addEventListener('keydown', onDeckKey);
+
+      // Horizontal touch / pointer swipe with interactive drag-follow
+      if (viewport) {{
+        let pointerStartX = null;
+        let pointerStartY = null;
+        let isDragging = false;
+        let dragRafId = null;
+        let currentDragDx = 0;
+
+        viewport.addEventListener('pointerdown', (e) => {{
+          if (e.target.closest('button, a, input, [data-task-idx], .conduit-node')) return;
+          pointerStartX = e.clientX;
+          pointerStartY = e.clientY;
+          isDragging = false;
+          currentDragDx = 0;
+        }});
+
+        viewport.addEventListener('pointermove', (e) => {{
+          if (pointerStartX === null || pointerStartY === null) return;
+          const dx = e.clientX - pointerStartX;
+          const dy = e.clientY - pointerStartY;
+          if (!isDragging) {{
+            if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.2) {{
+              isDragging = true;
+              if (track) track.classList.add('is-dragging');
+            }}
+          }}
+          if (isDragging && track) {{
+            const clampedDx = Math.max(-120, Math.min(120, dx));
+            currentDragDx = clampedDx;
+            if (!dragRafId) {{
+              dragRafId = requestAnimationFrame(() => {{
+                track.style.setProperty('--drag-x', `${{currentDragDx}}px`);
+                dragRafId = null;
+              }});
+            }}
+          }}
+        }});
+
+        const cleanupDrag = () => {{
+          if (dragRafId) {{
+            cancelAnimationFrame(dragRafId);
+            dragRafId = null;
+          }}
+          if (track) {{
+            track.classList.remove('is-dragging');
+            track.style.setProperty('--drag-x', '0px');
+          }}
+        }};
+
+        viewport.addEventListener('pointerup', (e) => {{
+          if (pointerStartX === null || pointerStartY === null) return;
+          const dx = e.clientX - pointerStartX;
+          const dy = e.clientY - pointerStartY;
+          pointerStartX = null;
+          pointerStartY = null;
+          isDragging = false;
+          cleanupDrag();
+          if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2) {{
+            setDeckIndex(dx < 0 ? currentIdx + 1 : currentIdx - 1);
+          }}
+        }});
+
+        viewport.addEventListener('pointercancel', () => {{
+          pointerStartX = null;
+          pointerStartY = null;
+          isDragging = false;
+          cleanupDrag();
+        }});
+      }}
+
+      setDeckIndex(currentIdx, false);
+      return {{ setDeckIndex }};
+    }}
+
+    function toggleDeckMaximize(deckId, forceState = null) {{
+      const deckEl = document.getElementById(deckId);
+      if (!deckEl) return;
+      const nextMaximized = forceState !== null ? Boolean(forceState) : !deckEl.classList.contains('is-deck-maximized');
+      deckEl.classList.toggle('is-deck-maximized', nextMaximized);
+      const expandSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+      const revertSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+      deckEl.querySelectorAll('.deck-card-focus-btn').forEach(btn => {{
+        btn.setAttribute('aria-pressed', nextMaximized ? 'true' : 'false');
+        btn.setAttribute('title', nextMaximized ? 'Revert to 3D Cover Flow' : 'Maximize active card');
+        btn.innerHTML = nextMaximized ? `${{revertSvg}} Revert` : `${{expandSvg}} Maximize`;
+      }});
     }}
 
     // Switch to Persona Archetype from Domain View Card Chip
     function switchToPersonaArchetype(personaId) {{
+      const foundIdx = PERSONA_ARCHETYPES.findIndex(p => p.id === personaId);
+      if (foundIdx >= 0) {{
+        overviewDeckIdx = foundIdx;
+      }}
+      ditlStageIdx = 0;
       setViewMode('persona');
       selectPersona(personaId);
       if (viewModeBar) {{
         viewModeBar.scrollIntoView({{ behavior: 'smooth', block: 'start' }});
-      }}
-    }}
-
-    // Day in the Life Collapsible Toggle
-    function toggleDitlStoryboard() {{
-      ditlCollapsed = !ditlCollapsed;
-      const grid = document.getElementById('ditlGrid');
-      const btn = document.getElementById('ditlToggleBtn');
-      if (grid) {{
-        grid.style.display = ditlCollapsed ? 'none' : 'grid';
-      }}
-      if (btn) {{
-        btn.textContent = ditlCollapsed ? '▼ Show Storyboard' : '▲ Hide Storyboard';
       }}
     }}
 
@@ -4019,7 +5191,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       personaExperienceContainer.style.display = 'block';
 
       if (activePersona === 'all') {{
-        // State A: 10-Persona Transformation Overview Grid
+        // State A: 10-Persona Transformation Overview Deck
         const query = searchQuery.toLowerCase().trim();
         const filteredPersonas = PERSONA_ARCHETYPES.filter(p => {{
           if (!query) return true;
@@ -4046,24 +5218,22 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         if (filteredPersonas.length === 0) {{
           personaExperienceContainer.innerHTML = `
             <div class="persona-overview-header">
-              <h2 class="persona-overview-title">
-                <span>👤</span> 10 Retail Enterprise Persona Archetypes
-              </h2>
+              <h2 class="persona-overview-title">10 Retail Enterprise Persona Archetypes</h2>
               <p class="persona-overview-subtitle">
                 Explore how Gemini Enterprise Agents transform daily workflows across retail leadership, merchandising, supply chain, store operations, and digital roles.
               </p>
             </div>
-            <div class="no-results" style="display: block; padding: 48px 24px; text-align: center;">
-              <div style="font-size: 2.5rem; margin-bottom: 12px;">🔍</div>
-              <h3 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 8px;">No matching persona archetypes found</h3>
-              <p style="color: var(--text-secondary); margin-bottom: 16px;">Try adjusting your search terms or clearing the search filter.</p>
-              <button class="btn-persona-cta" onclick="resetFilters()" style="margin: 0 auto;">Clear Search</button>
+            <div class="deck-empty-state">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--deck-ink-muted); margin-bottom: 4px;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <h3 style="font-size: 1.1rem; font-weight: 600; color: var(--deck-ink); margin: 0;">No matching persona archetypes</h3>
+              <p style="color: var(--deck-ink-secondary); font-size: 0.9rem; margin: 0; max-width: 44ch;">Try adjusting your search terms or clearing the search filter.</p>
+              <button type="button" class="btn-persona-cta" onclick="clearPersonaSearch()" style="margin-top: 8px;">Clear Search</button>
             </div>
           `;
           return;
         }}
 
-        const cardsHtml = filteredPersonas.map(p => {{
+        const slidesHtml = filteredPersonas.map(p => {{
           const count = AGENTS_DATA.filter(a => (a.persona_archetypes || []).includes(p.id)).length;
           const dist = p.task_distribution || {{
             unchanged_pct: 25,
@@ -4076,26 +5246,30 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             <div class="persona-overview-card" data-persona-id="${{p.id}}">
               <div class="persona-card-header">
                 <div class="persona-card-title-wrap">
-                  <span class="persona-card-icon">${{p.icon}}</span>
+                  <span class="persona-card-icon">${{getPersonaSvgIcon(p.id)}}</span>
                   <h3 class="persona-card-title">${{htmlEscape(p.title)}}</h3>
                 </div>
-                <span class="persona-agent-badge">${{count}} agents</span>
+                <div style="display: inline-flex; align-items: center; gap: 8px;">
+                  <span class="persona-agent-badge">${{count}} agents</span>
+                  <button type="button" class="deck-card-focus-btn" data-deck-focus="personaOverviewDeck" onclick="toggleDeckMaximize('personaOverviewDeck')" aria-pressed="false" title="Maximize active card">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg> Maximize
+                  </button>
+                </div>
               </div>
               <div class="persona-card-subtitle">${{htmlEscape(p.subtitle)}}</div>
               <p class="persona-card-summary">${{htmlEscape(p.roles_summary)}}</p>
-
-              <div class="persona-metrics-row">
-                <span class="persona-metric-pill">⏱️ <strong>${{htmlEscape(p.hours_saved)}}</strong></span>
-                <span class="persona-metric-pill">⚡ <strong>${{htmlEscape(p.decision_speed)}}</strong></span>
+              <div class="persona-horizons-inline">
+                <span>${{htmlEscape(p.hours_saved)}}</span>
+                <span aria-hidden="true">·</span>
+                <span>${{htmlEscape(p.decision_speed)}}</span>
               </div>
-
               <div class="task-dist-container">
                 <div class="task-dist-labels">
-                  <span>🟫 Unchanged</span>
-                  <span>🟪 Augmented</span>
-                  <span>🟦 Automated</span>
-                  <span>🟨 New AI</span>
-                  <span>◌ Retired</span>
+                  <span title="Unchanged: ${{dist.unchanged_pct}}%"><span class="state-dot dot-unchanged"></span> Unchanged</span>
+                  <span title="Augmented: ${{dist.augmented_pct}}%"><span class="state-dot dot-augmented"></span> Augmented</span>
+                  <span title="Automated: ${{dist.automated_pct}}%"><span class="state-dot dot-automated"></span> Automated</span>
+                  <span title="New AI Tasks: ${{dist.new_ai_pct}}%"><span class="state-dot dot-new"></span> New AI</span>
+                  <span title="Retired Manual Tasks: ${{dist.retired_pct}}%"><span class="state-dot dot-retired"></span> Retired</span>
                 </div>
                 <div class="task-dist-bar">
                   <div class="seg-unchanged" style="width: ${{dist.unchanged_pct}}%;" title="Unchanged: ${{dist.unchanged_pct}}%"></div>
@@ -4105,37 +5279,50 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                   <div class="seg-retired" style="width: ${{dist.retired_pct}}%;" title="Retired Manual Tasks: ${{dist.retired_pct}}%"></div>
                 </div>
               </div>
-
-              <button class="btn-persona-cta" onclick="selectPersona('${{p.id}}')">
-                <span>🌅</span> View Day in the Life →
-              </button>
+              <button type="button" class="btn-persona-cta" onclick="selectPersona('${{p.id}}', true)">View Day in the Life →</button>
             </div>
           `;
-        }}).join('');
+        }});
+
+        const clampedOverviewIdx = Math.max(0, Math.min(overviewDeckIdx, filteredPersonas.length - 1));
+        const deckHtml = renderDeckShell({{
+          id: 'personaOverviewDeck',
+          slidesHtml,
+          activeIdx: clampedOverviewIdx,
+          labels: filteredPersonas.map(p => p.title),
+          prevNoun: 'persona'
+        }});
 
         personaExperienceContainer.innerHTML = `
           <div class="persona-overview-header">
-            <h2 class="persona-overview-title">
-              <span>👤</span> 10 Retail Enterprise Persona Archetypes
-            </h2>
+            <h2 class="persona-overview-title">10 Retail Enterprise Persona Archetypes</h2>
             <p class="persona-overview-subtitle">
               Explore how Gemini Enterprise Agents transform daily workflows across retail leadership, merchandising, supply chain, store operations, and digital roles.
             </p>
             <div class="task-bundle-key-bar">
               <span class="task-bundle-key-title">5-State Task Bundle Key:</span>
               <div class="task-bundle-key-items">
-                <span class="task-bundle-key-chip key-unchanged">🟫 1. Tasks Unchanged</span>
-                <span class="task-bundle-key-chip key-augmented">🟪 2. Tasks Augmented</span>
-                <span class="task-bundle-key-chip key-automated">🟦 3. Tasks Automated</span>
-                <span class="task-bundle-key-chip key-new">🟨 4. New Tasks Created by AI</span>
-                <span class="task-bundle-key-chip key-retired">◌ 5. Retired Manual Tasks</span>
+                <span class="task-bundle-key-chip key-unchanged"><span class="state-dot dot-unchanged"></span> 1. Tasks Unchanged</span>
+                <span class="task-bundle-key-chip key-augmented"><span class="state-dot dot-augmented"></span> 2. Tasks Augmented</span>
+                <span class="task-bundle-key-chip key-automated"><span class="state-dot dot-automated"></span> 3. Tasks Automated</span>
+                <span class="task-bundle-key-chip key-new"><span class="state-dot dot-new"></span> 4. New Tasks Created by AI</span>
+                <span class="task-bundle-key-chip key-retired"><span class="state-dot dot-retired"></span> 5. Retired Manual Tasks</span>
               </div>
             </div>
           </div>
-          <div class="persona-overview-grid" id="personaOverviewGrid">
-            ${{cardsHtml}}
-          </div>
+          ${{deckHtml}}
         `;
+
+        initDeckController(document.getElementById('personaOverviewDeck'), {{
+          total: filteredPersonas.length,
+          initialIdx: clampedOverviewIdx,
+          labels: filteredPersonas.map(p => p.title),
+          prevNoun: 'persona',
+          onChange: (idx) => {{
+            overviewDeckIdx = idx;
+            syncUrlHash();
+          }}
+        }});
         runMotionChoreography(personaExperienceContainer);
       }} else {{
         // State B: Day-in-the-Life Storyboard for specific archetype
@@ -4144,28 +5331,27 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
         const count = AGENTS_DATA.filter(a => (a.persona_archetypes || []).includes(p.id)).length;
 
-        const stagesHtml = (p.day_in_the_life || []).map((stage, stageIdx) => {{
+        const stageSlides = (p.day_in_the_life || []).map((stage, stageIdx) => {{
           // 1. Task Bundle (6 tiles)
           const bundle = stage.task_bundle || [];
           const taskTilesHtml = bundle.map((t, tileIdx) => {{
             if (ditlStateMode === 'before') {{
               const isNew = t.state === 'new';
               const stateClass = isNew ? 'state-dormant' : 'state-unchanged';
-              const tagText = isNew ? '◌ NOT PERFORMED' : '🟫 MANUAL STEP';
               return `
                 <div class="task-tile ${{stateClass}}" data-task-state="${{t.state}}" data-task-idx="${{tileIdx}}">
                   <div class="task-tile-top">
-                    <span class="task-state-tag">${{tagText}}</span>
+                    <span class="task-state-tag"><span class="state-dot ${{isNew ? 'dot-retired' : 'dot-unchanged'}}"></span> ${{isNew ? 'Not Performed' : 'Manual Step'}}</span>
                   </div>
                   <div class="task-tile-label">${{htmlEscape(t.label)}}</div>
                 </div>
               `;
             }} else {{
-              let stateTag = '🟫 UNCHANGED';
-              if (t.state === 'augmented') stateTag = '🟪 AUGMENTED';
-              else if (t.state === 'automated') stateTag = '🟦 AUTOMATED';
-              else if (t.state === 'new') stateTag = '🟨 NEW AI TASK';
-              else if (t.state === 'retired') stateTag = '◌ RETIRED';
+              let stateLabel = 'Unchanged';
+              if (t.state === 'augmented') stateLabel = 'Augmented';
+              else if (t.state === 'automated') stateLabel = 'Automated';
+              else if (t.state === 'new') stateLabel = 'New AI Task';
+              else if (t.state === 'retired') stateLabel = 'Retired';
 
               const stepIndicesStr = (t.step_indices || []).join(',');
               const stepRefHtml = t.steps_label ? `<span class="task-step-ref">${{htmlEscape(t.steps_label)}}</span>` : '';
@@ -4173,7 +5359,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               return `
                 <div class="task-tile state-${{t.state}}" data-task-state="${{t.state}}" data-task-idx="${{tileIdx}}" data-steps="${{stepIndicesStr}}" tabindex="0">
                   <div class="task-tile-top">
-                    <span class="task-state-tag">${{stateTag}}</span>
+                    <span class="task-state-tag"><span class="state-dot dot-${{t.state}}"></span> ${{stateLabel}}</span>
                     ${{stepRefHtml}}
                   </div>
                   <div class="task-tile-label">${{htmlEscape(t.label)}}</div>
@@ -4185,8 +5371,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             }}
           }}).join('');
 
-          // 2. Option A — Connected Orchestration Conduit (Only when ditlStateMode === 'after')
-          let bentoFlowHtml = '';
+          // 2. Connected Orchestration Conduit (Only when ditlStateMode === 'after')
+          let bentoFlowHtml = '<div class="flow-bento-grid" style="display: none;"></div>';
           if (ditlStateMode === 'after') {{
             let flow = stage.agent_flow || [];
             if (!flow.length && stage.featured_agents) {{
@@ -4219,7 +5405,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                     </div>
                     <div class="flow-step-agent" title="${{htmlEscape(agentLabel)}}">${{htmlEscape(agentLabel)}}</div>
                     <button type="button" class="conduit-demo-btn" onclick="openVideoModal('${{f.slug}}')" title="Watch 1080p Demo for ${{htmlEscape(agentLabel)}}">
-                      <span>🎬</span> Watch Demo
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg> Watch Demo
                     </button>
                   </div>
                 </div>
@@ -4230,9 +5416,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               <div class="stage-flow-section">
                 <div class="stage-flow-header">
                   <span class="stage-flow-title">
-                    <span class="motion-pulse-dot"></span> Recommended Agent Execution Flow (${{flow.length}} Sequenced Steps)
+                    <span class="static-status-dot"></span> Recommended Agent Execution Flow (${{flow.length}} Sequenced Steps)
                   </span>
-                  <span class="stage-flow-hint">⚡ Hover or click any task, state pill, or step to spotlight linked agents · Click 🎬 Watch Demo for 1080p video</span>
+                  <span class="stage-flow-hint">Hover or click any task, state pill, or step to spotlight linked agents · Click Watch Demo for 1080p video</span>
                 </div>
                 <div class="flow-conduit-track" style="--conduit-cols: ${{flow.length}};">
                   <div class="conduit-rail-line">
@@ -4247,19 +5433,20 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             `;
           }}
 
-          // 3. Stage Header Horizon Badge & Maximize Stage Button
+          // 3. Stage Header Horizon Badge
           const horizonBadge = ditlStateMode === 'before'
-            ? `<span class="ditl-stage-horizon manual-mode">⏱️ Manual: ${{htmlEscape(stage.time_before)}}</span>`
-            : `<span class="ditl-stage-horizon">⏱️ ${{htmlEscape(stage.time_before)}} → ⚡ ${{htmlEscape(stage.time_after)}}</span>`;
+            ? `<span class="ditl-stage-horizon manual-mode">Manual: ${{htmlEscape(stage.time_before)}}</span>`
+            : `<span class="ditl-stage-horizon">${{htmlEscape(stage.time_before)}} → ${{htmlEscape(stage.time_after)}}</span>`;
 
           return `
-            <div class="ditl-stage-card">
-              <div class="ditl-stage-top">
-                <span class="ditl-time-stage">📋 ${{htmlEscape(stage.time)}} · ${{htmlEscape(stage.stage)}}</span>
-                <div class="ditl-stage-top-right">
+            <div class="ditl-stage-slide ditl-stage-card" data-stage-idx="${{stageIdx}}">
+              <div class="ditl-stage-header-row">
+                <h3 class="ditl-stage-title">${{htmlEscape(stage.stage)}}</h3>
+                <span class="ditl-stage-stagepill">${{htmlEscape(stage.time)}} · Stage ${{stageIdx + 1}} of ${{(p.day_in_the_life || []).length}}</span>
+                <div class="ditl-stage-top-right" style="margin-left: auto;">
                   ${{horizonBadge}}
-                  <button type="button" class="stage-maximize-btn" onclick="openStageTheater(${{stageIdx}})" title="Maximize stage in Full-Screen Focus Theater">
-                    <span>⤢</span> Maximize Stage
+                  <button type="button" class="deck-card-focus-btn" data-deck-focus="ditlStageDeck" onclick="toggleDeckMaximize('ditlStageDeck')" aria-pressed="false" title="Maximize active stage">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg> Maximize
                   </button>
                 </div>
               </div>
@@ -4267,7 +5454,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               <div class="task-bundle-wrap">
                 <div class="task-bundle-title">
                   <span>${{ditlStateMode === 'before' ? 'Manual Task Bundle (Baseline)' : '5-State Task Transformation Bundle (6 Tasks)'}}</span>
-                  <span>${{ditlStateMode === 'before' ? '⏱️ Legacy Manual Effort' : '⚡ AI-Augmented Horizon'}}</span>
+                  <span>${{ditlStateMode === 'before' ? 'Legacy Manual Effort' : 'AI-Augmented Horizon'}}</span>
                 </div>
                 <div class="task-bundle-grid">
                   ${{taskTilesHtml}}
@@ -4277,30 +5464,62 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               ${{bentoFlowHtml}}
             </div>
           `;
-        }}).join('');
+        }});
+
+        const stageLabels = (p.day_in_the_life || []).map(s => s.stage);
+        const clampedStageIdx = Math.max(0, Math.min(ditlStageIdx, stageSlides.length - 1));
+        const deckHtml = renderDeckShell({{
+          id: 'ditlStageDeck',
+          slidesHtml: stageSlides,
+          activeIdx: clampedStageIdx,
+          labels: stageLabels,
+          prevNoun: 'stage'
+        }});
+
+        const queryTrimmed = searchQuery ? searchQuery.trim() : '';
+        const searchHintBannerHtml = queryTrimmed ? `
+          <div class="ditl-search-hint-banner" style="background: var(--badge-bg); border: 1px solid var(--badge-border); border-radius: 10px; padding: 10px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 0.85rem; color: var(--text-primary); flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span>Searching across all 100 agents — click 'All Personas' or 'Browse by Domain' to view matching agents</span>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button type="button" class="btn-header" onclick="selectPersona('all')" style="padding: 6px 12px; font-size: 0.8rem; cursor: pointer;">
+                All Personas
+              </button>
+              <button type="button" class="btn-header" onclick="setViewMode('domain')" style="padding: 6px 12px; font-size: 0.8rem; cursor: pointer;">
+                Browse by Domain
+              </button>
+            </div>
+          </div>
+        ` : '';
 
         personaExperienceContainer.innerHTML = `
           <div class="ditl-banner">
+            ${{searchHintBannerHtml}}
             <div class="ditl-header">
               <div class="ditl-header-left">
-                <h2 class="ditl-title">
-                  <span>${{p.icon}}</span> ${{htmlEscape(p.title)}} — Day in the Life
-                </h2>
-                <div class="ditl-subtitle">${{htmlEscape(p.subtitle)}}</div>
-                <div class="ditl-stat-pills">
-                  <span class="ditl-stat-pill">⏱️ <strong>${{htmlEscape(p.hours_saved)}}</strong></span>
-                  <span class="ditl-stat-pill">⚡ <strong>${{htmlEscape(p.decision_speed)}}</strong></span>
-                  <span class="ditl-stat-pill">🤖 <strong>${{htmlEscape(p.automated_label || 'Automated: Data, SQL & Visuals')}}</strong></span>
-                  <span class="ditl-stat-pill">✨ <strong>${{htmlEscape(p.augmented_label || 'Augmented: Strategy & Sign-Off')}}</strong></span>
-                  <span class="ditl-stat-pill">👥 <strong>${{count}} Agents</strong></span>
+                <button class="btn-header" id="backToAllPersonasBtn" onclick="selectPersona('all')">
+                  ← All Personas
+                </button>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                  <h2 class="ditl-title" style="margin: 0; display: inline-flex; align-items: center; gap: 8px;">
+                    ${{getPersonaSvgIcon(p.id)}} ${{htmlEscape(p.title)}}
+                  </h2>
+                  <div class="ditl-subtitle" style="margin: 0;">
+                    ${{htmlEscape(p.subtitle)}}
+                    <span style="color: var(--deck-ink-muted); margin: 0 6px;">·</span>
+                    <span style="font-weight: 600; color: var(--deck-accent);">${{htmlEscape(p.hours_saved)}}</span>
+                    <span style="color: var(--deck-ink-muted); margin: 0 6px;">·</span>
+                    <span style="font-weight: 600; color: var(--deck-accent);">${{htmlEscape(p.decision_speed)}}</span>
+                    <span style="color: var(--deck-ink-muted); margin: 0 6px;">·</span>
+                    <span style="font-weight: 600; color: var(--deck-accent);">${{count}} agents</span>
+                  </div>
                 </div>
               </div>
               <div class="ditl-header-right">
-                <button class="btn-header" id="backToAllPersonasBtn" onclick="selectPersona('all')">
-                  <span>👥</span> ← All Personas Overview
-                </button>
-                <button class="btn-header" id="ditlToggleBtn" onclick="toggleDitlStoryboard()">
-                  ${{ditlCollapsed ? '▼ Show Storyboard' : '▲ Hide Storyboard'}}
+                <button type="button" class="stage-maximize-btn" onclick="openStageTheater(ditlStageIdx)" title="Maximize stage in Full-Screen Focus Theater">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                  Fullscreen
                 </button>
               </div>
             </div>
@@ -4319,19 +5538,19 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                 <span class="task-bundle-key-title">5-State Task Bundle Key:</span>
                 <div class="task-bundle-key-items">
                   <button type="button" class="task-bundle-key-chip key-unchanged ditl-state-filter-pill ${{activeTaskStateFilter === 'unchanged' ? 'active-filter' : ''}}" data-filter-state="unchanged" onclick="toggleTaskStateFilter('unchanged')" onmouseenter="previewTaskStateFilter('unchanged')" onmouseleave="clearPreviewTaskStateFilter()">
-                    <span class="pill-check-ind">${{activeTaskStateFilter === 'unchanged' ? '✓' : '○'}}</span> 🟫 1. Tasks Unchanged
+                    <span class="pill-check-ind">${{activeTaskStateFilter === 'unchanged' ? '✓' : '○'}}</span> <span class="state-dot dot-unchanged"></span> 1. Tasks Unchanged
                   </button>
                   <button type="button" class="task-bundle-key-chip key-augmented ditl-state-filter-pill ${{activeTaskStateFilter === 'augmented' ? 'active-filter' : ''}}" data-filter-state="augmented" onclick="toggleTaskStateFilter('augmented')" onmouseenter="previewTaskStateFilter('augmented')" onmouseleave="clearPreviewTaskStateFilter()">
-                    <span class="pill-check-ind">${{activeTaskStateFilter === 'augmented' ? '✓' : '○'}}</span> 🟪 2. Tasks Augmented
+                    <span class="pill-check-ind">${{activeTaskStateFilter === 'augmented' ? '✓' : '○'}}</span> <span class="state-dot dot-augmented"></span> 2. Tasks Augmented
                   </button>
                   <button type="button" class="task-bundle-key-chip key-automated ditl-state-filter-pill ${{activeTaskStateFilter === 'automated' ? 'active-filter' : ''}}" data-filter-state="automated" onclick="toggleTaskStateFilter('automated')" onmouseenter="previewTaskStateFilter('automated')" onmouseleave="clearPreviewTaskStateFilter()">
-                    <span class="pill-check-ind">${{activeTaskStateFilter === 'automated' ? '✓' : '○'}}</span> 🟦 3. Tasks Automated
+                    <span class="pill-check-ind">${{activeTaskStateFilter === 'automated' ? '✓' : '○'}}</span> <span class="state-dot dot-automated"></span> 3. Tasks Automated
                   </button>
                   <button type="button" class="task-bundle-key-chip key-new ditl-state-filter-pill ${{activeTaskStateFilter === 'new' ? 'active-filter' : ''}}" data-filter-state="new" onclick="toggleTaskStateFilter('new')" onmouseenter="previewTaskStateFilter('new')" onmouseleave="clearPreviewTaskStateFilter()">
-                    <span class="pill-check-ind">${{activeTaskStateFilter === 'new' ? '✓' : '○'}}</span> 🟨 4. New Tasks Created by AI
+                    <span class="pill-check-ind">${{activeTaskStateFilter === 'new' ? '✓' : '○'}}</span> <span class="state-dot dot-new"></span> 4. New Tasks Created by AI
                   </button>
                   <button type="button" class="task-bundle-key-chip key-retired ditl-state-filter-pill ${{activeTaskStateFilter === 'retired' ? 'active-filter' : ''}}" data-filter-state="retired" onclick="toggleTaskStateFilter('retired')" onmouseenter="previewTaskStateFilter('retired')" onmouseleave="clearPreviewTaskStateFilter()">
-                    <span class="pill-check-ind">${{activeTaskStateFilter === 'retired' ? '✓' : '○'}}</span> ◌ 5. Retired Manual Tasks
+                    <span class="pill-check-ind">${{activeTaskStateFilter === 'retired' ? '✓' : '○'}}</span> <span class="state-dot dot-retired"></span> 5. Retired Manual Tasks
                   </button>
                   <button type="button" class="filter-reset-pill" onclick="resetTaskStateFilter()" style="display: ${{activeTaskStateFilter ? 'inline-flex' : 'none'}};">
                     ✕ Reset Filter
@@ -4340,12 +5559,21 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               </div>
             </div>
 
-            <div class="ditl-grid" id="ditlGrid" style="${{ditlCollapsed ? 'display: none;' : ''}}">
-              ${{stagesHtml}}
-            </div>
+            ${{deckHtml}}
           </div>
         `;
-        runMotionChoreography(personaExperienceContainer);
+
+        initDeckController(document.getElementById('ditlStageDeck'), {{
+          total: stageSlides.length,
+          initialIdx: clampedStageIdx,
+          labels: stageLabels,
+          prevNoun: 'stage',
+          onChange: (idx) => {{
+            ditlStageIdx = idx;
+            syncUrlHash();
+          }}
+        }});
+
         if (activePersona !== 'all') {{
           bindPipelineSpotlightEvents(personaExperienceContainer);
           if (activeTaskStateFilter) {{
@@ -4438,7 +5666,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
             ${{promptItems ? `
               <div class="prompts-container">
-                <button class="prompts-toggle" onclick="togglePrompts(this)">
+                <button class="prompts-toggle" onclick="togglePrompts(this)" aria-expanded="false">
                   <span>💬 Sample Business Questions (${{agent.prompts.length}})</span>
                   <span class="toggle-icon">▼</span>
                 </button>
@@ -4455,8 +5683,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               <a href="${{agent.demo_html}}" target="_blank" rel="noopener noreferrer" class="btn-showcase" title="Open Dedicated Showcase Player">
                 <span>📄</span> Showcase
               </a>
-              <a href="${{agent.readme}}" target="_blank" rel="noopener noreferrer" class="btn-doc" title="View Technical README">
-                <span>📖</span>
+              <a href="https://github.com/rajanm/retail-enterprise-agents/blob/master/${{agent.readme}}" target="_blank" rel="noopener noreferrer" class="btn-doc" title="View Technical README">
+                <span>📖</span> Docs
               </a>
             </div>
           </div>
@@ -4467,12 +5695,15 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     function togglePrompts(btn) {{
       const list = btn.nextElementSibling;
       const icon = btn.querySelector('.toggle-icon');
-      if (list.classList.contains('open')) {{
+      const isOpen = list.classList.contains('open');
+      if (isOpen) {{
         list.classList.remove('open');
-        icon.textContent = '▼';
+        btn.setAttribute('aria-expanded', 'false');
+        if (icon) icon.textContent = '▼';
       }} else {{
         list.classList.add('open');
-        icon.textContent = '▲';
+        btn.setAttribute('aria-expanded', 'true');
+        if (icon) icon.textContent = '▲';
       }}
     }}
 
@@ -4485,20 +5716,152 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         .replace(/"/g, '&quot;');
     }}
 
+    // URL Hash State Synchronization
+    function syncUrlHash() {{
+      const params = new URLSearchParams();
+      if (viewMode) params.set('view', viewMode);
+      if (viewMode === 'domain') {{
+        if (activeDomain && activeDomain !== 'all') params.set('domain', activeDomain);
+      }} else if (viewMode === 'persona') {{
+        if (activePersona && activePersona !== 'all') {{
+          params.set('persona', activePersona);
+          if (ditlStageIdx > 0) params.set('stage', String(ditlStageIdx + 1));
+        }} else {{
+          if (overviewDeckIdx > 0) params.set('pidx', String(overviewDeckIdx + 1));
+        }}
+      }}
+      if (searchQuery && searchQuery.trim()) {{
+        params.set('q', searchQuery.trim());
+      }}
+      const hashStr = params.toString();
+      const newUrl = hashStr ? '#' + hashStr : window.location.pathname + window.location.search;
+      history.replaceState(null, '', newUrl);
+    }}
+
+    function restoreStateFromHash() {{
+      const rawHash = window.location.hash || '';
+      const hash = rawHash.startsWith('#') ? rawHash.substring(1) : rawHash;
+      const params = new URLSearchParams(hash);
+      const urlView = params.get('view');
+      const urlDomain = params.get('domain');
+      const urlPersona = params.get('persona');
+      const urlQ = params.get('q');
+      const urlPidx = params.get('pidx');
+      const urlStage = params.get('stage');
+
+      // 1. Search Query (defaults to empty string when omitted)
+      searchQuery = (urlQ !== null && urlQ !== undefined) ? urlQ : '';
+      if (searchInput) {{
+        searchInput.value = searchQuery;
+      }}
+      if (searchClear) {{
+        searchClear.style.display = searchQuery ? 'block' : 'none';
+      }}
+
+      // 2. View Mode (defaults to 'domain' unless 'persona' is explicitly requested)
+      viewMode = (urlView === 'persona') ? 'persona' : 'domain';
+      document.querySelectorAll('.view-mode-btn').forEach(btn => {{
+        const isActive = btn.dataset.view === viewMode;
+        btn.classList.toggle('active', isActive);
+        btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      }});
+
+      // 3. Active Domain (defaults to 'all'; safe loop check avoiding DOMException on querySelector)
+      let resolvedDomain = 'all';
+      if (urlDomain && urlDomain !== 'all') {{
+        const domainButtons = document.querySelectorAll('#domainPills .domain-btn');
+        domainButtons.forEach(b => {{
+          if (b.dataset.domain === urlDomain) {{
+            resolvedDomain = urlDomain;
+          }}
+        }});
+      }}
+      activeDomain = resolvedDomain;
+      document.querySelectorAll('#domainPills .domain-btn').forEach(b => {{
+        b.classList.toggle('active', b.dataset.domain === activeDomain);
+      }});
+
+      // 4. Active Persona (defaults to 'all')
+      let resolvedPersona = 'all';
+      if (urlPersona && urlPersona !== 'all' && PERSONA_MAP[urlPersona]) {{
+        resolvedPersona = urlPersona;
+      }}
+      activePersona = resolvedPersona;
+      document.querySelectorAll('.persona-btn').forEach(btn => {{
+        btn.classList.toggle('active', btn.dataset.persona === activePersona);
+      }});
+
+      // 4b. Synchronize deck indices from hash (pidx and stage)
+      if (urlPidx) {{
+        const parsedPidx = parseInt(urlPidx, 10);
+        if (!isNaN(parsedPidx) && parsedPidx >= 1) {{
+          overviewDeckIdx = Math.max(0, Math.min(parsedPidx - 1, PERSONA_ARCHETYPES.length - 1));
+        }}
+      }} else {{
+        overviewDeckIdx = 0;
+      }}
+
+      if (resolvedPersona !== 'all') {{
+        const foundPersonaIdx = PERSONA_ARCHETYPES.findIndex(p => p.id === resolvedPersona);
+        if (foundPersonaIdx >= 0) {{
+          overviewDeckIdx = foundPersonaIdx;
+        }}
+      }}
+
+      if (urlStage) {{
+        const parsedStage = parseInt(urlStage, 10);
+        if (!isNaN(parsedStage) && parsedStage >= 1) {{
+          ditlStageIdx = Math.max(0, Math.min(parsedStage - 1, 3));
+        }}
+      }} else {{
+        ditlStageIdx = 0;
+      }}
+
+      // 5. Container & Navigation Visibility
+      if (viewMode === 'domain') {{
+        if (domainPills) domainPills.style.display = 'flex';
+        if (personaPills) personaPills.style.display = 'none';
+        if (personaExperienceContainer) personaExperienceContainer.style.display = 'none';
+        if (resultsBar) resultsBar.style.display = 'flex';
+        if (agentGrid) agentGrid.style.display = 'grid';
+        if (viewModeHint) viewModeHint.textContent = 'Organized by 9 enterprise retail business functions';
+      }} else {{
+        if (domainPills) domainPills.style.display = 'none';
+        if (personaPills) personaPills.style.display = activePersona === 'all' ? 'none' : 'flex';
+        if (personaExperienceContainer) personaExperienceContainer.style.display = 'block';
+        if (resultsBar) resultsBar.style.display = 'none';
+        if (agentGrid) agentGrid.style.display = 'none';
+        if (noResults) noResults.style.display = 'none';
+        if (viewModeHint) viewModeHint.textContent = 'Organized by 10 retail leadership and operational roles with Day-in-the-Life workflows';
+      }}
+
+      // 6. Synchronize Views
+      renderPersonaExperience();
+      renderAgents();
+    }}
+
     // Search input handler
     searchInput.addEventListener('input', (e) => {{
       searchQuery = e.target.value;
       searchClear.style.display = searchQuery ? 'block' : 'none';
+      if (viewMode === 'persona' && activePersona === 'all') {{
+        overviewDeckIdx = 0;
+      }}
       renderPersonaExperience();
       renderAgents();
+      syncUrlHash();
     }});
 
     searchClear.addEventListener('click', () => {{
       searchInput.value = '';
       searchQuery = '';
       searchClear.style.display = 'none';
+      if (viewMode === 'persona' && activePersona === 'all') {{
+        overviewDeckIdx = 0;
+      }}
       renderPersonaExperience();
       renderAgents();
+      syncUrlHash();
       searchInput.focus();
     }});
 
@@ -4521,6 +5884,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
       activeDomain = btn.dataset.domain;
       renderAgents();
+      syncUrlHash();
     }});
 
     // Persona Filter Handler
@@ -4546,6 +5910,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         b.classList.toggle('active', b.dataset.persona === 'all');
       }});
       setViewMode('domain');
+      syncUrlHash();
     }}
 
     // Video Modal Handlers
@@ -4560,26 +5925,42 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       modalDownloadBtn.href = agent.demo_mp4;
       modalShowcaseBtn.href = agent.demo_html;
 
+      if (videoFallbackLink) videoFallbackLink.href = agent.demo_mp4;
+      if (videoLoadingState) videoLoadingState.style.display = 'flex';
+      if (videoErrorState) videoErrorState.style.display = 'none';
+
       if (agent.prompts && agent.prompts.length >= 3) {{
         modalTurnsList.innerHTML = `
           <li><strong>Turn 1 (Data Insights):</strong> "${{htmlEscape(agent.prompts[0])}}"</li>
           <li><strong>Turn 2 (Market Grounding):</strong> "${{htmlEscape(agent.prompts[1])}}"</li>
           <li><strong>Turn 3 (Visual Analytics):</strong> "${{htmlEscape(agent.prompts[2])}}"</li>
-          <li><strong>Turn 4 (Canvas Presentation):</strong> Executive 4-slide slide deck generated in Gemini Enterprise Canvas.</li>
+          <li><strong>Turn 4 (Canvas Presentation):</strong> Executive 4-slide deck generated in Gemini Enterprise Canvas.</li>
         `;
       }}
 
-      videoModal.classList.add('open');
-      document.body.style.overflow = 'hidden';
+      openAccessibleModal(videoModal, '#modalCloseBtn');
       modalVideo.play().catch(() => {{}});
     }}
 
     function closeVideoModal() {{
-      videoModal.classList.remove('open');
-      document.body.style.overflow = '';
+      closeAccessibleModal(videoModal);
       modalVideo.pause();
       modalVideo.src = '';
+      if (videoLoadingState) videoLoadingState.style.display = 'none';
+      if (videoErrorState) videoErrorState.style.display = 'none';
     }}
+
+    modalVideo.addEventListener('loadeddata', () => {{
+      if (videoLoadingState) videoLoadingState.style.display = 'none';
+    }});
+    modalVideo.addEventListener('canplay', () => {{
+      if (videoLoadingState) videoLoadingState.style.display = 'none';
+    }});
+    modalVideo.addEventListener('error', () => {{
+      if (!modalVideo.getAttribute('src') || !videoModal.classList.contains('open')) return;
+      if (videoLoadingState) videoLoadingState.style.display = 'none';
+      if (videoErrorState) videoErrorState.style.display = 'flex';
+    }});
 
     modalCloseBtn.addEventListener('click', closeVideoModal);
     videoModal.addEventListener('click', (e) => {{
@@ -4588,13 +5969,11 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     // Architecture Modal Handlers
     function openArchModal() {{
-      archModal.classList.add('open');
-      document.body.style.overflow = 'hidden';
+      openAccessibleModal(archModal, '#archCloseBtn');
     }}
 
     function closeArchModal() {{
-      archModal.classList.remove('open');
-      document.body.style.overflow = '';
+      closeAccessibleModal(archModal);
     }}
 
     archBtn.addEventListener('click', openArchModal);
@@ -4610,23 +5989,95 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       }});
     }}
 
-    // ESC key listener for modals
+    // Global keyboard listener: ESC, modal Tab trapping, Theater arrow navigation, global search
     document.addEventListener('keydown', (e) => {{
+      const openModal = [videoModal, archModal, stageTheaterModal].find(m => m && m.classList.contains('open'));
+
       if (e.key === 'Escape') {{
         if (videoModal && videoModal.classList.contains('open')) {{
           closeVideoModal();
-        }} else if (stageTheaterModal && stageTheaterModal.classList.contains('open')) {{
-          closeStageTheater();
         }} else if (archModal && archModal.classList.contains('open')) {{
           closeArchModal();
+        }} else if (stageTheaterModal && stageTheaterModal.classList.contains('open')) {{
+          closeStageTheater();
+        }} else {{
+          const maxDeck = document.querySelector('.deck-shell.is-deck-maximized');
+          if (maxDeck && maxDeck.id) {{
+            toggleDeckMaximize(maxDeck.id, false);
+          }}
+        }}
+        return;
+      }}
+
+      // Modal focus trap for Tab / Shift+Tab
+      if (e.key === 'Tab' && openModal) {{
+        const focusables = getFocusableElements(openModal);
+        if (focusables.length === 0) {{
+          e.preventDefault();
+          return;
+        }}
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (e.shiftKey) {{
+          if (document.activeElement === first || !openModal.contains(document.activeElement)) {{
+            e.preventDefault();
+            last.focus();
+          }}
+        }} else {{
+          if (document.activeElement === last || !openModal.contains(document.activeElement)) {{
+            e.preventDefault();
+            first.focus();
+          }}
+        }}
+        return;
+      }}
+
+      // Theater stage navigation with ArrowLeft / ArrowRight
+      if (openModal === stageTheaterModal) {{
+        const p = PERSONA_MAP[activePersona];
+        if (p && p.day_in_the_life && p.day_in_the_life.length > 0) {{
+          const maxStages = p.day_in_the_life.length;
+          if (e.key === 'ArrowRight') {{
+            e.preventDefault();
+            switchTheaterStage((maximizedStageIdx + 1) % maxStages);
+            return;
+          }} else if (e.key === 'ArrowLeft') {{
+            e.preventDefault();
+            switchTheaterStage((maximizedStageIdx - 1 + maxStages) % maxStages);
+            return;
+          }}
+        }}
+      }}
+
+      // Global search shortcut: '/' or 'Cmd+K' / 'Ctrl+K'
+      const tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+      const isInput = tag === 'input' || tag === 'textarea' || (document.activeElement && document.activeElement.isContentEditable);
+      if (!openModal) {{
+        if (e.key === '/' && !isInput) {{
+          e.preventDefault();
+          const searchInput = document.getElementById('searchInput');
+          if (searchInput) {{
+            searchInput.focus();
+            searchInput.select();
+          }}
+        }} else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {{
+          e.preventDefault();
+          const searchInput = document.getElementById('searchInput');
+          if (searchInput) {{
+            searchInput.focus();
+            searchInput.select();
+          }}
         }}
       }}
     }});
 
     // Initial Load
     initTheme();
-    renderPersonaExperience();
-    renderAgents();
+    restoreStateFromHash();
+    window.addEventListener('hashchange', () => {{
+      restoreStateFromHash();
+    }});
   </script>
 </body>
 </html>

@@ -75,7 +75,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       --border-subtle: #1e293b;
       --text-primary: #f8fafc;
       --text-secondary: #94a3b8;
-      --text-muted: #64748b;
+      --text-muted: #94a3b8;
       --accent-blue: #38bdf8;
       --accent-indigo: #818cf8;
       --badge-bg: rgba(56, 189, 248, 0.12);
@@ -93,7 +93,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       --border-subtle: #e2e8f0;
       --text-primary: #0f172a;
       --text-secondary: #475569;
-      --text-muted: #64748b;
+      --text-muted: #475569;
       --accent-blue: #0284c7;
       --accent-indigo: #6366f1;
       --badge-bg: #e0f2fe;
@@ -109,7 +109,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }}
 
     body {{
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: 'Google Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: var(--bg-primary);
       color: var(--text-primary);
       min-height: 100vh;
@@ -210,23 +210,65 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       display: flex;
       align-items: center;
       gap: 10px;
+      text-wrap: balance;
     }}
 
     p.subtitle {{
       color: var(--text-secondary);
       font-size: 0.95rem;
       line-height: 1.5;
+      max-width: 68ch;
     }}
 
     .video-wrapper {{
       position: relative;
       width: 100%;
+      aspect-ratio: 16 / 9;
       background: #000;
       border: 1px solid var(--border-faint);
       border-radius: 12px;
       overflow: hidden;
       margin: 20px 0;
       box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+    }}
+
+    .video-status-overlay {{
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: #0b1120;
+      color: #e2e8f0;
+      font-size: 0.9rem;
+      z-index: 2;
+    }}
+
+    #videoLoadingState {{
+      pointer-events: none;
+    }}
+
+    .btn-header {{
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      transition: all 0.15s ease;
+    }}
+
+    .btn-header:hover {{
+      background: var(--bg-surface);
+      border-color: var(--accent-blue);
     }}
 
     video {{
@@ -239,10 +281,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 12px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-faint);
-      border-radius: 10px;
-      padding: 16px;
+      background: transparent;
+      border-top: 1px solid var(--border-faint);
+      border-bottom: 1px solid var(--border-faint);
+      border-radius: 0;
+      padding: 16px 0;
       margin-bottom: 24px;
     }}
 
@@ -266,10 +309,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }}
 
     .turns-section {{
-      background: var(--bg-surface);
-      border: 1px solid var(--border-faint);
-      border-radius: 10px;
-      padding: 20px;
+      background: transparent;
+      border-top: 1px solid var(--border-faint);
+      border-bottom: 1px solid var(--border-faint);
+      border-radius: 0;
+      padding: 20px 0;
       margin-bottom: 24px;
     }}
 
@@ -278,6 +322,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       font-size: 1.1rem;
       margin-bottom: 12px;
       color: var(--accent-indigo);
+      text-wrap: balance;
     }}
 
     .turn-list {{
@@ -291,6 +336,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       font-size: 0.9rem;
       line-height: 1.5;
       color: var(--text-secondary);
+      max-width: 72ch;
     }}
 
     .turn-list strong {{
@@ -329,7 +375,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <a class="nav-back-link" href="../../../index.html">
         <span>←</span> Back to All Enterprise Agents
       </a>
-      <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle light/dark theme">
+      <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle light/dark theme" aria-pressed="false">
         <span id="themeIcon">☀️</span> <span id="themeText">Light</span>
       </button>
     </nav>
@@ -347,7 +393,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     </header>
 
     <div class="video-wrapper">
-      <video id="demoVideo" src="{video_filename}#t=10" controls autoplay muted playsinline preload="auto">
+      <div id="videoLoadingState" class="video-status-overlay">Loading 1080p walkthrough…</div>
+      <div id="videoErrorState" class="video-status-overlay" style="display: none;">
+        <span>Unable to stream video preview.</span>
+        <a id="videoFallbackLink" href="{video_filename}" download class="btn-header">Download MP4</a>
+      </div>
+      <video id="demoVideo" controls autoplay muted playsinline preload="auto">
         <source src="{video_filename}#t=10" type="video/mp4">
         Your browser does not support HTML5 video.
       </video>
@@ -356,23 +407,57 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <script>
       (function() {{
         const video = document.getElementById('demoVideo');
-        if (!video) return;
-        let hasSeeked = false;
+        const loadingState = document.getElementById('videoLoadingState');
+        const errorState = document.getElementById('videoErrorState');
 
-        const seekToOffset = () => {{
-          if (!hasSeeked && video.currentTime < 10) {{
-            hasSeeked = true;
-            video.currentTime = 10;
-          }}
-        }};
+        if (video) {{
+          let hasSeeked = false;
 
-        video.addEventListener('loadedmetadata', seekToOffset);
-        video.addEventListener('canplay', seekToOffset);
-        video.addEventListener('timeupdate', function onFirstTick() {{
-          if (!hasSeeked && video.currentTime < 10) {{
+          const seekToOffset = () => {{
+            if (!hasSeeked && video.currentTime < 10) {{
+              hasSeeked = true;
+              video.currentTime = 10;
+            }}
+          }};
+
+          const hideLoading = () => {{
+            if (loadingState) loadingState.style.display = 'none';
+          }};
+
+          const showLoading = () => {{
+            if (loadingState) loadingState.style.display = 'flex';
+          }};
+
+          const showError = () => {{
+            if (loadingState) loadingState.style.display = 'none';
+            if (errorState) errorState.style.display = 'flex';
+          }};
+
+          if (video.readyState >= 2) hideLoading();
+
+          video.addEventListener('loadedmetadata', seekToOffset);
+          video.addEventListener('loadeddata', () => {{
+            hideLoading();
             seekToOffset();
+          }});
+          video.addEventListener('canplay', () => {{
+            hideLoading();
+            seekToOffset();
+          }});
+          video.addEventListener('waiting', showLoading);
+          video.addEventListener('playing', hideLoading);
+          video.addEventListener('timeupdate', function onFirstTick() {{
+            if (!hasSeeked && video.currentTime < 10) {{
+              seekToOffset();
+            }}
+          }});
+
+          video.addEventListener('error', showError);
+          const videoSource = video.querySelector('source');
+          if (videoSource) {{
+            videoSource.addEventListener('error', showError);
           }}
-        }});
+        }}
 
         // Theme Toggle Logic
         const themeToggleBtn = document.getElementById('themeToggleBtn');
@@ -380,7 +465,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         const themeText = document.getElementById('themeText');
 
         function updateThemeUI(theme) {{
-          if (theme === 'light') {{
+          const isLight = theme === 'light';
+          if (themeToggleBtn) {{
+            themeToggleBtn.setAttribute('aria-pressed', isLight ? 'true' : 'false');
+          }}
+          if (isLight) {{
             themeIcon.textContent = '🌙';
             themeText.textContent = 'Dark';
           }} else {{
@@ -392,13 +481,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
         updateThemeUI(currentTheme);
 
-        themeToggleBtn.addEventListener('click', () => {{
-          const current = document.documentElement.getAttribute('data-theme') || 'dark';
-          const next = current === 'dark' ? 'light' : 'dark';
-          document.documentElement.setAttribute('data-theme', next);
-          localStorage.setItem('retail_agents_theme', next);
-          updateThemeUI(next);
-        }});
+        if (themeToggleBtn) {{
+          themeToggleBtn.addEventListener('click', () => {{
+            const current = document.documentElement.getAttribute('data-theme') || 'dark';
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('retail_agents_theme', next);
+            updateThemeUI(next);
+          }});
+        }}
       }})();
     </script>
 
@@ -442,6 +533,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 """
 
 
+def clean_subtitle_markdown(text: str) -> str:
+    """Removes inline Markdown syntax (**bold**, `code`, links) from subtitle text."""
+    cleaned = re.sub(r"\[(.*?)\]\(.*?\)", r"\1", text)
+    cleaned = cleaned.replace("**", "").replace("`", "")
+    return re.sub(r"\s+", " ", cleaned).strip()
+
+
 def get_agent_info(agent_name: str, domain: str) -> dict:
     """Extracts agent metadata, display name, and subtitle description."""
     agent_dir = REPO_ROOT / "domains" / domain / "agents" / agent_name
@@ -462,7 +560,7 @@ def get_agent_info(agent_name: str, domain: str) -> dict:
                     display_name = line.replace("# ", "").replace(" Agent", "").strip()
             for line in content.splitlines():
                 if line.startswith("Answers questions about"):
-                    subtitle = line.strip()
+                    subtitle = clean_subtitle_markdown(line.strip())
                     break
         except Exception:
             pass
