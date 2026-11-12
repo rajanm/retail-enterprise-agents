@@ -355,8 +355,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --deck-border: rgba(255, 255, 255, 0.10);
       --deck-top-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
       --deck-active-shadow: 0 22px 48px -18px rgba(0, 0, 0, 0.55);
-      --deck-glow-peak: #bae6fd;
-      --deck-glow-shadow: 0 14px 40px -6px rgba(56, 189, 248, 0.36), 0 0 0 1px rgba(56, 189, 248, 0.45);
+      --deck-glow-peak: #ffffff;
+      --deck-glow-shadow: 0 16px 44px -4px rgba(56, 189, 248, 0.42), 0 0 0 1.5px rgba(56, 189, 248, 0.55);
       --deck-sheen: linear-gradient(112deg, transparent 20%, rgba(255, 255, 255, 0.13) 48%, rgba(56, 189, 248, 0.12) 52%, transparent 80%);
       --deck-ink: #f4f4f5;
       --deck-ink-secondary: #d4d4d8;
@@ -448,7 +448,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --deck-top-highlight: none;
       --deck-active-shadow: 0 20px 44px -18px rgba(12, 12, 9, 0.16);
       --deck-glow-peak: #38bdf8;
-      --deck-glow-shadow: 0 14px 36px -6px rgba(3, 105, 161, 0.25), 0 0 0 1px rgba(3, 105, 161, 0.40);
+      --deck-glow-shadow: 0 14px 38px -4px rgba(3, 105, 161, 0.30), 0 0 0 1.5px rgba(3, 105, 161, 0.45);
       --deck-sheen: linear-gradient(112deg, transparent 20%, rgba(255, 255, 255, 0.52) 48%, rgba(3, 105, 161, 0.12) 52%, transparent 80%);
       --deck-ink: #0c0c09;
       --deck-ink-secondary: #3f3f46;
@@ -1045,7 +1045,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     #ditlStageDeck .deck-slide {{
       background: var(--deck-canvas);
       border-radius: 16px;
-      padding: 12px 18px;
+      padding: 0;
     }}
 
     #ditlStageDeck .deck-slide.is-prev-2,
@@ -1227,11 +1227,11 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         --glow-angle: 0deg;
         opacity: 0;
       }}
-      18% {{
+      12% {{
         opacity: 1;
       }}
-      80% {{
-        opacity: 0.9;
+      78% {{
+        opacity: 1;
       }}
       100% {{
         --glow-angle: 360deg;
@@ -1243,7 +1243,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       0% {{
         box-shadow: var(--deck-active-shadow);
       }}
-      35% {{
+      32% {{
         box-shadow: var(--deck-glow-shadow);
       }}
       100% {{
@@ -1259,6 +1259,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     .deck-slide .ditl-stage-slide {{
       border-radius: 16px;
+      padding: 16px 20px;
     }}
 
     .deck-slide .persona-overview-card::before,
@@ -1266,14 +1267,15 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       content: '';
       position: absolute;
       inset: 0;
-      padding: 1.5px;
+      padding: 2.5px;
       border-radius: inherit;
       background: conic-gradient(
         from var(--glow-angle, 0deg),
         transparent 0deg,
-        transparent 215deg,
-        var(--deck-accent) 285deg,
-        var(--deck-glow-peak) 325deg,
+        transparent 160deg,
+        var(--deck-accent) 235deg,
+        var(--deck-glow-peak) 295deg,
+        var(--deck-accent) 335deg,
         transparent 360deg
       );
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -1282,21 +1284,21 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       mask-composite: exclude;
       pointer-events: none;
       opacity: 0;
-      z-index: 5;
+      z-index: 6;
     }}
 
     .deck-slide.is-active.is-flip-next .persona-overview-card::before,
     .deck-slide.is-active.is-flip-prev .persona-overview-card::before,
     .deck-slide.is-active.is-flip-next .ditl-stage-slide::before,
     .deck-slide.is-active.is-flip-prev .ditl-stage-slide::before {{
-      animation: borderRimTrace 740ms cubic-bezier(0.22, 1, 0.36, 1) 120ms 1 both;
+      animation: borderRimTrace 1050ms cubic-bezier(0.22, 1, 0.36, 1) 80ms 1 both;
     }}
 
     .deck-slide.is-active.is-flip-next .persona-overview-card,
     .deck-slide.is-active.is-flip-prev .persona-overview-card,
     .deck-slide.is-active.is-flip-next .ditl-stage-slide,
     .deck-slide.is-active.is-flip-prev .ditl-stage-slide {{
-      animation: borderBloomSettle 740ms cubic-bezier(0.22, 1, 0.36, 1) 120ms 1 both;
+      animation: borderBloomSettle 1050ms cubic-bezier(0.22, 1, 0.36, 1) 80ms 1 both;
     }}
 
     .deck-slide .persona-overview-card::after,
