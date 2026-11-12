@@ -1058,7 +1058,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .task-bundle-key-chip {{
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       font-weight: 600;
       padding: 3px 8px;
       border-radius: 6px;
@@ -1067,6 +1067,27 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       gap: 5px;
       line-height: 1.2;
     }}
+
+    .persona-overview-header .task-bundle-key-chip {{
+      background: transparent !important;
+      border: none !important;
+      padding: 2px 4px !important;
+      cursor: default;
+    }}
+
+    .state-dot {{
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }}
+
+    .state-dot.dot-unchanged {{ background: var(--task-unchanged-dot); }}
+    .state-dot.dot-augmented {{ background: var(--task-augmented-dot); }}
+    .state-dot.dot-automated {{ background: var(--task-automated-dot); }}
+    .state-dot.dot-new {{ background: var(--task-new-dot); }}
+    .state-dot.dot-retired {{ background: var(--task-retired-dot); border: 1px dashed var(--task-retired-border); }}
 
     .task-bundle-key-chip.key-unchanged {{
       background: var(--task-unchanged-bg);
@@ -1105,11 +1126,17 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .task-dist-labels {{
       display: flex;
       justify-content: space-between;
-      font-size: 0.70rem;
+      font-size: 0.75rem;
       font-weight: 600;
       margin-bottom: 6px;
       color: var(--text-secondary);
       flex-wrap: wrap;
+      gap: 4px;
+    }}
+
+    .task-dist-labels span {{
+      display: inline-flex;
+      align-items: center;
       gap: 4px;
     }}
 
@@ -1724,9 +1751,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .motion-dimmed {{
-      opacity: 0.26 !important;
-      filter: grayscale(45%);
-      transform: scale(0.96);
+      opacity: 0.50 !important;
+      filter: none;
+      transform: none;
       pointer-events: auto;
     }}
 
@@ -3747,10 +3774,12 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
           const onEnter = () => {{
             if (activeTaskStateFilter || hoveredTaskStateFilter) return;
+            const hasPinned = stageCard.querySelector('.task-tile.is-pinned, .conduit-node.is-pinned, .flow-step-card.is-pinned');
+            if (hasPinned) return;
+
             stepElements.forEach(se => {{
               const isSelf = se === stepElem;
               se.classList.toggle('active-step', isSelf);
-              se.classList.toggle('motion-dimmed', !isSelf);
               const innerCard = se.classList.contains('flow-step-card') ? se : se.querySelector('.flow-step-card');
               if (innerCard) {{
                 innerCard.classList.toggle('motion-spotlight', isSelf);
@@ -3762,7 +3791,6 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               const indices = stepsAttr.split(',').map(s => s.trim()).filter(Boolean);
               if (indices.includes(stepVal)) {{
                 tile.classList.add('motion-spotlight');
-                tile.classList.remove('motion-dimmed');
                 if (window.Motion && typeof window.Motion.animate === 'function') {{
                   try {{
                     window.Motion.animate(tile, {{ scale: [0.98, 1.03] }}, {{ duration: 0.24, easing: 'ease-out' }});
@@ -3770,13 +3798,14 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                 }}
               }} else {{
                 tile.classList.remove('motion-spotlight');
-                tile.classList.add('motion-dimmed');
               }}
             }});
           }};
 
           const onLeave = () => {{
             if (activeTaskStateFilter || hoveredTaskStateFilter) return;
+            const hasPinned = stageCard.querySelector('.task-tile.is-pinned, .conduit-node.is-pinned, .flow-step-card.is-pinned');
+            if (hasPinned) return;
             applyProminentSpotlight();
           }};
 
@@ -3808,12 +3837,14 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           const stepsAttr = tile.getAttribute('data-steps') || '';
           const indices = stepsAttr.split(',').map(s => s.trim()).filter(Boolean);
 
-          tile.addEventListener('mouseenter', () => {{
+          const onEnter = () => {{
             if (activeTaskStateFilter || hoveredTaskStateFilter) return;
+            const hasPinned = stageCard.querySelector('.task-tile.is-pinned, .conduit-node.is-pinned, .flow-step-card.is-pinned');
+            if (hasPinned) return;
+
             taskTiles.forEach(t => {{
               const isSelf = t === tile;
               t.classList.toggle('motion-spotlight', isSelf);
-              t.classList.toggle('motion-dimmed', !isSelf);
             }});
             const matchedSteps = [];
             stepElements.forEach(stepElem => {{
@@ -3821,7 +3852,6 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               const isMatch = indices.includes(stepVal);
               const innerCard = stepElem.classList.contains('flow-step-card') ? stepElem : stepElem.querySelector('.flow-step-card');
               stepElem.classList.toggle('active-step', isMatch);
-              stepElem.classList.toggle('motion-dimmed', !isMatch);
               if (innerCard) {{
                 innerCard.classList.toggle('motion-spotlight', isMatch);
                 innerCard.classList.toggle('active-step', isMatch);
@@ -3833,9 +3863,19 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                 window.Motion.animate(matchedSteps, {{ scale: [0.98, 1.03] }}, {{ duration: 0.24, easing: 'ease-out' }});
               }} catch (e) {{}}
             }}
-          }});
+          }};
 
-          tile.addEventListener('mouseleave', () => {{
+          const onLeave = () => {{
+            if (activeTaskStateFilter || hoveredTaskStateFilter) return;
+            const hasPinned = stageCard.querySelector('.task-tile.is-pinned, .conduit-node.is-pinned, .flow-step-card.is-pinned');
+            if (hasPinned) return;
+            applyProminentSpotlight();
+          }};
+
+          tile.addEventListener('mouseenter', onEnter);
+          tile.addEventListener('mouseleave', onLeave);
+          tile.addEventListener('focus', onEnter);
+          tile.addEventListener('blur', onLeave);
             if (activeTaskStateFilter || hoveredTaskStateFilter) return;
             applyProminentSpotlight();
           }});
@@ -3913,6 +3953,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     // Full-Screen Stage Focus Theater Modal Handlers
     function openStageTheater(stageIdx) {{
+      applyProminentSpotlight(null);
       const p = PERSONA_MAP[activePersona];
       if (!p) return;
       maximizedStageIdx = stageIdx;
@@ -4097,19 +4138,19 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             <span class="task-bundle-key-title">Filter by Task State:</span>
             <div class="task-bundle-key-items">
               <button type="button" class="task-bundle-key-chip key-unchanged ditl-state-filter-pill ${{activeTaskStateFilter === 'unchanged' ? 'active-filter' : ''}}" data-filter-state="unchanged" onclick="toggleTaskStateFilter('unchanged')" onmouseenter="previewTaskStateFilter('unchanged')" onmouseleave="clearPreviewTaskStateFilter()">
-                <span class="pill-check-ind">${{activeTaskStateFilter === 'unchanged' ? '✓' : '○'}}</span> 🟫 1. Tasks Unchanged
+                <span class="pill-check-ind">${{activeTaskStateFilter === 'unchanged' ? '✓' : '○'}}</span> <span class="state-dot dot-unchanged"></span> 1. Tasks Unchanged
               </button>
               <button type="button" class="task-bundle-key-chip key-augmented ditl-state-filter-pill ${{activeTaskStateFilter === 'augmented' ? 'active-filter' : ''}}" data-filter-state="augmented" onclick="toggleTaskStateFilter('augmented')" onmouseenter="previewTaskStateFilter('augmented')" onmouseleave="clearPreviewTaskStateFilter()">
-                <span class="pill-check-ind">${{activeTaskStateFilter === 'augmented' ? '✓' : '○'}}</span> 🟪 2. Tasks Augmented
+                <span class="pill-check-ind">${{activeTaskStateFilter === 'augmented' ? '✓' : '○'}}</span> <span class="state-dot dot-augmented"></span> 2. Tasks Augmented
               </button>
               <button type="button" class="task-bundle-key-chip key-automated ditl-state-filter-pill ${{activeTaskStateFilter === 'automated' ? 'active-filter' : ''}}" data-filter-state="automated" onclick="toggleTaskStateFilter('automated')" onmouseenter="previewTaskStateFilter('automated')" onmouseleave="clearPreviewTaskStateFilter()">
-                <span class="pill-check-ind">${{activeTaskStateFilter === 'automated' ? '✓' : '○'}}</span> 🟦 3. Tasks Automated
+                <span class="pill-check-ind">${{activeTaskStateFilter === 'automated' ? '✓' : '○'}}</span> <span class="state-dot dot-automated"></span> 3. Tasks Automated
               </button>
               <button type="button" class="task-bundle-key-chip key-new ditl-state-filter-pill ${{activeTaskStateFilter === 'new' ? 'active-filter' : ''}}" data-filter-state="new" onclick="toggleTaskStateFilter('new')" onmouseenter="previewTaskStateFilter('new')" onmouseleave="clearPreviewTaskStateFilter()">
-                <span class="pill-check-ind">${{activeTaskStateFilter === 'new' ? '✓' : '○'}}</span> 🟨 4. New Tasks Created by AI
+                <span class="pill-check-ind">${{activeTaskStateFilter === 'new' ? '✓' : '○'}}</span> <span class="state-dot dot-new"></span> 4. New Tasks Created by AI
               </button>
               <button type="button" class="task-bundle-key-chip key-retired ditl-state-filter-pill ${{activeTaskStateFilter === 'retired' ? 'active-filter' : ''}}" data-filter-state="retired" onclick="toggleTaskStateFilter('retired')" onmouseenter="previewTaskStateFilter('retired')" onmouseleave="clearPreviewTaskStateFilter()">
-                <span class="pill-check-ind">${{activeTaskStateFilter === 'retired' ? '✓' : '○'}}</span> ◌ 5. Retired Manual Tasks
+                <span class="pill-check-ind">${{activeTaskStateFilter === 'retired' ? '✓' : '○'}}</span> <span class="state-dot dot-retired"></span> 5. Retired Manual Tasks
               </button>
               <button type="button" class="filter-reset-pill" onclick="resetTaskStateFilter()" style="display: ${{activeTaskStateFilter ? 'inline-flex' : 'none'}};">
                 ✕ Reset Filter
@@ -4166,6 +4207,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
       renderPersonaExperience();
       renderAgents();
+      syncUrlHash();
     }}
 
     // Persona Selection
@@ -4184,6 +4226,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
       renderPersonaExperience();
       renderAgents();
+      syncUrlHash();
     }}
 
     // Switch to Persona Archetype from Domain View Card Chip
@@ -4293,11 +4336,11 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
               <div class="task-dist-container">
                 <div class="task-dist-labels">
-                  <span>🟫 Unchanged</span>
-                  <span>🟪 Augmented</span>
-                  <span>🟦 Automated</span>
-                  <span>🟨 New AI</span>
-                  <span>◌ Retired</span>
+                  <span title="Unchanged: ${{dist.unchanged_pct}}%"><span class="state-dot dot-unchanged"></span> Unchanged</span>
+                  <span title="Augmented: ${{dist.augmented_pct}}%"><span class="state-dot dot-augmented"></span> Augmented</span>
+                  <span title="Automated: ${{dist.automated_pct}}%"><span class="state-dot dot-automated"></span> Automated</span>
+                  <span title="New AI Tasks: ${{dist.new_ai_pct}}%"><span class="state-dot dot-new"></span> New AI</span>
+                  <span title="Retired Manual Tasks: ${{dist.retired_pct}}%"><span class="state-dot dot-retired"></span> Retired</span>
                 </div>
                 <div class="task-dist-bar">
                   <div class="seg-unchanged" style="width: ${{dist.unchanged_pct}}%;" title="Unchanged: ${{dist.unchanged_pct}}%"></div>
@@ -4326,11 +4369,11 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             <div class="task-bundle-key-bar">
               <span class="task-bundle-key-title">5-State Task Bundle Key:</span>
               <div class="task-bundle-key-items">
-                <span class="task-bundle-key-chip key-unchanged">🟫 1. Tasks Unchanged</span>
-                <span class="task-bundle-key-chip key-augmented">🟪 2. Tasks Augmented</span>
-                <span class="task-bundle-key-chip key-automated">🟦 3. Tasks Automated</span>
-                <span class="task-bundle-key-chip key-new">🟨 4. New Tasks Created by AI</span>
-                <span class="task-bundle-key-chip key-retired">◌ 5. Retired Manual Tasks</span>
+                <span class="task-bundle-key-chip key-unchanged"><span class="state-dot dot-unchanged"></span> 1. Tasks Unchanged</span>
+                <span class="task-bundle-key-chip key-augmented"><span class="state-dot dot-augmented"></span> 2. Tasks Augmented</span>
+                <span class="task-bundle-key-chip key-automated"><span class="state-dot dot-automated"></span> 3. Tasks Automated</span>
+                <span class="task-bundle-key-chip key-new"><span class="state-dot dot-new"></span> 4. New Tasks Created by AI</span>
+                <span class="task-bundle-key-chip key-retired"><span class="state-dot dot-retired"></span> 5. Retired Manual Tasks</span>
               </div>
             </div>
           </div>
@@ -4540,19 +4583,19 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                 <span class="task-bundle-key-title">5-State Task Bundle Key:</span>
                 <div class="task-bundle-key-items">
                   <button type="button" class="task-bundle-key-chip key-unchanged ditl-state-filter-pill ${{activeTaskStateFilter === 'unchanged' ? 'active-filter' : ''}}" data-filter-state="unchanged" onclick="toggleTaskStateFilter('unchanged')" onmouseenter="previewTaskStateFilter('unchanged')" onmouseleave="clearPreviewTaskStateFilter()">
-                    <span class="pill-check-ind">${{activeTaskStateFilter === 'unchanged' ? '✓' : '○'}}</span> 🟫 1. Tasks Unchanged
+                    <span class="pill-check-ind">${{activeTaskStateFilter === 'unchanged' ? '✓' : '○'}}</span> <span class="state-dot dot-unchanged"></span> 1. Tasks Unchanged
                   </button>
                   <button type="button" class="task-bundle-key-chip key-augmented ditl-state-filter-pill ${{activeTaskStateFilter === 'augmented' ? 'active-filter' : ''}}" data-filter-state="augmented" onclick="toggleTaskStateFilter('augmented')" onmouseenter="previewTaskStateFilter('augmented')" onmouseleave="clearPreviewTaskStateFilter()">
-                    <span class="pill-check-ind">${{activeTaskStateFilter === 'augmented' ? '✓' : '○'}}</span> 🟪 2. Tasks Augmented
+                    <span class="pill-check-ind">${{activeTaskStateFilter === 'augmented' ? '✓' : '○'}}</span> <span class="state-dot dot-augmented"></span> 2. Tasks Augmented
                   </button>
                   <button type="button" class="task-bundle-key-chip key-automated ditl-state-filter-pill ${{activeTaskStateFilter === 'automated' ? 'active-filter' : ''}}" data-filter-state="automated" onclick="toggleTaskStateFilter('automated')" onmouseenter="previewTaskStateFilter('automated')" onmouseleave="clearPreviewTaskStateFilter()">
-                    <span class="pill-check-ind">${{activeTaskStateFilter === 'automated' ? '✓' : '○'}}</span> 🟦 3. Tasks Automated
+                    <span class="pill-check-ind">${{activeTaskStateFilter === 'automated' ? '✓' : '○'}}</span> <span class="state-dot dot-automated"></span> 3. Tasks Automated
                   </button>
                   <button type="button" class="task-bundle-key-chip key-new ditl-state-filter-pill ${{activeTaskStateFilter === 'new' ? 'active-filter' : ''}}" data-filter-state="new" onclick="toggleTaskStateFilter('new')" onmouseenter="previewTaskStateFilter('new')" onmouseleave="clearPreviewTaskStateFilter()">
-                    <span class="pill-check-ind">${{activeTaskStateFilter === 'new' ? '✓' : '○'}}</span> 🟨 4. New Tasks Created by AI
+                    <span class="pill-check-ind">${{activeTaskStateFilter === 'new' ? '✓' : '○'}}</span> <span class="state-dot dot-new"></span> 4. New Tasks Created by AI
                   </button>
                   <button type="button" class="task-bundle-key-chip key-retired ditl-state-filter-pill ${{activeTaskStateFilter === 'retired' ? 'active-filter' : ''}}" data-filter-state="retired" onclick="toggleTaskStateFilter('retired')" onmouseenter="previewTaskStateFilter('retired')" onmouseleave="clearPreviewTaskStateFilter()">
-                    <span class="pill-check-ind">${{activeTaskStateFilter === 'retired' ? '✓' : '○'}}</span> ◌ 5. Retired Manual Tasks
+                    <span class="pill-check-ind">${{activeTaskStateFilter === 'retired' ? '✓' : '○'}}</span> <span class="state-dot dot-retired"></span> 5. Retired Manual Tasks
                   </button>
                   <button type="button" class="filter-reset-pill" onclick="resetTaskStateFilter()" style="display: ${{activeTaskStateFilter ? 'inline-flex' : 'none'}};">
                     ✕ Reset Filter
@@ -4709,12 +4752,109 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         .replace(/"/g, '&quot;');
     }}
 
+    // URL Hash State Synchronization
+    function syncUrlHash() {{
+      const params = new URLSearchParams();
+      if (viewMode) params.set('view', viewMode);
+      if (viewMode === 'domain') {{
+        if (activeDomain && activeDomain !== 'all') params.set('domain', activeDomain);
+      }} else if (viewMode === 'persona') {{
+        if (activePersona && activePersona !== 'all') params.set('persona', activePersona);
+      }}
+      if (searchQuery && searchQuery.trim()) {{
+        params.set('q', searchQuery.trim());
+      }}
+      const hashStr = params.toString();
+      const newUrl = hashStr ? '#' + hashStr : window.location.pathname + window.location.search;
+      history.replaceState(null, '', newUrl);
+    }}
+
+    function restoreStateFromHash() {{
+      const hash = window.location.hash ? window.location.hash.substring(1) : '';
+      if (!hash) return;
+      const params = new URLSearchParams(hash);
+      const urlView = params.get('view');
+      const urlDomain = params.get('domain');
+      const urlPersona = params.get('persona');
+      const urlQ = params.get('q');
+
+      let stateChanged = false;
+
+      if (urlQ !== null) {{
+        searchQuery = urlQ;
+        if (searchInput) {{
+          searchInput.value = urlQ;
+        }}
+        if (searchClear) {{
+          searchClear.style.display = urlQ ? 'block' : 'none';
+        }}
+        stateChanged = true;
+      }}
+
+      if (urlView === 'persona' || urlView === 'domain') {{
+        viewMode = urlView;
+        document.querySelectorAll('.view-mode-btn').forEach(btn => {{
+          const isActive = btn.dataset.view === viewMode;
+          btn.classList.toggle('active', isActive);
+          btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        }});
+        if (viewMode === 'domain') {{
+          if (domainPills) domainPills.style.display = 'flex';
+          if (personaPills) personaPills.style.display = 'none';
+          if (personaExperienceContainer) personaExperienceContainer.style.display = 'none';
+          if (resultsBar) resultsBar.style.display = 'flex';
+          if (agentGrid) agentGrid.style.display = 'grid';
+          if (viewModeHint) viewModeHint.textContent = 'Organized by 9 enterprise retail business functions';
+        }} else {{
+          if (domainPills) domainPills.style.display = 'none';
+          if (personaExperienceContainer) personaExperienceContainer.style.display = 'block';
+          if (resultsBar) resultsBar.style.display = 'none';
+          if (agentGrid) agentGrid.style.display = 'none';
+          if (noResults) noResults.style.display = 'none';
+          if (viewModeHint) viewModeHint.textContent = 'Organized by 10 retail leadership and operational roles with Day-in-the-Life workflows';
+        }}
+        stateChanged = true;
+      }}
+
+      if (urlDomain) {{
+        const btn = document.querySelector('#domainPills .domain-btn[data-domain="' + urlDomain + '"]');
+        if (btn || urlDomain === 'all') {{
+          activeDomain = urlDomain;
+          document.querySelectorAll('#domainPills .domain-btn').forEach(b => {{
+            b.classList.toggle('active', b.dataset.domain === activeDomain);
+          }});
+          stateChanged = true;
+        }}
+      }}
+
+      if (urlPersona) {{
+        const exists = PERSONA_MAP[urlPersona] || urlPersona === 'all';
+        if (exists) {{
+          activePersona = urlPersona;
+          document.querySelectorAll('.persona-btn').forEach(btn => {{
+            btn.classList.toggle('active', btn.dataset.persona === activePersona);
+          }});
+          stateChanged = true;
+        }}
+      }}
+
+      if (personaPills && viewMode === 'persona') {{
+        personaPills.style.display = activePersona === 'all' ? 'none' : 'flex';
+      }}
+
+      if (stateChanged) {{
+        renderPersonaExperience();
+        renderAgents();
+      }}
+    }}
+
     // Search input handler
     searchInput.addEventListener('input', (e) => {{
       searchQuery = e.target.value;
       searchClear.style.display = searchQuery ? 'block' : 'none';
       renderPersonaExperience();
       renderAgents();
+      syncUrlHash();
     }});
 
     searchClear.addEventListener('click', () => {{
@@ -4723,6 +4863,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       searchClear.style.display = 'none';
       renderPersonaExperience();
       renderAgents();
+      syncUrlHash();
       searchInput.focus();
     }});
 
@@ -4745,6 +4886,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
       activeDomain = btn.dataset.domain;
       renderAgents();
+      syncUrlHash();
     }});
 
     // Persona Filter Handler
@@ -4770,6 +4912,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         b.classList.toggle('active', b.dataset.persona === 'all');
       }});
       setViewMode('domain');
+      syncUrlHash();
     }}
 
     // Video Modal Handlers
@@ -4910,8 +5053,12 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     // Initial Load
     initTheme();
+    restoreStateFromHash();
     renderPersonaExperience();
     renderAgents();
+    window.addEventListener('hashchange', () => {{
+      restoreStateFromHash();
+    }});
   </script>
 </body>
 </html>

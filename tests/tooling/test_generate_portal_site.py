@@ -536,6 +536,16 @@ def test_portal_responsive_layout_and_persona_nav_dedup():
     assert "activePersona === 'all' ? 'none' : 'flex'" in html
 
 
+def test_portal_spotlight_floor_and_url_hash_state():
+    html = build_portal_html([], {})
+    dimmed_block = re.search(r"\.motion-dimmed\s*\{([^}]*)\}", html)
+    assert dimmed_block is not None
+    assert "opacity: 0.5" in dimmed_block.group(1) or "opacity: 0.50" in dimmed_block.group(1)
+    assert "grayscale" not in dimmed_block.group(1)
+    assert "syncUrlHash" in html
+    assert "restoreStateFromHash" in html
+
+
 def test_zero_modifications_to_scaffold_agents_and_demos():
     res = subprocess.run(
         ["git", "status", "--porcelain"],
