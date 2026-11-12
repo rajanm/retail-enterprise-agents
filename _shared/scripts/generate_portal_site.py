@@ -1019,21 +1019,21 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     #personaOverviewDeck {{
-      --slide-w: min(560px, 78vw);
+      --slide-w: min(580px, 78vw);
       --slide-gap: 0px;
-      --cf-step-x: min(350px, 44vw);
+      --cf-step-x: min(370px, 44vw);
       --cf-step-z: 90px;
-      --cf-angle: 16deg;
-      --cf-scale-neighbor: 0.85;
+      --cf-angle: 22deg;
+      --cf-scale-neighbor: 0.76;
     }}
 
     #ditlStageDeck {{
-      --slide-w: min(860px, 82vw);
+      --slide-w: min(880px, 82vw);
       --slide-gap: 0px;
-      --cf-step-x: min(540px, 54vw);
+      --cf-step-x: min(560px, 55vw);
       --cf-step-z: 90px;
-      --cf-angle: 9deg;
-      --cf-scale-neighbor: 0.86;
+      --cf-angle: 13deg;
+      --cf-scale-neighbor: 0.78;
     }}
 
     #ditlStageDeck .deck-slide {{
@@ -1056,7 +1056,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       position: relative;
       touch-action: pan-y;
       outline: none;
-      padding: 24px 0 28px;
+      padding: 34px 0 38px;
     }}
 
     .deck-track {{
@@ -1079,7 +1079,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       width: var(--slide-w);
       position: relative;
       transform-style: preserve-3d;
-      transition: transform var(--m-coverflow) var(--m-spring), opacity var(--m-coverflow) var(--m-spring);
+      transition: transform var(--m-coverflow) var(--m-spring), opacity var(--m-coverflow) var(--m-spring), filter var(--m-coverflow) var(--m-spring);
       will-change: transform, opacity;
       opacity: 0;
       z-index: 1;
@@ -1088,10 +1088,43 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     .deck-slide.is-active,
     .deck-slide[data-pos="0"] {{
-      transform: translate3d(0, 0, 0) scale(1) rotateY(0deg);
+      transform: translate3d(0, 0, 24px) scale(1.04) rotateY(0deg);
       opacity: 1;
+      filter: none;
       z-index: 20;
       pointer-events: auto;
+    }}
+
+    @keyframes coverFlipNext {{
+      0% {{
+        transform: translate3d(42px, 0, -40px) scale(0.84) rotateY(-24deg);
+      }}
+      58% {{
+        transform: translate3d(0, 0, 32px) scale(1.06) rotateY(3deg);
+      }}
+      100% {{
+        transform: translate3d(0, 0, 24px) scale(1.04) rotateY(0deg);
+      }}
+    }}
+
+    @keyframes coverFlipPrev {{
+      0% {{
+        transform: translate3d(-42px, 0, -40px) scale(0.84) rotateY(24deg);
+      }}
+      58% {{
+        transform: translate3d(0, 0, 32px) scale(1.06) rotateY(-3deg);
+      }}
+      100% {{
+        transform: translate3d(0, 0, 24px) scale(1.04) rotateY(0deg);
+      }}
+    }}
+
+    .deck-slide.is-active.is-flip-next {{
+      animation: coverFlipNext 440ms var(--m-spring);
+    }}
+
+    .deck-slide.is-active.is-flip-prev {{
+      animation: coverFlipPrev 440ms var(--m-spring);
     }}
 
     .deck-slide.is-active .persona-overview-card,
@@ -1102,7 +1135,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .deck-slide.is-prev-1,
     .deck-slide[data-pos="-1"] {{
       transform: translate3d(calc(var(--cf-step-x) * -1), 0, -90px) scale(var(--cf-scale-neighbor)) rotateY(var(--cf-angle));
-      opacity: 0.78;
+      opacity: 0.34;
+      filter: saturate(0.15);
       z-index: 12;
       pointer-events: auto;
       cursor: pointer;
@@ -1111,31 +1145,100 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .deck-slide.is-next-1,
     .deck-slide[data-pos="1"] {{
       transform: translate3d(var(--cf-step-x), 0, -90px) scale(var(--cf-scale-neighbor)) rotateY(calc(var(--cf-angle) * -1));
-      opacity: 0.78;
+      opacity: 0.34;
+      filter: saturate(0.15);
       z-index: 12;
       pointer-events: auto;
       cursor: pointer;
     }}
 
     .deck-slide.is-neighbor {{
-      opacity: 0.78;
+      opacity: 0.34;
+      filter: saturate(0.15);
       cursor: pointer;
+    }}
+
+    .deck-slide.is-neighbor:hover {{
+      opacity: 0.56;
+      filter: saturate(0.45);
+    }}
+
+    .deck-slide:not(.is-active) .persona-card-title,
+    .deck-slide:not(.is-active) .ditl-stage-title {{
+      font-weight: 500;
+      color: var(--deck-ink-muted);
+    }}
+
+    .deck-slide:not(.is-active) .persona-card-subtitle,
+    .deck-slide:not(.is-active) .task-tile-label,
+    .deck-slide:not(.is-active) .flow-step-action {{
+      color: var(--deck-ink-muted);
+      font-weight: 400;
+    }}
+
+    .deck-slide:not(.is-active) .btn-persona-cta,
+    .deck-slide:not(.is-active) .conduit-demo-btn {{
+      background: var(--deck-surface-subtle);
+      color: var(--deck-ink-muted);
+      border-color: var(--deck-border);
     }}
 
     .deck-slide.is-prev-2,
     .deck-slide[data-pos="-2"] {{
-      transform: translate3d(calc(var(--cf-step-x) * -1.48), 0, -170px) scale(0.74) rotateY(calc(var(--cf-angle) * 1.35));
-      opacity: 0.38;
+      transform: translate3d(calc(var(--cf-step-x) * -1.48), 0, -170px) scale(0.64) rotateY(calc(var(--cf-angle) * 1.3));
+      opacity: 0.14;
+      filter: saturate(0.1);
       z-index: 6;
       pointer-events: none;
     }}
 
     .deck-slide.is-next-2,
     .deck-slide[data-pos="2"] {{
-      transform: translate3d(calc(var(--cf-step-x) * 1.48), 0, -170px) scale(0.74) rotateY(calc(var(--cf-angle) * -1.35));
-      opacity: 0.38;
+      transform: translate3d(calc(var(--cf-step-x) * 1.48), 0, -170px) scale(0.64) rotateY(calc(var(--cf-angle) * -1.3));
+      opacity: 0.14;
+      filter: saturate(0.1);
       z-index: 6;
       pointer-events: none;
+    }}
+
+    .deck-shell.is-deck-maximized {{
+      --slide-w: min(1080px, 94vw);
+    }}
+
+    .deck-shell.is-deck-maximized .deck-slide:not(.is-active) {{
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transform: translate3d(0, 0, -240px) scale(0.75) !important;
+    }}
+
+    .deck-shell.is-deck-maximized .deck-slide.is-active,
+    .deck-shell.is-deck-maximized .deck-slide[data-pos="0"] {{
+      transform: translate3d(0, 0, 0) scale(1) rotateY(0deg) !important;
+      width: 100%;
+      max-width: min(1080px, 94vw);
+    }}
+
+    .deck-card-focus-btn {{
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      min-height: 32px;
+      border-radius: 6px;
+      background: var(--deck-surface-subtle);
+      border: 1px solid var(--deck-border);
+      color: var(--deck-ink-secondary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    }}
+
+    .deck-card-focus-btn:hover,
+    .deck-card-focus-btn[aria-pressed="true"] {{
+      border-color: var(--deck-accent);
+      color: var(--deck-accent);
     }}
 
     .deck-slide.is-prev-far,
@@ -3141,13 +3244,18 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       .ditl-state-btn,
       .deck-nav-btn,
       .ditl-back-btn,
-      .btn-persona-cta {{
+      .btn-persona-cta,
+      .deck-card-focus-btn {{
         min-height: 44px;
       }}
       .view-mode-btn {{
         white-space: nowrap;
         font-size: 0.8rem;
         padding: 8px 12px;
+      }}
+      .deck-slide.is-active,
+      .deck-slide[data-pos="0"] {{
+        transform: translate3d(0, 0, 0) scale(1) rotateY(0deg);
       }}
       #personaOverviewDeck,
       #ditlStageDeck {{
@@ -3182,6 +3290,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       .deck-track,
       .deck-slide {{
         transition-duration: 0ms !important;
+        animation: none !important;
       }}
     }}
   </style>
@@ -4663,16 +4772,22 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       const counter = deckEl.querySelector('.deck-counter');
 
       function setDeckIndex(nextIdx, emit = true) {{
+        const prevIdx = currentIdx;
         const clamped = Math.max(0, Math.min(nextIdx, total - 1));
+        const flipDir = clamped > prevIdx ? 'is-flip-next' : (clamped < prevIdx ? 'is-flip-prev' : '');
         currentIdx = clamped;
         deckEl.style.setProperty('--deck-idx', String(clamped));
 
         slides.forEach((slide, idx) => {{
           const relInfo = getDeckRelInfo(idx, clamped);
-          slide.classList.remove('is-active', 'is-prev-1', 'is-next-1', 'is-prev-2', 'is-next-2', 'is-prev-far', 'is-next-far', 'is-neighbor');
+          slide.classList.remove('is-active', 'is-prev-1', 'is-next-1', 'is-prev-2', 'is-next-2', 'is-prev-far', 'is-next-far', 'is-neighbor', 'is-flip-next', 'is-flip-prev');
           relInfo.cls.split(' ').forEach(c => {{
             if (c) slide.classList.add(c);
           }});
+          if (relInfo.isActive && emit && flipDir) {{
+            void slide.offsetWidth;
+            slide.classList.add(flipDir);
+          }}
           slide.setAttribute('data-pos', relInfo.dataPos);
 
           const content = slide.querySelector('.deck-slide-content');
@@ -4832,6 +4947,20 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       return {{ setDeckIndex }};
     }}
 
+    function toggleDeckMaximize(deckId, forceState = null) {{
+      const deckEl = document.getElementById(deckId);
+      if (!deckEl) return;
+      const nextMaximized = forceState !== null ? Boolean(forceState) : !deckEl.classList.contains('is-deck-maximized');
+      deckEl.classList.toggle('is-deck-maximized', nextMaximized);
+      const expandSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+      const revertSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+      deckEl.querySelectorAll('.deck-card-focus-btn').forEach(btn => {{
+        btn.setAttribute('aria-pressed', nextMaximized ? 'true' : 'false');
+        btn.setAttribute('title', nextMaximized ? 'Revert to 3D Cover Flow' : 'Maximize active card');
+        btn.innerHTML = nextMaximized ? `${{revertSvg}} Revert` : `${{expandSvg}} Maximize`;
+      }});
+    }}
+
     // Switch to Persona Archetype from Domain View Card Chip
     function switchToPersonaArchetype(personaId) {{
       const foundIdx = PERSONA_ARCHETYPES.findIndex(p => p.id === personaId);
@@ -4917,7 +5046,12 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                   <span class="persona-card-icon">${{getPersonaSvgIcon(p.id)}}</span>
                   <h3 class="persona-card-title">${{htmlEscape(p.title)}}</h3>
                 </div>
-                <span class="persona-agent-badge">${{count}} agents</span>
+                <div style="display: inline-flex; align-items: center; gap: 8px;">
+                  <span class="persona-agent-badge">${{count}} agents</span>
+                  <button type="button" class="deck-card-focus-btn" data-deck-focus="personaOverviewDeck" onclick="toggleDeckMaximize('personaOverviewDeck')" aria-pressed="false" title="Maximize active card">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg> Maximize
+                  </button>
+                </div>
               </div>
               <div class="persona-card-subtitle">${{htmlEscape(p.subtitle)}}</div>
               <p class="persona-card-summary">${{htmlEscape(p.roles_summary)}}</p>
@@ -5108,6 +5242,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                 <span class="ditl-stage-stagepill">${{htmlEscape(stage.time)}} · Stage ${{stageIdx + 1}} of ${{(p.day_in_the_life || []).length}}</span>
                 <div class="ditl-stage-top-right" style="margin-left: auto;">
                   ${{horizonBadge}}
+                  <button type="button" class="deck-card-focus-btn" data-deck-focus="ditlStageDeck" onclick="toggleDeckMaximize('ditlStageDeck')" aria-pressed="false" title="Maximize active stage">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg> Maximize
+                  </button>
                 </div>
               </div>
 
@@ -5660,6 +5797,11 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           closeArchModal();
         }} else if (stageTheaterModal && stageTheaterModal.classList.contains('open')) {{
           closeStageTheater();
+        }} else {{
+          const maxDeck = document.querySelector('.deck-shell.is-deck-maximized');
+          if (maxDeck && maxDeck.id) {{
+            toggleDeckMaximize(maxDeck.id, false);
+          }}
         }}
         return;
       }}

@@ -772,6 +772,25 @@ def test_coverflow_relative_classes_and_drag_physics():
     assert "track.style.setProperty('--drag-x'" in html
 
 
+def test_coverflow_faint_neighbors_flip_and_maximize_revert():
+    html = build_portal_html([], {})
+    for snippet in [
+        "opacity: 0.34",
+        "saturate(0.15)",
+        "scale(1.04)",
+        "@keyframes coverFlipNext",
+        "@keyframes coverFlipPrev",
+        "is-flip-next",
+        "is-flip-prev",
+        "is-deck-maximized",
+        "toggleDeckMaximize",
+        "deck-card-focus-btn",
+        "Maximize",
+        "Revert",
+    ]:
+        assert snippet in html, f"Missing Cover Flow polish snippet: {snippet}"
+
+
 
 
 
