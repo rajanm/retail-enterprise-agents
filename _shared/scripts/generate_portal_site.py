@@ -896,8 +896,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .persona-view-shell {{
       background: var(--deck-canvas);
       color: var(--deck-ink);
-      border-radius: 16px;
-      padding: 24px;
+      border-radius: 0;
+      padding: 24px 0;
       margin-bottom: 28px;
     }}
 
@@ -1051,7 +1051,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .deck-slide.is-neighbor {{
-      opacity: 0.65;
+      opacity: 0.78;
       cursor: pointer;
     }}
 
@@ -1729,7 +1729,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .task-bundle-title {{
       font-size: 0.75rem;
       font-weight: 700;
-      color: var(--deck-ink-muted);
+      color: var(--deck-ink-secondary);
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }}
