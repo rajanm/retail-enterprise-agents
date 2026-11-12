@@ -15,6 +15,7 @@ uv.lock.bak
 .agents/
 .claude/
 .superpowers/
+.impeccable/
 docs/**
 /scripts/
 .adk/
