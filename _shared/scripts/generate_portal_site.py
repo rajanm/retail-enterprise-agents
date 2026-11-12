@@ -372,18 +372,18 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --border-color: #cbd5e1;
       --border-faint: #cbd5e1;
       --border-subtle: #e2e8f0;
-      --border-focus: #0284c7;
+      --border-focus: #0369a1;
       --text-primary: #0f172a;
       --text-secondary: #475569;
       --text-muted: #475569;
-      --accent-blue: #0284c7;
-      --accent-blue-hover: #0369a1;
+      --accent-blue: #0369a1;
+      --accent-blue-hover: #075985;
       --accent-indigo: #6366f1;
       --accent-emerald: #059669;
       --accent-amber: #d97706;
       --badge-bg: #e0f2fe;
       --badge-border: #bae6fd;
-      --badge-text: #0284c7;
+      --badge-text: #0369a1;
       --kpi-bg: #d1fae5;
       --kpi-border: #a7f3d0;
       --kpi-text: #065f46;
@@ -421,9 +421,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --task-augmented-stack-2: rgba(147, 51, 234, 0.11);
 
       --task-automated-bg: #e0f2fe;
-      --task-automated-border: #0284c7;
+      --task-automated-border: #0369a1;
       --task-automated-text: #0c4a6e;
-      --task-automated-dot: #0284c7;
+      --task-automated-dot: #0369a1;
       --task-automated-stack-1: rgba(2, 132, 199, 0.22);
       --task-automated-stack-2: rgba(2, 132, 199, 0.11);
 
@@ -3599,6 +3599,23 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     let activeDomain = 'all';
     const PERSONA_ARCHETYPES = {personas_json};
     const PERSONA_MAP = Object.fromEntries(PERSONA_ARCHETYPES.map(p => [p.id, p]));
+    const PERSONA_ALIASES = {{
+      vp_merchandising: 'merchandising_buyers',
+      c_suite_exec: 'exec_leadership',
+      supply_chain_dir: 'supply_chain_logistics',
+      store_ops_dir: 'store_field_ops',
+      ecommerce_lead: 'ecommerce_digital',
+      cfo_finance_vp: 'finance_fpa',
+      cmo_marketing_vp: 'marketing_loyalty',
+      customer_care_dir: 'customer_care_cx',
+      chro_hr_vp: 'hr_esg_compliance',
+      cso_esg_dir: 'hr_esg_compliance'
+    }};
+    for (const [alias, realId] of Object.entries(PERSONA_ALIASES)) {{
+      if (PERSONA_MAP[realId] && !PERSONA_MAP[alias]) {{
+        PERSONA_MAP[alias] = PERSONA_MAP[realId];
+      }}
+    }}
     let viewMode = 'domain';
     let activePersona = 'all';
     let overviewDeckIdx = 0;
@@ -4500,6 +4517,18 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     // Monochrome 1.5px-stroke SVG icons per persona archetype
     function getPersonaSvgIcon(personaId) {{
+      const reverseAliases = {{
+        exec_leadership: 'c_suite_exec',
+        merchandising_buyers: 'vp_merchandising',
+        supply_chain_logistics: 'supply_chain_dir',
+        store_field_ops: 'store_ops_dir',
+        ecommerce_digital: 'ecommerce_lead',
+        finance_fpa: 'cfo_finance_vp',
+        marketing_loyalty: 'cmo_marketing_vp',
+        customer_care_cx: 'customer_care_dir',
+        hr_esg_compliance: 'chro_hr_vp'
+      }};
+      const key = reverseAliases[personaId] || personaId;
       const paths = {{
         c_suite_exec: '<path d="M3 20h18M5 20V9l7-5 7 5v11M9 20v-5h6v5"/>',
         vp_merchandising: '<path d="M4 7h16l-1.5 11h-13L4 7zM9 7V5a3 3 0 0 1 6 0v2"/>',
@@ -4512,7 +4541,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         chro_hr_vp: '<path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm6.5 1a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM4 19a5 5 0 0 1 10 0M15 19a4 4 0 0 1 5-3.8"/>',
         cso_esg_dir: '<path d="M12 20c4.5 0 8-3.5 8-8 0-3.5-2-6.5-5-8-1 3.5-3.5 6-7 7.5C6.5 12 4 14.5 4 17a3 3 0 0 0 3 3h5z"/>',
       }};
-      const d = paths[personaId] || '<circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/>';
+      const d = paths[key] || paths[personaId] || '<circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/>';
       return `<svg class="persona-svg-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${{d}}</svg>`;
     }}
 

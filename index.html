@@ -95,12 +95,15 @@
 
       /* Scoped Minimalist Deck & Surface Tokens (Dark Theme) */
       --m-slide: 240ms;
+      --m-coverflow: 380ms;
+      --m-spring: cubic-bezier(0.22, 1, 0.36, 1);
       --m-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
       --deck-canvas: #0b0b0d;
       --deck-surface: #151517;
       --deck-surface-subtle: #111114;
       --deck-border: rgba(255, 255, 255, 0.10);
       --deck-top-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      --deck-active-shadow: 0 22px 48px -18px rgba(0, 0, 0, 0.55);
       --deck-ink: #f4f4f5;
       --deck-ink-secondary: #d4d4d8;
       --deck-ink-muted: #a1a1aa;
@@ -118,18 +121,18 @@
       --border-color: #cbd5e1;
       --border-faint: #cbd5e1;
       --border-subtle: #e2e8f0;
-      --border-focus: #0284c7;
+      --border-focus: #0369a1;
       --text-primary: #0f172a;
       --text-secondary: #475569;
       --text-muted: #475569;
-      --accent-blue: #0284c7;
-      --accent-blue-hover: #0369a1;
+      --accent-blue: #0369a1;
+      --accent-blue-hover: #075985;
       --accent-indigo: #6366f1;
       --accent-emerald: #059669;
       --accent-amber: #d97706;
       --badge-bg: #e0f2fe;
       --badge-border: #bae6fd;
-      --badge-text: #0284c7;
+      --badge-text: #0369a1;
       --kpi-bg: #d1fae5;
       --kpi-border: #a7f3d0;
       --kpi-text: #065f46;
@@ -167,9 +170,9 @@
       --task-augmented-stack-2: rgba(147, 51, 234, 0.11);
 
       --task-automated-bg: #e0f2fe;
-      --task-automated-border: #0284c7;
+      --task-automated-border: #0369a1;
       --task-automated-text: #0c4a6e;
-      --task-automated-dot: #0284c7;
+      --task-automated-dot: #0369a1;
       --task-automated-stack-1: rgba(2, 132, 199, 0.22);
       --task-automated-stack-2: rgba(2, 132, 199, 0.11);
 
@@ -189,6 +192,7 @@
       --deck-surface-subtle: #efefe9;
       --deck-border: rgba(12, 12, 9, 0.10);
       --deck-top-highlight: none;
+      --deck-active-shadow: 0 20px 44px -18px rgba(12, 12, 9, 0.16);
       --deck-ink: #0c0c09;
       --deck-ink-secondary: #3f3f46;
       --deck-ink-muted: #52525b;
@@ -764,39 +768,89 @@
     }
 
     #personaOverviewDeck {
-      --slide-w: min(660px, 84vw);
-      --slide-gap: 24px;
+      --slide-w: min(560px, 78vw);
+      --slide-gap: 0px;
+      --cf-step-x: min(350px, 44vw);
+      --cf-step-z: 90px;
+      --cf-angle: 16deg;
+      --cf-scale-neighbor: 0.85;
     }
 
     #ditlStageDeck {
-      --slide-w: min(920px, 90vw);
-      --slide-gap: 24px;
+      --slide-w: min(860px, 84vw);
+      --slide-gap: 0px;
+      --cf-step-x: min(470px, 48vw);
+      --cf-step-z: 90px;
+      --cf-angle: 9deg;
+      --cf-scale-neighbor: 0.88;
     }
 
     .deck-viewport {
+      perspective: 1200px;
       overflow: hidden;
       width: 100%;
       position: relative;
       touch-action: pan-y;
       outline: none;
-      padding: 8px 0;
+      padding: 24px 0 28px;
     }
 
     .deck-track {
-      display: flex;
-      align-items: stretch;
-      gap: var(--slide-gap, 24px);
-      transition: transform var(--m-slide) var(--m-ease-out);
-      transform: translate3d(calc(50% - var(--slide-w, 660px) / 2 - var(--deck-idx, 0) * (var(--slide-w, 660px) + var(--slide-gap, 24px))), 0, 0);
+      position: relative;
+      width: 100%;
+      transform-style: preserve-3d;
+      display: grid;
+      place-items: center;
+      transform: translate3d(var(--drag-x, 0px), 0, 0);
+      transition: transform var(--m-coverflow) var(--m-spring);
       will-change: transform;
     }
 
+    .deck-track.is-dragging {
+      transition: none;
+    }
+
     .deck-slide {
-      flex: 0 0 var(--slide-w, 660px);
-      width: var(--slide-w, 660px);
+      grid-area: 1 / 1;
+      width: var(--slide-w);
       position: relative;
-      opacity: 0.35;
-      transition: opacity var(--m-slide) var(--m-ease-out);
+      transform-style: preserve-3d;
+      transition: transform var(--m-coverflow) var(--m-spring), opacity var(--m-coverflow) var(--m-spring);
+      will-change: transform, opacity;
+      opacity: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .deck-slide.is-active,
+    .deck-slide[data-pos="0"] {
+      transform: translate3d(0, 0, 0) scale(1) rotateY(0deg);
+      opacity: 1;
+      z-index: 20;
+      pointer-events: auto;
+    }
+
+    .deck-slide.is-active .persona-overview-card,
+    .deck-slide[data-pos="0"] .persona-overview-card {
+      box-shadow: var(--deck-active-shadow);
+    }
+
+    .deck-slide.is-prev-1,
+    .deck-slide[data-pos="-1"] {
+      transform: translate3d(calc(var(--cf-step-x) * -1), 0, -90px) scale(var(--cf-scale-neighbor)) rotateY(var(--cf-angle));
+      opacity: 0.78;
+      z-index: 12;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    .deck-slide.is-next-1,
+    .deck-slide[data-pos="1"] {
+      transform: translate3d(var(--cf-step-x), 0, -90px) scale(var(--cf-scale-neighbor)) rotateY(calc(var(--cf-angle) * -1));
+      opacity: 0.78;
+      z-index: 12;
+      pointer-events: auto;
+      cursor: pointer;
     }
 
     .deck-slide.is-neighbor {
@@ -804,8 +858,36 @@
       cursor: pointer;
     }
 
-    .deck-slide.is-active {
-      opacity: 1;
+    .deck-slide.is-prev-2,
+    .deck-slide[data-pos="-2"] {
+      transform: translate3d(calc(var(--cf-step-x) * -1.48), 0, -170px) scale(0.74) rotateY(calc(var(--cf-angle) * 1.35));
+      opacity: 0.38;
+      z-index: 6;
+      pointer-events: none;
+    }
+
+    .deck-slide.is-next-2,
+    .deck-slide[data-pos="2"] {
+      transform: translate3d(calc(var(--cf-step-x) * 1.48), 0, -170px) scale(0.74) rotateY(calc(var(--cf-angle) * -1.35));
+      opacity: 0.38;
+      z-index: 6;
+      pointer-events: none;
+    }
+
+    .deck-slide.is-prev-far,
+    .deck-slide[data-pos="prev-far"] {
+      transform: translate3d(calc(var(--cf-step-x) * -1.75), 0, -240px) scale(0.68) rotateY(calc(var(--cf-angle) * 1.5));
+      opacity: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .deck-slide.is-next-far,
+    .deck-slide[data-pos="next-far"] {
+      transform: translate3d(calc(var(--cf-step-x) * 1.75), 0, -240px) scale(0.68) rotateY(calc(var(--cf-angle) * -1.5));
+      opacity: 0;
+      z-index: 1;
+      pointer-events: none;
     }
 
     .deck-slide-content {
@@ -2807,6 +2889,16 @@
       #ditlStageDeck {
         --slide-w: 100%;
         --slide-gap: 0px;
+        --cf-step-x: 104%;
+        --cf-angle: 0deg;
+        --cf-scale-neighbor: 0.92;
+      }
+      .deck-slide.is-prev-2,
+      .deck-slide.is-next-2,
+      .deck-slide.is-prev-far,
+      .deck-slide.is-next-far {
+        opacity: 0;
+        pointer-events: none;
       }
       .deck-peek-overlay {
         display: none !important;
@@ -13671,6 +13763,23 @@
   }
 ];
     const PERSONA_MAP = Object.fromEntries(PERSONA_ARCHETYPES.map(p => [p.id, p]));
+    const PERSONA_ALIASES = {
+      vp_merchandising: 'merchandising_buyers',
+      c_suite_exec: 'exec_leadership',
+      supply_chain_dir: 'supply_chain_logistics',
+      store_ops_dir: 'store_field_ops',
+      ecommerce_lead: 'ecommerce_digital',
+      cfo_finance_vp: 'finance_fpa',
+      cmo_marketing_vp: 'marketing_loyalty',
+      customer_care_dir: 'customer_care_cx',
+      chro_hr_vp: 'hr_esg_compliance',
+      cso_esg_dir: 'hr_esg_compliance'
+    };
+    for (const [alias, realId] of Object.entries(PERSONA_ALIASES)) {
+      if (PERSONA_MAP[realId] && !PERSONA_MAP[alias]) {
+        PERSONA_MAP[alias] = PERSONA_MAP[realId];
+      }
+    }
     let viewMode = 'domain';
     let activePersona = 'all';
     let overviewDeckIdx = 0;
@@ -14572,6 +14681,18 @@
 
     // Monochrome 1.5px-stroke SVG icons per persona archetype
     function getPersonaSvgIcon(personaId) {
+      const reverseAliases = {
+        exec_leadership: 'c_suite_exec',
+        merchandising_buyers: 'vp_merchandising',
+        supply_chain_logistics: 'supply_chain_dir',
+        store_field_ops: 'store_ops_dir',
+        ecommerce_digital: 'ecommerce_lead',
+        finance_fpa: 'cfo_finance_vp',
+        marketing_loyalty: 'cmo_marketing_vp',
+        customer_care_cx: 'customer_care_dir',
+        hr_esg_compliance: 'chro_hr_vp'
+      };
+      const key = reverseAliases[personaId] || personaId;
       const paths = {
         c_suite_exec: '<path d="M3 20h18M5 20V9l7-5 7 5v11M9 20v-5h6v5"/>',
         vp_merchandising: '<path d="M4 7h16l-1.5 11h-13L4 7zM9 7V5a3 3 0 0 1 6 0v2"/>',
@@ -14584,7 +14705,7 @@
         chro_hr_vp: '<path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm6.5 1a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM4 19a5 5 0 0 1 10 0M15 19a4 4 0 0 1 5-3.8"/>',
         cso_esg_dir: '<path d="M12 20c4.5 0 8-3.5 8-8 0-3.5-2-6.5-5-8-1 3.5-3.5 6-7 7.5C6.5 12 4 14.5 4 17a3 3 0 0 0 3 3h5z"/>',
       };
-      const d = paths[personaId] || '<circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/>';
+      const d = paths[key] || paths[personaId] || '<circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/>';
       return `<svg class="persona-svg-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
     }
 
@@ -14603,6 +14724,25 @@
       if (searchInput) searchInput.focus();
     }
 
+    function getDeckRelInfo(idx, activeIdx) {
+      const rel = idx - activeIdx;
+      if (rel === 0) {
+        return { rel, cls: 'is-active', dataPos: '0', isActive: true };
+      } else if (rel === -1) {
+        return { rel, cls: 'is-prev-1 is-neighbor', dataPos: '-1', isActive: false };
+      } else if (rel === 1) {
+        return { rel, cls: 'is-next-1 is-neighbor', dataPos: '1', isActive: false };
+      } else if (rel === -2) {
+        return { rel, cls: 'is-prev-2', dataPos: '-2', isActive: false };
+      } else if (rel === 2) {
+        return { rel, cls: 'is-next-2', dataPos: '2', isActive: false };
+      } else if (rel < -2) {
+        return { rel, cls: 'is-prev-far', dataPos: 'prev-far', isActive: false };
+      } else {
+        return { rel, cls: 'is-next-far', dataPos: 'next-far', isActive: false };
+      }
+    }
+
     function renderDeckShell({ id, slidesHtml, activeIdx, labels, prevNoun, emptyHtml }) {
       const total = labels.length;
       if (total === 0) {
@@ -14615,14 +14755,13 @@
       const nextTarget = safeIdx < total - 1 ? labels[safeIdx + 1] : '';
 
       const wrappedSlides = slidesHtml.map((innerHtml, idx) => {
-        const isActive = idx === safeIdx;
-        const isNeighbor = !isActive && Math.abs(idx - safeIdx) === 1;
-        const cls = isActive ? 'is-active' : (isNeighbor ? 'is-neighbor' : '');
-        const inertAttr = isActive ? '' : 'inert aria-hidden="true"';
+        const relInfo = getDeckRelInfo(idx, safeIdx);
+        const inertAttr = relInfo.isActive ? '' : 'inert aria-hidden="true"';
+        const overlayDisplay = Math.abs(relInfo.rel) === 1 ? '' : 'style="display: none;"';
         return `
-          <div class="deck-slide ${cls}" data-slide-idx="${idx}">
+          <div class="deck-slide ${relInfo.cls}" data-slide-idx="${idx}" data-pos="${relInfo.dataPos}">
             <div class="deck-slide-content" ${inertAttr}>${innerHtml}</div>
-            ${!isActive ? `<button type="button" class="deck-peek-overlay" data-peek-idx="${idx}" tabindex="-1" aria-hidden="true" title="Go to ${htmlEscape(labels[idx] || '')}"></button>` : ''}
+            <button type="button" class="deck-peek-overlay" data-peek-idx="${idx}" tabindex="-1" aria-hidden="true" title="Go to ${htmlEscape(labels[idx] || '')}" ${overlayDisplay}></button>
           </div>
         `;
       }).join('');
@@ -14667,6 +14806,7 @@
       if (!deckEl || total <= 0) return null;
       let currentIdx = Math.max(0, Math.min(initialIdx || 0, total - 1));
       const viewport = deckEl.querySelector('.deck-viewport');
+      const track = deckEl.querySelector('.deck-track');
       const slides = Array.from(deckEl.querySelectorAll('.deck-slide'));
       const dots = Array.from(deckEl.querySelectorAll('.deck-dot'));
       const prevBtn = deckEl.querySelector('.deck-prev-btn');
@@ -14679,14 +14819,17 @@
         deckEl.style.setProperty('--deck-idx', String(clamped));
 
         slides.forEach((slide, idx) => {
-          const isActive = idx === clamped;
-          const isNeighbor = !isActive && Math.abs(idx - clamped) === 1;
-          slide.classList.toggle('is-active', isActive);
-          slide.classList.toggle('is-neighbor', isNeighbor);
+          const relInfo = getDeckRelInfo(idx, clamped);
+          slide.classList.remove('is-active', 'is-prev-1', 'is-next-1', 'is-prev-2', 'is-next-2', 'is-prev-far', 'is-next-far', 'is-neighbor');
+          relInfo.cls.split(' ').forEach(c => {
+            if (c) slide.classList.add(c);
+          });
+          slide.setAttribute('data-pos', relInfo.dataPos);
+
           const content = slide.querySelector('.deck-slide-content');
           const overlay = slide.querySelector('.deck-peek-overlay');
           if (content) {
-            if (isActive) {
+            if (relInfo.isActive) {
               content.removeAttribute('inert');
               content.removeAttribute('aria-hidden');
             } else {
@@ -14695,7 +14838,7 @@
             }
           }
           if (overlay) {
-            overlay.style.display = isActive ? 'none' : '';
+            overlay.style.display = Math.abs(relInfo.rel) === 1 ? '' : 'none';
           }
         });
 
@@ -14766,28 +14909,73 @@
       if (viewport) viewport.addEventListener('keydown', onDeckKey);
       if (controlsEl) controlsEl.addEventListener('keydown', onDeckKey);
 
-      // Horizontal touch / pointer swipe without fighting vertical scroll
+      // Horizontal touch / pointer swipe with interactive drag-follow
       if (viewport) {
         let pointerStartX = null;
         let pointerStartY = null;
+        let isDragging = false;
+        let dragRafId = null;
+        let currentDragDx = 0;
+
         viewport.addEventListener('pointerdown', (e) => {
           if (e.target.closest('button, a, input, [data-task-idx], .conduit-node')) return;
           pointerStartX = e.clientX;
           pointerStartY = e.clientY;
+          isDragging = false;
+          currentDragDx = 0;
         });
+
+        viewport.addEventListener('pointermove', (e) => {
+          if (pointerStartX === null || pointerStartY === null) return;
+          const dx = e.clientX - pointerStartX;
+          const dy = e.clientY - pointerStartY;
+          if (!isDragging) {
+            if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+              isDragging = true;
+              if (track) track.classList.add('is-dragging');
+            }
+          }
+          if (isDragging && track) {
+            const clampedDx = Math.max(-120, Math.min(120, dx));
+            currentDragDx = clampedDx;
+            if (!dragRafId) {
+              dragRafId = requestAnimationFrame(() => {
+                track.style.setProperty('--drag-x', `${currentDragDx}px`);
+                dragRafId = null;
+              });
+            }
+          }
+        });
+
+        const cleanupDrag = () => {
+          if (dragRafId) {
+            cancelAnimationFrame(dragRafId);
+            dragRafId = null;
+          }
+          if (track) {
+            track.classList.remove('is-dragging');
+            track.style.setProperty('--drag-x', '0px');
+          }
+        };
+
         viewport.addEventListener('pointerup', (e) => {
           if (pointerStartX === null || pointerStartY === null) return;
           const dx = e.clientX - pointerStartX;
           const dy = e.clientY - pointerStartY;
           pointerStartX = null;
           pointerStartY = null;
+          isDragging = false;
+          cleanupDrag();
           if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2) {
             setDeckIndex(dx < 0 ? currentIdx + 1 : currentIdx - 1);
           }
         });
+
         viewport.addEventListener('pointercancel', () => {
           pointerStartX = null;
           pointerStartY = null;
+          isDragging = false;
+          cleanupDrag();
         });
       }
 
