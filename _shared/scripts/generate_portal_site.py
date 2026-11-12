@@ -3876,9 +3876,6 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           tile.addEventListener('mouseleave', onLeave);
           tile.addEventListener('focus', onEnter);
           tile.addEventListener('blur', onLeave);
-            if (activeTaskStateFilter || hoveredTaskStateFilter) return;
-            applyProminentSpotlight();
-          }});
 
           // Click to Pin Focus
           tile.addEventListener('click', (e) => {{
@@ -4770,82 +4767,77 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     function restoreStateFromHash() {{
-      const hash = window.location.hash ? window.location.hash.substring(1) : '';
-      if (!hash) return;
+      const rawHash = window.location.hash || '';
+      const hash = rawHash.startsWith('#') ? rawHash.substring(1) : rawHash;
       const params = new URLSearchParams(hash);
       const urlView = params.get('view');
       const urlDomain = params.get('domain');
       const urlPersona = params.get('persona');
       const urlQ = params.get('q');
 
-      let stateChanged = false;
-
-      if (urlQ !== null) {{
-        searchQuery = urlQ;
-        if (searchInput) {{
-          searchInput.value = urlQ;
-        }}
-        if (searchClear) {{
-          searchClear.style.display = urlQ ? 'block' : 'none';
-        }}
-        stateChanged = true;
+      // 1. Search Query (defaults to empty string when omitted)
+      searchQuery = (urlQ !== null && urlQ !== undefined) ? urlQ : '';
+      if (searchInput) {{
+        searchInput.value = searchQuery;
+      }}
+      if (searchClear) {{
+        searchClear.style.display = searchQuery ? 'block' : 'none';
       }}
 
-      if (urlView === 'persona' || urlView === 'domain') {{
-        viewMode = urlView;
-        document.querySelectorAll('.view-mode-btn').forEach(btn => {{
-          const isActive = btn.dataset.view === viewMode;
-          btn.classList.toggle('active', isActive);
-          btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      // 2. View Mode (defaults to 'domain' unless 'persona' is explicitly requested)
+      viewMode = (urlView === 'persona') ? 'persona' : 'domain';
+      document.querySelectorAll('.view-mode-btn').forEach(btn => {{
+        const isActive = btn.dataset.view === viewMode;
+        btn.classList.toggle('active', isActive);
+        btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      }});
+
+      // 3. Active Domain (defaults to 'all'; safe loop check avoiding DOMException on querySelector)
+      let resolvedDomain = 'all';
+      if (urlDomain && urlDomain !== 'all') {{
+        const domainButtons = document.querySelectorAll('#domainPills .domain-btn');
+        domainButtons.forEach(b => {{
+          if (b.dataset.domain === urlDomain) {{
+            resolvedDomain = urlDomain;
+          }}
         }});
-        if (viewMode === 'domain') {{
-          if (domainPills) domainPills.style.display = 'flex';
-          if (personaPills) personaPills.style.display = 'none';
-          if (personaExperienceContainer) personaExperienceContainer.style.display = 'none';
-          if (resultsBar) resultsBar.style.display = 'flex';
-          if (agentGrid) agentGrid.style.display = 'grid';
-          if (viewModeHint) viewModeHint.textContent = 'Organized by 9 enterprise retail business functions';
-        }} else {{
-          if (domainPills) domainPills.style.display = 'none';
-          if (personaExperienceContainer) personaExperienceContainer.style.display = 'block';
-          if (resultsBar) resultsBar.style.display = 'none';
-          if (agentGrid) agentGrid.style.display = 'none';
-          if (noResults) noResults.style.display = 'none';
-          if (viewModeHint) viewModeHint.textContent = 'Organized by 10 retail leadership and operational roles with Day-in-the-Life workflows';
-        }}
-        stateChanged = true;
+      }}
+      activeDomain = resolvedDomain;
+      document.querySelectorAll('#domainPills .domain-btn').forEach(b => {{
+        b.classList.toggle('active', b.dataset.domain === activeDomain);
+      }});
+
+      // 4. Active Persona (defaults to 'all')
+      let resolvedPersona = 'all';
+      if (urlPersona && urlPersona !== 'all' && PERSONA_MAP[urlPersona]) {{
+        resolvedPersona = urlPersona;
+      }}
+      activePersona = resolvedPersona;
+      document.querySelectorAll('.persona-btn').forEach(btn => {{
+        btn.classList.toggle('active', btn.dataset.persona === activePersona);
+      }});
+
+      // 5. Container & Navigation Visibility
+      if (viewMode === 'domain') {{
+        if (domainPills) domainPills.style.display = 'flex';
+        if (personaPills) personaPills.style.display = 'none';
+        if (personaExperienceContainer) personaExperienceContainer.style.display = 'none';
+        if (resultsBar) resultsBar.style.display = 'flex';
+        if (agentGrid) agentGrid.style.display = 'grid';
+        if (viewModeHint) viewModeHint.textContent = 'Organized by 9 enterprise retail business functions';
+      }} else {{
+        if (domainPills) domainPills.style.display = 'none';
+        if (personaPills) personaPills.style.display = activePersona === 'all' ? 'none' : 'flex';
+        if (personaExperienceContainer) personaExperienceContainer.style.display = 'block';
+        if (resultsBar) resultsBar.style.display = 'none';
+        if (agentGrid) agentGrid.style.display = 'none';
+        if (noResults) noResults.style.display = 'none';
+        if (viewModeHint) viewModeHint.textContent = 'Organized by 10 retail leadership and operational roles with Day-in-the-Life workflows';
       }}
 
-      if (urlDomain) {{
-        const btn = document.querySelector('#domainPills .domain-btn[data-domain="' + urlDomain + '"]');
-        if (btn || urlDomain === 'all') {{
-          activeDomain = urlDomain;
-          document.querySelectorAll('#domainPills .domain-btn').forEach(b => {{
-            b.classList.toggle('active', b.dataset.domain === activeDomain);
-          }});
-          stateChanged = true;
-        }}
-      }}
-
-      if (urlPersona) {{
-        const exists = PERSONA_MAP[urlPersona] || urlPersona === 'all';
-        if (exists) {{
-          activePersona = urlPersona;
-          document.querySelectorAll('.persona-btn').forEach(btn => {{
-            btn.classList.toggle('active', btn.dataset.persona === activePersona);
-          }});
-          stateChanged = true;
-        }}
-      }}
-
-      if (personaPills && viewMode === 'persona') {{
-        personaPills.style.display = activePersona === 'all' ? 'none' : 'flex';
-      }}
-
-      if (stateChanged) {{
-        renderPersonaExperience();
-        renderAgents();
-      }}
+      // 6. Synchronize Views
+      renderPersonaExperience();
+      renderAgents();
     }}
 
     // Search input handler
@@ -5054,8 +5046,6 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     // Initial Load
     initTheme();
     restoreStateFromHash();
-    renderPersonaExperience();
-    renderAgents();
     window.addEventListener('hashchange', () => {{
       restoreStateFromHash();
     }});

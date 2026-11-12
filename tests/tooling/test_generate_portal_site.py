@@ -3,8 +3,10 @@
 import json
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 import pytest
 import yaml
 
@@ -544,6 +546,36 @@ def test_portal_spotlight_floor_and_url_hash_state():
     assert "grayscale" not in dimmed_block.group(1)
     assert "syncUrlHash" in html
     assert "restoreStateFromHash" in html
+    # Safe dataset comparison for urlDomain to avoid DOMException
+    assert "b.dataset.domain === urlDomain" in html
+    # Clean reset on omitted hash or omitted params
+    assert "searchQuery = (urlQ !== null && urlQ !== undefined) ? urlQ : ''" in html
+
+
+def test_generated_portal_js_syntax_is_valid():
+    node_bin = shutil.which("node")
+    if not node_bin:
+        pytest.skip("node binary not found on system")
+    html = build_portal_html([], {})
+    inline_scripts = re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", html, re.DOTALL)
+    assert inline_scripts, "Expected at least one inline <script> block in portal HTML"
+
+    for idx, script_content in enumerate(inline_scripts):
+        if not script_content.strip():
+            continue
+        with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8") as f:
+            f.write(script_content)
+            f.flush()
+            res = subprocess.run(
+                [node_bin, "--check", f.name],
+                capture_output=True,
+                text=True,
+            )
+            assert res.returncode == 0, (
+                f"JavaScript syntax error in inline <script> block {idx}:\n"
+                f"Exit code: {res.returncode}\n"
+                f"stderr:\n{res.stderr}\n"
+            )
 
 
 def test_zero_modifications_to_scaffold_agents_and_demos():
