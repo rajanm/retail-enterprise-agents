@@ -343,6 +343,20 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --task-retired-border: rgba(148, 163, 184, 0.24);
       --task-retired-text: #94a3b8;
       --task-retired-dot: #94a3b8;
+
+      /* Scoped Minimalist Deck & Surface Tokens (Dark Theme) */
+      --m-slide: 240ms;
+      --m-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+      --deck-canvas: #0b0b0d;
+      --deck-surface: #151517;
+      --deck-surface-subtle: #111114;
+      --deck-border: rgba(255, 255, 255, 0.10);
+      --deck-top-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      --deck-ink: #f4f4f5;
+      --deck-ink-secondary: #d4d4d8;
+      --deck-ink-muted: #a1a1aa;
+      --deck-accent: #38bdf8;
+      --deck-accent-ink: #0b0b0d;
     }}
 
     [data-theme="light"] {{
@@ -419,6 +433,18 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --task-retired-border: #c4bfb3;
       --task-retired-text: #57534e;
       --task-retired-dot: #a8a29e;
+
+      /* Scoped Minimalist Deck & Surface Tokens (Light Theme) */
+      --deck-canvas: #f4f4f1;
+      --deck-surface: #ffffff;
+      --deck-surface-subtle: #efefe9;
+      --deck-border: rgba(12, 12, 9, 0.10);
+      --deck-top-highlight: none;
+      --deck-ink: #0c0c09;
+      --deck-ink-secondary: #3f3f46;
+      --deck-ink-muted: #52525b;
+      --deck-accent: #0369a1;
+      --deck-accent-ink: #ffffff;
     }}
 
     * {{
@@ -865,32 +891,305 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       color: #ffffff;
     }}
 
-    /* Persona Experience Container & Overview Grid */
-    #personaExperienceContainer {{
+    /* Persona View Container & Cards */
+    #personaExperienceContainer,
+    .persona-view-shell {{
+      background: var(--deck-canvas);
+      color: var(--deck-ink);
+      border-radius: 16px;
+      padding: 24px;
       margin-bottom: 28px;
     }}
 
+    .persona-view-shell p,
+    .persona-card-summary,
+    .persona-overview-subtitle,
+    .ditl-subtitle {{
+      font-size: 1rem;
+      line-height: 1.5;
+      max-width: 54ch;
+      color: var(--deck-ink-secondary);
+    }}
+
     .persona-overview-header {{
-      margin-bottom: 18px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }}
 
     .persona-overview-title {{
       font-family: 'Google Sans', sans-serif;
-      font-size: 1.45rem;
+      font-size: 1.5rem;
       font-weight: 700;
-      color: var(--text-primary);
+      color: var(--deck-ink);
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 4px;
+      letter-spacing: -0.02em;
     }}
 
     .persona-overview-subtitle {{
-      font-size: 0.9rem;
-      color: var(--text-secondary);
+      font-size: 1rem;
+      color: var(--deck-ink-secondary);
       line-height: 1.5;
+      max-width: 62ch;
     }}
 
+    /* 5-State Task Bundle Legend Key & 5-Segment Distribution Bar */
+    .task-bundle-key-bar {{
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin-top: 8px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }}
+
+    .task-bundle-key-title {{
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--deck-ink-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }}
+
+    .task-bundle-key-items {{
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }}
+
+    .task-bundle-key-chip {{
+      background: transparent !important;
+      border: none !important;
+      padding: 2px 4px !important;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--deck-ink-secondary);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      line-height: 1.2;
+    }}
+
+    .persona-overview-header .task-bundle-key-chip {{
+      background: transparent !important;
+      border: none !important;
+      padding: 2px 4px !important;
+      cursor: default;
+    }}
+
+    .state-dot {{
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }}
+
+    .state-dot.dot-unchanged {{ background: var(--task-unchanged-dot); }}
+    .state-dot.dot-augmented {{ background: var(--task-augmented-dot); }}
+    .state-dot.dot-automated {{ background: var(--task-automated-dot); }}
+    .state-dot.dot-new {{ background: var(--task-new-dot); }}
+    .state-dot.dot-retired {{ background: var(--task-retired-dot); border: 1px dashed var(--task-retired-border); }}
+
+    .task-bundle-key-chip.key-unchanged {{ color: var(--deck-ink); }}
+    .task-bundle-key-chip.key-augmented {{ color: var(--deck-ink); }}
+    .task-bundle-key-chip.key-automated {{ color: var(--deck-ink); }}
+    .task-bundle-key-chip.key-new {{ color: var(--deck-ink); }}
+    .task-bundle-key-chip.key-retired {{ color: var(--deck-ink-muted); }}
+
+    /* Apple Music–Style Deck Geometry */
+    .deck-shell {{
+      position: relative;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }}
+
+    #personaOverviewDeck {{
+      --slide-w: min(660px, 84vw);
+      --slide-gap: 24px;
+    }}
+
+    #ditlStageDeck {{
+      --slide-w: min(920px, 90vw);
+      --slide-gap: 24px;
+    }}
+
+    .deck-viewport {{
+      overflow: hidden;
+      width: 100%;
+      position: relative;
+      touch-action: pan-y;
+      outline: none;
+      padding: 8px 0;
+    }}
+
+    .deck-track {{
+      display: flex;
+      align-items: stretch;
+      gap: var(--slide-gap, 24px);
+      transition: transform var(--m-slide) var(--m-ease-out);
+      transform: translate3d(calc(50% - var(--slide-w, 660px) / 2 - var(--deck-idx, 0) * (var(--slide-w, 660px) + var(--slide-gap, 24px))), 0, 0);
+      will-change: transform;
+    }}
+
+    .deck-slide {{
+      flex: 0 0 var(--slide-w, 660px);
+      width: var(--slide-w, 660px);
+      position: relative;
+      opacity: 0.35;
+      transition: opacity var(--m-slide) var(--m-ease-out);
+    }}
+
+    .deck-slide.is-neighbor {{
+      opacity: 0.65;
+      cursor: pointer;
+    }}
+
+    .deck-slide.is-active {{
+      opacity: 1;
+    }}
+
+    .deck-slide-content {{
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }}
+
+    .deck-peek-overlay {{
+      display: none;
+    }}
+
+    @media (min-width: 769px) {{
+      .deck-slide.is-neighbor .deck-peek-overlay {{
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        display: block;
+      }}
+    }}
+
+    .deck-controls {{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      margin-top: 8px;
+      padding: 8px 0;
+    }}
+
+    .deck-nav-btn {{
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      min-height: 44px;
+      border-radius: 50%;
+      background: var(--deck-surface);
+      border: 1px solid var(--deck-border);
+      color: var(--deck-ink);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--deck-top-highlight);
+      transition: all 0.15s ease;
+    }}
+
+    .deck-nav-btn:hover:not(:disabled) {{
+      background: var(--deck-surface-subtle);
+      border-color: var(--deck-accent);
+      color: var(--deck-accent);
+    }}
+
+    .deck-nav-btn:disabled,
+    .deck-nav-btn[aria-disabled="true"] {{
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+    }}
+
+    .deck-scrubber-wrap {{
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }}
+
+    .deck-scrubber {{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }}
+
+    .deck-dot {{
+      width: 8px;
+      height: 8px;
+      min-width: 8px;
+      min-height: 8px;
+      border-radius: 9999px;
+      background: var(--deck-border);
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      position: relative;
+      transition: all var(--m-slide) var(--m-ease-out);
+    }}
+
+    .deck-dot::before {{
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      min-width: 44px;
+      min-height: 44px;
+    }}
+
+    .deck-dot:hover {{
+      background: var(--deck-ink-muted);
+    }}
+
+    .deck-dot.is-active {{
+      width: 20px;
+      background: var(--deck-accent);
+    }}
+
+    .deck-counter {{
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--deck-ink-muted);
+      letter-spacing: 0.05em;
+      min-width: 60px;
+      text-align: center;
+    }}
+
+    .deck-empty-state {{
+      padding: 48px 24px;
+      text-align: center;
+      border: 1px dashed var(--deck-border);
+      border-radius: 14px;
+      background: var(--deck-surface);
+      color: var(--deck-ink-secondary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }}
+
+    /* Persona Overview Card & Details */
     .persona-overview-grid {{
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
@@ -898,28 +1197,23 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .persona-overview-card {{
-      background: var(--bg-card);
-      border: 1px solid var(--border-faint);
+      background: var(--deck-surface);
+      border: 1px solid var(--deck-border);
       border-radius: 14px;
-      padding: 20px;
+      padding: 24px;
       display: flex;
       flex-direction: column;
-      box-shadow: var(--shadow-card);
-      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: var(--deck-top-highlight);
       position: relative;
-    }}
-
-    .persona-overview-card:hover {{
-      transform: translateY(-3px);
-      border-color: var(--border-focus);
-      box-shadow: 0 14px 28px -6px rgba(0, 0, 0, 0.35);
+      width: 100%;
+      height: 100%;
     }}
 
     .persona-card-header {{
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      gap: 10px;
+      gap: 12px;
       margin-bottom: 8px;
     }}
 
@@ -930,15 +1224,23 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .persona-card-icon {{
-      font-size: 1.6rem;
-      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--deck-accent);
+      flex-shrink: 0;
+    }}
+
+    .persona-svg-icon {{
+      display: block;
+      color: currentColor;
     }}
 
     .persona-card-title {{
       font-family: 'Google Sans', sans-serif;
-      font-size: 1.15rem;
+      font-size: 1.25rem;
       font-weight: 700;
-      color: var(--text-primary);
+      color: var(--deck-ink);
       text-wrap: balance;
     }}
 
@@ -946,30 +1248,40 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       font-weight: 700;
       padding: 3px 8px;
       border-radius: 6px;
-      background: var(--persona-pill-bg);
-      border: 1px solid var(--persona-pill-border);
-      color: var(--persona-pill-text);
+      background: var(--deck-surface-subtle);
+      border: 1px solid var(--deck-border);
+      color: var(--deck-ink-secondary);
       font-family: 'JetBrains Mono', monospace;
       white-space: nowrap;
     }}
 
     .persona-card-subtitle {{
-      font-size: 0.84rem;
+      font-size: 0.88rem;
       font-weight: 600;
-      color: var(--accent-blue);
-      margin-bottom: 6px;
+      color: var(--deck-accent);
+      margin-bottom: 8px;
     }}
 
     .persona-card-summary {{
+      font-size: 0.95rem;
+      color: var(--deck-ink-secondary);
+      line-height: 1.5;
+      margin-bottom: 16px;
+      max-width: 54ch;
+    }}
+
+    .persona-horizons-inline {{
+      display: flex;
+      align-items: center;
+      gap: 8px;
       font-size: 0.82rem;
-      color: var(--text-secondary);
-      line-height: 1.45;
-      margin-bottom: 14px;
-      flex: 1;
+      font-weight: 600;
+      color: var(--deck-ink-muted);
+      margin-bottom: 16px;
     }}
 
     .persona-metrics-row {{
@@ -978,15 +1290,15 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       flex-wrap: wrap;
       margin-bottom: 14px;
       padding: 8px 12px;
-      background: var(--bg-surface);
+      background: var(--deck-surface-subtle);
       border-radius: 8px;
-      border: 1px solid var(--border-faint);
+      border: 1px solid var(--deck-border);
     }}
 
     .persona-metric-pill {{
       font-size: 0.76rem;
       font-weight: 600;
-      color: var(--text-primary);
+      color: var(--deck-ink);
       display: inline-flex;
       align-items: center;
       gap: 4px;
@@ -1003,10 +1315,10 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .auto-aug-legend {{
       display: flex;
       justify-content: space-between;
-      font-size: 0.74rem;
+      font-size: 0.75rem;
       font-weight: 600;
       margin-bottom: 6px;
-      color: var(--text-secondary);
+      color: var(--deck-ink-muted);
     }}
 
     .auto-aug-legend .auto-text {{
@@ -1022,8 +1334,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       height: 8px;
       border-radius: 9999px;
       overflow: hidden;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-faint);
+      background: var(--deck-surface-subtle);
+      border: 1px solid var(--deck-border);
     }}
 
     .auto-fill-bar {{
@@ -1038,216 +1350,147 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       transition: width 0.6s ease-out;
     }}
 
-    /* 5-State Task Bundle Legend Key & 5-Segment Distribution Bar */
-    .task-bundle-key-bar {{
-      background: var(--bg-card);
-      border: 1px solid var(--border-faint);
-      border-radius: 10px;
-      padding: 10px 14px;
-      margin-top: 12px;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }}
-
-    .task-bundle-key-title {{
-      font-size: 0.76rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }}
-
-    .task-bundle-key-items {{
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-    }}
-
-    .task-bundle-key-chip {{
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 3px 8px;
-      border-radius: 6px;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      line-height: 1.2;
-    }}
-
-    .persona-overview-header .task-bundle-key-chip {{
-      background: transparent !important;
-      border: none !important;
-      padding: 2px 4px !important;
-      cursor: default;
-    }}
-
-    .state-dot {{
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-      flex-shrink: 0;
-    }}
-
-    .state-dot.dot-unchanged {{ background: var(--task-unchanged-dot); }}
-    .state-dot.dot-augmented {{ background: var(--task-augmented-dot); }}
-    .state-dot.dot-automated {{ background: var(--task-automated-dot); }}
-    .state-dot.dot-new {{ background: var(--task-new-dot); }}
-    .state-dot.dot-retired {{ background: var(--task-retired-dot); border: 1px dashed var(--task-retired-border); }}
-
-    .task-bundle-key-chip.key-unchanged {{
-      background: var(--task-unchanged-bg);
-      border: 1px solid var(--task-unchanged-border);
-      color: var(--task-unchanged-text);
-    }}
-
-    .task-bundle-key-chip.key-augmented {{
-      background: var(--task-augmented-bg);
-      border: 1px solid var(--task-augmented-border);
-      color: var(--task-augmented-text);
-    }}
-
-    .task-bundle-key-chip.key-automated {{
-      background: var(--task-automated-bg);
-      border: 1px solid var(--task-automated-border);
-      color: var(--task-automated-text);
-    }}
-
-    .task-bundle-key-chip.key-new {{
-      background: var(--task-new-bg);
-      border: 1px solid var(--task-new-border);
-      color: var(--task-new-text);
-    }}
-
-    .task-bundle-key-chip.key-retired {{
-      background: var(--task-retired-bg);
-      border: 1px solid var(--task-retired-border);
-      color: var(--task-retired-text);
-    }}
-
     .task-dist-container {{
-      margin-bottom: 16px;
+      margin-bottom: 20px;
     }}
 
     .task-dist-labels {{
       display: flex;
-      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
       font-size: 0.75rem;
       font-weight: 600;
-      margin-bottom: 6px;
-      color: var(--text-secondary);
-      flex-wrap: wrap;
-      gap: 4px;
+      color: var(--deck-ink-muted);
     }}
 
     .task-dist-labels span {{
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
     }}
 
     .task-dist-bar {{
       display: flex;
-      height: 8px;
+      height: 6px;
       border-radius: 9999px;
       overflow: hidden;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-faint);
+      background: var(--deck-surface-subtle);
+      gap: 1px;
     }}
 
-    .task-dist-bar .seg-unchanged {{
-      background: var(--task-unchanged-border);
-      height: 100%;
-    }}
-
-    .task-dist-bar .seg-augmented {{
-      background: var(--task-augmented-border);
-      height: 100%;
-    }}
-
-    .task-dist-bar .seg-automated {{
-      background: var(--task-automated-border);
-      height: 100%;
-    }}
-
-    .task-dist-bar .seg-new {{
-      background: var(--task-new-border);
-      height: 100%;
-    }}
-
-    .task-dist-bar .seg-retired {{
-      background: var(--task-retired-border);
-      height: 100%;
-    }}
+    .task-dist-bar .seg-unchanged {{ background: var(--task-unchanged-dot); }}
+    .task-dist-bar .seg-augmented {{ background: var(--task-augmented-dot); }}
+    .task-dist-bar .seg-automated {{ background: var(--task-automated-dot); }}
+    .task-dist-bar .seg-new {{ background: var(--task-new-dot); }}
+    .task-dist-bar .seg-retired {{ background: var(--task-retired-dot); }}
 
     .btn-persona-cta {{
-      width: 100%;
+      margin-top: auto;
+      padding: 10px 18px;
+      border-radius: 8px;
+      background: var(--deck-accent);
+      color: var(--deck-accent-ink);
+      border: 1px solid var(--deck-accent);
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      background: var(--bg-surface);
-      color: var(--text-primary);
-      padding: 9px 14px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      border: 1px solid var(--border-color);
-      cursor: pointer;
       transition: all 0.15s ease;
-      font-family: inherit;
+      min-height: 44px;
     }}
 
     .btn-persona-cta:hover {{
-      background: var(--accent-blue);
-      border-color: var(--accent-blue);
-      color: #0f172a;
-      transform: translateY(-1px);
+      opacity: 0.92;
     }}
 
     /* Day in the Life Storyboard */
     .ditl-banner {{
-      background: var(--bg-card);
-      border: 1px solid var(--border-faint);
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: var(--shadow-card);
-      margin-bottom: 20px;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      padding: 0;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }}
 
     .ditl-header {{
       display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }}
+
+    .ditl-header-top-row {{
+      display: flex;
       justify-content: space-between;
       align-items: flex-start;
       gap: 16px;
-      margin-bottom: 20px;
       flex-wrap: wrap;
     }}
 
     .ditl-header-left {{
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
       flex: 1;
-      min-width: 280px;
+    }}
+
+    .ditl-back-btn {{
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      background: var(--deck-surface);
+      border: 1px solid var(--deck-border);
+      color: var(--deck-ink);
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      width: fit-content;
+      min-height: 44px;
+      transition: all 0.15s ease;
+    }}
+
+    .ditl-back-btn:hover {{
+      background: var(--deck-surface-subtle);
+      border-color: var(--deck-accent);
+      color: var(--deck-accent);
     }}
 
     .ditl-title {{
       font-family: 'Google Sans', sans-serif;
-      font-size: 1.4rem;
+      font-size: 1.45rem;
       font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 4px;
+      color: var(--deck-ink);
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      letter-spacing: -0.02em;
     }}
 
     .ditl-subtitle {{
-      font-size: 0.88rem;
-      color: var(--text-secondary);
-      margin-bottom: 12px;
+      font-size: 0.95rem;
+      color: var(--deck-ink-secondary);
+      line-height: 1.5;
+      max-width: 54ch;
+    }}
+
+    .ditl-horizons-inline {{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--deck-ink-muted);
+      flex-wrap: wrap;
     }}
 
     .ditl-stat-pills {{
@@ -1257,302 +1500,23 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .ditl-stat-pill {{
-      font-size: 0.76rem;
+      font-size: 0.75rem;
       font-weight: 600;
+      color: var(--deck-ink-secondary);
+      background: var(--deck-surface-subtle);
+      border: 1px solid var(--deck-border);
       padding: 4px 10px;
-      border-radius: 9999px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-faint);
-      color: var(--text-primary);
+      border-radius: 6px;
       display: inline-flex;
       align-items: center;
       gap: 4px;
+    }}
+
+    .ditl-stat-pill strong {{
+      color: var(--deck-accent);
     }}
 
     .ditl-header-right {{
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }}
-
-    .ditl-grid {{
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-      margin-top: 14px;
-    }}
-
-    @media (max-width: 900px) {{
-      .ditl-grid {{
-        grid-template-columns: 1fr;
-      }}
-    }}
-
-    .ditl-stage-card {{
-      background: var(--bg-surface);
-      border: 1px solid var(--border-faint);
-      border-radius: 12px;
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      transition: transform 0.15s ease, border-color 0.15s ease;
-    }}
-
-    .ditl-stage-card:hover {{
-      border-color: var(--border-focus);
-    }}
-
-    .ditl-stage-top {{
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-    }}
-
-    .ditl-time-stage {{
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: var(--text-primary);
-    }}
-
-    .ditl-mode-badge {{
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }}
-
-    .ditl-mode-badge.automated {{
-      background: var(--with-bg);
-      border: 1px solid var(--with-border);
-      color: var(--with-text);
-    }}
-
-    .ditl-mode-badge.augmented {{
-      background: var(--aug-bg);
-      border: 1px solid var(--aug-border);
-      color: var(--aug-text);
-    }}
-
-    .ditl-compare-grid {{
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }}
-
-    @media (max-width: 600px) {{
-      .ditl-compare-grid {{
-        grid-template-columns: 1fr;
-      }}
-    }}
-
-    .ditl-without {{
-      background: var(--without-bg);
-      border: 1px solid var(--without-border);
-      color: var(--without-text);
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 0.8rem;
-      line-height: 1.45;
-    }}
-
-    .ditl-with {{
-      background: var(--with-bg);
-      border: 1px solid var(--with-border);
-      color: var(--with-text);
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 0.8rem;
-      line-height: 1.45;
-    }}
-
-    .ditl-compare-header {{
-      font-weight: 700;
-      font-size: 0.74rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 4px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }}
-
-    .ditl-time-tag,
-    .ditl-time-badge {{
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      opacity: 0.9;
-    }}
-
-    .ditl-split-box {{
-      background: var(--bg-card);
-      border: 1px solid var(--border-faint);
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 0.78rem;
-      line-height: 1.45;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }}
-
-    .ditl-split-box strong {{
-      color: var(--text-primary);
-    }}
-
-    .ditl-agent-chips {{
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      align-items: center;
-      padding-top: 4px;
-    }}
-
-    .ditl-agent-chips-label {{
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }}
-
-    .ditl-agent-chip {{
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      color: var(--text-primary);
-      padding: 4px 9px;
-      border-radius: 6px;
-      font-size: 0.74rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      transition: all 0.15s ease;
-      font-family: inherit;
-    }}
-
-    .ditl-agent-chip:hover {{
-      background: var(--accent-blue);
-      border-color: var(--accent-blue);
-      color: #0f172a;
-      transform: translateY(-1px);
-    }}
-
-    /* 2-State Switcher Controls Bar */
-    .ditl-controls-row {{
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px solid var(--border-faint);
-      flex-wrap: wrap;
-    }}
-
-    .ditl-state-switcher {{
-      display: inline-flex;
-      background: var(--bg-surface);
-      border: 1.5px solid var(--border-color);
-      border-radius: 10px;
-      padding: 3px;
-      gap: 4px;
-    }}
-
-    .ditl-state-btn {{
-      padding: 7px 14px;
-      border-radius: 8px;
-      border: 1.5px solid var(--border-color);
-      background: var(--bg-card);
-      color: var(--text-secondary);
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }}
-
-    .ditl-state-btn:hover {{
-      color: var(--text-primary);
-      transform: translateY(-1px);
-      border-color: var(--border-focus);
-    }}
-
-    .ditl-state-btn.active-before {{
-      background: #dc2626 !important;
-      border-color: #b91c1c !important;
-      color: #ffffff !important;
-      font-weight: 700;
-      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.28);
-    }}
-
-    .ditl-state-btn.active-after {{
-      background: #047857 !important;
-      border-color: #065f46 !important;
-      color: #ffffff !important;
-      font-weight: 700;
-      box-shadow: 0 4px 12px rgba(4, 120, 87, 0.30);
-    }}
-
-    .mode-radio-dot {{
-      font-size: 0.85rem;
-      line-height: 1;
-    }}
-
-    /* Interactive 5-State Filter Pills */
-    .ditl-state-filter-pill {{
-      cursor: pointer;
-      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-      border-width: 1.5px !important;
-      user-select: none;
-    }}
-
-    .ditl-state-filter-pill:hover {{
-      transform: translateY(-2px) scale(1.02);
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-    }}
-
-    .ditl-state-filter-pill.active-filter {{
-      border-width: 2px !important;
-      font-weight: 800 !important;
-      transform: translateY(-2px);
-      box-shadow: 0 0 0 3px var(--border-focus), 0 6px 14px rgba(0, 0, 0, 0.18) !important;
-    }}
-
-    .pill-check-ind {{
-      font-size: 0.72rem;
-      font-weight: 800;
-      margin-right: 2px;
-    }}
-
-    .filter-reset-pill {{
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 6px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-color);
-      color: var(--text-muted);
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.15s ease;
-    }}
-
-    .filter-reset-pill:hover {{
-      background: var(--without-bg);
-      border-color: var(--without-border);
-      color: var(--without-text);
-    }}
-
-    .ditl-stage-top-right {{
       display: flex;
       align-items: center;
       gap: 8px;
@@ -1561,61 +1525,213 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .stage-maximize-btn {{
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      padding: 4px 9px;
-      border-radius: 6px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      color: var(--text-primary);
-      font-size: 0.72rem;
-      font-weight: 600;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      background: var(--deck-surface);
+      border: 1px solid var(--deck-border);
+      color: var(--deck-ink);
+      font-size: 0.82rem;
+      font-weight: 700;
       cursor: pointer;
       font-family: inherit;
+      white-space: nowrap;
+      min-height: 44px;
       transition: all 0.15s ease;
     }}
 
     .stage-maximize-btn:hover {{
-      background: var(--accent-blue);
-      border-color: var(--accent-blue);
-      color: #0f172a;
-      transform: translateY(-1px);
+      background: var(--deck-surface-subtle);
+      border-color: var(--deck-accent);
+      color: var(--deck-accent);
+    }}
+
+    .ditl-controls-row {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding-top: 8px;
+      border-top: 1px solid var(--deck-border);
+    }}
+
+    .ditl-state-switcher {{
+      display: inline-flex;
+      background: var(--deck-surface);
+      border: 1px solid var(--deck-border);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 2px;
+    }}
+
+    .ditl-state-btn {{
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--deck-ink-muted);
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 38px;
+      transition: all 0.15s ease;
+    }}
+
+    .ditl-state-btn:hover {{
+      color: var(--deck-ink);
+    }}
+
+    .ditl-state-btn.active-before {{
+      background: #b91c1c;
+      color: #ffffff;
+    }}
+
+    .ditl-state-btn.active-after {{
+      background: #065f46;
+      color: #ffffff;
+    }}
+
+    .mode-radio-dot {{
+      font-size: 0.75rem;
+    }}
+
+    .ditl-state-filter-pill {{
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--deck-border);
+      background: var(--deck-surface);
+      color: var(--deck-ink-secondary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      min-height: 34px;
+      transition: all 0.15s ease;
+    }}
+
+    .ditl-state-filter-pill:hover {{
+      border-color: var(--deck-accent);
+      color: var(--deck-ink);
+    }}
+
+    .ditl-state-filter-pill.active-filter {{
+      border-color: var(--deck-accent);
+      background: var(--deck-surface-subtle);
+      color: var(--deck-ink);
+      font-weight: 700;
+    }}
+
+    .pill-check-ind {{
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 800;
+    }}
+
+    .filter-reset-pill {{
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px dashed var(--deck-border);
+      background: transparent;
+      color: var(--deck-ink-muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      min-height: 34px;
+      transition: all 0.15s ease;
+    }}
+
+    .filter-reset-pill:hover {{
+      color: var(--deck-accent);
+      border-color: var(--deck-accent);
+    }}
+
+    .ditl-grid {{
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }}
+
+    @media (max-width: 900px) {{
+      .ditl-grid {{
+        grid-template-columns: 1fr;
+      }}
+    }}
+
+    /* Stage Slide Card — Open & Borderless on --deck-canvas */
+    .ditl-stage-card,
+    .ditl-stage-slide {{
+      border: none;
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+    }}
+
+    .ditl-stage-header-row {{
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      flex-wrap: wrap;
+    }}
+
+    .ditl-stage-title {{
+      font-family: 'Google Sans', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--deck-ink);
+      letter-spacing: -0.01em;
+    }}
+
+    .ditl-stage-stagepill {{
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--deck-ink-muted);
+      font-family: 'JetBrains Mono', monospace;
     }}
 
     .ditl-stage-horizon {{
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.74rem;
-      font-weight: 700;
-      padding: 4px 9px;
-      border-radius: 6px;
-      background: var(--badge-bg);
-      border: 1px solid var(--badge-border);
-      color: var(--badge-text);
-      white-space: nowrap;
-      flex-shrink: 0;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--deck-ink-muted);
     }}
 
     .ditl-stage-horizon.manual-mode {{
-      background: var(--without-bg);
-      border-color: var(--without-border);
-      color: var(--without-text);
+      color: var(--deck-ink-muted);
     }}
 
-    /* 3×2 Task-Bundle Grid */
-    .task-bundle-wrap {{
+    .ditl-stage-top-right {{
       display: flex;
-      flex-direction: column;
+      align-items: center;
       gap: 8px;
     }}
 
-    .task-bundle-title {{
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+    .task-bundle-wrap {{
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
+      gap: 10px;
+    }}
+
+    .task-bundle-title {{
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--deck-ink-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }}
 
     .task-bundle-grid {{
@@ -1637,109 +1753,94 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .task-tile {{
-      border-radius: 10px;
-      padding: 10px 12px;
+      background: var(--deck-surface);
+      border: 1px solid var(--deck-border);
+      border-radius: 9px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
       gap: 8px;
-      min-height: 88px;
-      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-      position: relative;
       cursor: pointer;
-      outline: none;
+      text-align: left;
+      font-family: inherit;
+      position: relative;
+      box-shadow: none;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     }}
 
     .task-tile:focus-visible {{
-      box-shadow: 0 0 0 2.5px var(--border-focus);
+      outline: 2px solid var(--deck-accent);
+      outline-offset: 2px;
     }}
 
     .task-tile-top {{
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       gap: 6px;
     }}
 
     .task-state-tag {{
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
       font-size: 0.75rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      line-height: 1.2;
+      font-weight: 600;
     }}
 
     .task-step-ref {{
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.75rem;
-      font-weight: 800;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: rgba(0, 0, 0, 0.10);
-      color: inherit;
-      white-space: nowrap;
+      font-weight: 700;
+      color: var(--deck-ink-muted);
     }}
 
     .task-tile-label {{
-      font-size: 0.80rem;
-      line-height: 1.35;
+      font-size: 0.85rem;
       font-weight: 600;
+      color: var(--deck-ink);
+      line-height: 1.4;
     }}
 
     .task-tile-footer {{
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.75rem;
-      color: var(--text-muted);
+      margin-top: auto;
       padding-top: 4px;
-      border-top: 1px dashed rgba(0, 0, 0, 0.08);
+      font-size: 0.75rem;
+      color: var(--deck-ink-muted);
     }}
 
     .task-pin-chip {{
       font-size: 0.75rem;
-      font-weight: 600;
-      opacity: 0.75;
+      color: var(--deck-ink-muted);
     }}
 
     .task-tile.is-pinned .task-pin-chip {{
-      opacity: 1;
-      font-weight: 800;
-      color: var(--accent-blue);
+      color: var(--deck-accent);
+      font-weight: 700;
     }}
 
-    /* Task States */
     .task-tile.state-unchanged {{
-      background: var(--task-unchanged-bg);
-      border: 1px solid var(--task-unchanged-border);
-      color: var(--task-unchanged-text);
+      border-color: var(--task-unchanged-border);
     }}
 
     .task-tile.state-augmented {{
-      background: var(--task-augmented-bg);
-      border: 1px solid var(--task-augmented-border);
-      color: var(--task-augmented-text);
-      box-shadow: 0 2px 0 0 var(--task-augmented-stack-1), 0 4px 0 0 var(--task-augmented-stack-2);
+      border-color: var(--task-augmented-border);
     }}
 
     .task-tile.state-automated {{
-      background: var(--task-automated-bg);
-      border: 1px solid var(--task-automated-border);
-      color: var(--task-automated-text);
-      box-shadow: 0 2px 0 0 var(--task-automated-stack-1), 0 4px 0 0 var(--task-automated-stack-2);
+      border-color: var(--task-automated-border);
     }}
 
     .task-tile.state-new {{
-      background: var(--task-new-bg);
-      border: 1px solid var(--task-new-border);
-      color: var(--task-new-text);
+      border-color: var(--task-new-border);
     }}
 
     .task-tile.state-retired {{
-      background: var(--task-retired-bg);
       border: 1px dashed var(--task-retired-border);
-      color: var(--task-retired-text);
-      opacity: 0.75;
+      opacity: 0.7;
     }}
 
     .task-tile.state-retired .task-tile-label {{
@@ -1747,17 +1848,16 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .task-tile.state-dormant {{
-      background: var(--task-retired-bg);
       border: 1px dashed var(--task-retired-border);
-      color: var(--task-retired-text);
-      opacity: 0.65;
+      opacity: 0.6;
     }}
 
     /* Prominent Motion Spotlighting & Dimming */
     .motion-spotlight {{
-      transform: translateY(-4px) scale(1.03) !important;
+      transform: translateY(-2px) scale(1.02) !important;
       z-index: 6 !important;
-      box-shadow: 0 0 0 2.5px var(--border-focus), 0 14px 28px -6px rgba(37, 99, 235, 0.28) !important;
+      border-color: var(--deck-accent) !important;
+      box-shadow: 0 0 0 2px var(--deck-accent) !important;
     }}
 
     .motion-dimmed {{
@@ -1771,7 +1871,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .stage-flow-section {{
       margin-top: 12px;
       padding-top: 14px;
-      border-top: 1px solid var(--border-faint);
+      border-top: 1px solid var(--deck-border);
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -1788,7 +1888,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .stage-flow-title {{
       font-size: 0.76rem;
       font-weight: 700;
-      color: var(--text-primary);
+      color: var(--deck-ink);
       text-transform: uppercase;
       letter-spacing: 0.04em;
       display: flex;
@@ -1796,26 +1896,21 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       gap: 6px;
     }}
 
-    .motion-pulse-dot {{
-      width: 7px;
-      height: 7px;
+    .static-status-dot {{
+      width: 6px;
+      height: 6px;
       border-radius: 9999px;
       background: var(--accent-emerald);
-      box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
-      animation: pulseDot 1.8s infinite;
       display: inline-block;
+      flex-shrink: 0;
     }}
 
-    @keyframes pulseDot {{
-      0% {{
-        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
-      }}
-      70% {{
-        box-shadow: 0 0 0 6px rgba(52, 211, 153, 0);
-      }}
-      100% {{
-        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
-      }}
+    .persona-view-shell :focus-visible,
+    #personaExperienceContainer :focus-visible,
+    #stageTheaterModal :focus-visible {{
+      outline: 2px solid var(--deck-accent) !important;
+      outline-offset: 2px !important;
+      transition: none !important;
     }}
 
     .stage-flow-hint {{
@@ -1918,8 +2013,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .conduit-step-card {{
-      background: var(--bg-card);
-      border: 1.5px solid var(--border-color);
+      background: var(--deck-surface);
+      border: 1px solid var(--deck-border);
       border-radius: 10px;
       padding: 10px 12px;
       display: flex;
@@ -1931,13 +2026,14 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
       flex: 1;
+      box-shadow: none;
     }}
 
     .conduit-step-card:hover,
     .conduit-step-card.active-step,
     .conduit-node.active-step .conduit-step-card {{
-      background: var(--bg-surface);
-      border-color: var(--border-focus);
+      background: var(--deck-surface-subtle);
+      border-color: var(--deck-accent);
       transform: translateY(-2px);
       box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.22);
     }}
@@ -1966,8 +2062,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .flow-step-card {{
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
+      background: var(--deck-surface);
+      border: 1px solid var(--deck-border);
       border-radius: 9px;
       padding: 8px 10px;
       display: flex;
@@ -1978,18 +2074,19 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       font-family: inherit;
       transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
+      box-shadow: none;
     }}
 
     .flow-step-card:hover,
     .flow-step-card.active-step {{
-      background: var(--bg-surface);
-      border-color: var(--border-focus);
+      background: var(--deck-surface-subtle);
+      border-color: var(--deck-accent);
       transform: translateY(-2px);
       box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.2);
     }}
 
     .flow-step-card.active-step {{
-      box-shadow: 0 0 0 2px var(--border-focus), 0 6px 14px -2px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 0 0 2px var(--deck-accent), 0 6px 14px -2px rgba(0, 0, 0, 0.25);
     }}
 
     .flow-step-top {{
@@ -2017,7 +2114,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .flow-step-action {{
-      font-size: 0.74rem;
+      font-size: 0.75rem;
       font-weight: 700;
       color: var(--text-primary);
       line-height: 1.3;
@@ -2030,7 +2127,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .flow-step-agent {{
-      font-size: 0.71rem;
+      font-size: 0.75rem;
       font-weight: 500;
       color: var(--text-secondary);
       line-height: 1.32;
@@ -2051,7 +2148,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       background: var(--bg-surface);
       border: 1.5px solid var(--border-color);
       color: var(--text-primary);
-      font-size: 0.70rem;
+      font-size: 0.75rem;
       font-weight: 700;
       cursor: pointer;
       font-family: inherit;
@@ -2076,8 +2173,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       width: 96vw !important;
       max-height: 94vh !important;
       overflow-y: auto;
-      background: var(--bg-card);
-      border: 1.5px solid var(--border-focus);
+      background: var(--deck-canvas);
+      border: 1px solid var(--deck-border);
       border-radius: 18px;
       box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.45);
       display: flex;
@@ -2091,8 +2188,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       gap: 14px;
       flex-wrap: wrap;
       padding: 16px 24px;
-      border-bottom: 1px solid var(--border-color);
-      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--deck-border);
+      background: var(--deck-surface);
       position: sticky;
       top: 0;
       z-index: 10;
@@ -2108,26 +2205,27 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .theater-stage-tab {{
       padding: 6px 12px;
       border-radius: 8px;
-      border: 1.5px solid var(--border-color);
-      background: var(--bg-surface);
-      color: var(--text-secondary);
+      border: 1px solid var(--deck-border);
+      background: var(--deck-surface);
+      color: var(--deck-ink-secondary);
       font-size: 0.78rem;
       font-weight: 700;
       cursor: pointer;
       font-family: inherit;
       white-space: nowrap;
       transition: all 0.15s ease;
+      min-height: 38px;
     }}
 
     .theater-stage-tab:hover {{
-      color: var(--text-primary);
-      border-color: var(--border-focus);
+      color: var(--deck-ink);
+      border-color: var(--deck-accent);
     }}
 
     .theater-stage-tab.active {{
-      background: var(--accent-blue);
-      border-color: var(--accent-blue);
-      color: #0f172a;
+      background: var(--deck-accent);
+      border-color: var(--deck-accent);
+      color: var(--deck-accent-ink);
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     }}
 
@@ -2136,6 +2234,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       display: flex;
       flex-direction: column;
       gap: 20px;
+      background: var(--deck-canvas);
     }}
 
     /* Results Header */
@@ -2944,13 +3043,24 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       .persona-chip,
       .modal-close,
       .stage-maximize-btn,
-      .ditl-state-btn {{
+      .ditl-state-btn,
+      .deck-nav-btn,
+      .ditl-back-btn,
+      .btn-persona-cta {{
         min-height: 44px;
       }}
       .view-mode-btn {{
         white-space: nowrap;
         font-size: 0.8rem;
         padding: 8px 12px;
+      }}
+      #personaOverviewDeck,
+      #ditlStageDeck {{
+        --slide-w: 100%;
+        --slide-gap: 0px;
+      }}
+      .deck-peek-overlay {{
+        display: none !important;
       }}
       .persona-overview-grid {{
         grid-template-columns: 1fr;
@@ -2964,8 +3074,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
       }}
-      .motion-pulse-dot {{
-        animation: none !important;
+      .deck-track,
+      .deck-slide {{
+        transition-duration: 0ms !important;
       }}
     }}
   </style>
@@ -4155,7 +4266,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           <div class="stage-flow-section">
             <div class="stage-flow-header">
               <span class="stage-flow-title">
-                <span class="motion-pulse-dot"></span> Recommended Agent Execution Flow (${{flow.length}} Sequenced Steps)
+                <span class="static-status-dot"></span> Recommended Agent Execution Flow (${{flow.length}} Sequenced Steps)
               </span>
               <span class="stage-flow-hint">⚡ Hover or click any task, state pill, or step to spotlight linked agents · Click 🎬 Watch Demo for 1080p video</span>
             </div>
@@ -4526,7 +4637,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               <div class="stage-flow-section">
                 <div class="stage-flow-header">
                   <span class="stage-flow-title">
-                    <span class="motion-pulse-dot"></span> Recommended Agent Execution Flow (${{flow.length}} Sequenced Steps)
+                    <span class="static-status-dot"></span> Recommended Agent Execution Flow (${{flow.length}} Sequenced Steps)
                   </span>
                   <span class="stage-flow-hint">⚡ Hover or click any task, state pill, or step to spotlight linked agents · Click 🎬 Watch Demo for 1080p video</span>
                 </div>

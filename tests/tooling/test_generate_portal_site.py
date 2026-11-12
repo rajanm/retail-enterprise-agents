@@ -616,3 +616,47 @@ def test_portal_video_modal_has_loading_and_error_states():
     assert "loadeddata" in html
 
 
+def test_minimalist_persona_tokens_and_deck_css():
+    html = build_portal_html([], {})
+
+    # Scoped minimalist theme tokens (light & dark)
+    for token_snippet in [
+        "--m-slide: 240ms",
+        "--deck-canvas: #0b0b0d",
+        "--deck-surface: #151517",
+        "--deck-ink: #f4f4f5",
+        "--deck-accent: #38bdf8",
+        "inset 0 1px 0 rgba(255, 255, 255, 0.06)",
+        "--deck-canvas: #f4f4f1",
+        "--deck-surface: #ffffff",
+        "--deck-ink: #0c0c09",
+        "--deck-accent: #0369a1",
+    ]:
+        assert token_snippet in html, f"Missing minimalist theme token snippet: {token_snippet}"
+
+    # Apple Music deck geometry & responsive single-card mobile track
+    for selector in [
+        ".deck-viewport",
+        ".deck-track",
+        ".deck-slide",
+        ".deck-slide-content",
+        ".deck-peek-overlay",
+        ".deck-controls",
+        ".deck-nav-btn",
+        ".deck-scrubber",
+        ".deck-dot",
+        ".deck-counter",
+        "--slide-w: 100%",
+        "--slide-gap: 0px",
+        "touch-action: pan-y",
+        "tabular-nums",
+    ]:
+        assert selector in html, f"Missing deck CSS rule/selector: {selector}"
+
+    # Pulsing dot loop animation removed; replaced by static status dot
+    assert "@keyframes pulseDot" not in html, "Infinite pulseDot keyframes must be removed"
+    assert ".motion-pulse-dot" not in html, ".motion-pulse-dot must be removed"
+    assert ".static-status-dot" in html, "Expected static .static-status-dot indicator"
+
+
+
