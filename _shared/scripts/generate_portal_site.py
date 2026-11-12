@@ -355,6 +355,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --deck-border: rgba(255, 255, 255, 0.10);
       --deck-top-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
       --deck-active-shadow: 0 22px 48px -18px rgba(0, 0, 0, 0.55);
+      --deck-sheen: linear-gradient(112deg, transparent 20%, rgba(255, 255, 255, 0.13) 48%, rgba(56, 189, 248, 0.12) 52%, transparent 80%);
       --deck-ink: #f4f4f5;
       --deck-ink-secondary: #d4d4d8;
       --deck-ink-muted: #a1a1aa;
@@ -444,6 +445,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --deck-border: rgba(12, 12, 9, 0.10);
       --deck-top-highlight: none;
       --deck-active-shadow: 0 20px 44px -18px rgba(12, 12, 9, 0.16);
+      --deck-sheen: linear-gradient(112deg, transparent 20%, rgba(255, 255, 255, 0.52) 48%, rgba(3, 105, 161, 0.12) 52%, transparent 80%);
       --deck-ink: #0c0c09;
       --deck-ink-secondary: #3f3f46;
       --deck-ink-muted: #52525b;
@@ -1097,34 +1099,148 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     @keyframes coverFlipNext {{
       0% {{
-        transform: translate3d(42px, 0, -40px) scale(0.84) rotateY(-24deg);
+        transform: translate3d(var(--cf-step-x, 370px), 0, -90px) scale(var(--cf-scale-neighbor, 0.76)) rotateY(calc(var(--cf-angle, 22deg) * -1));
+        opacity: 0.34;
+        filter: saturate(0.15);
       }}
-      58% {{
-        transform: translate3d(0, 0, 32px) scale(1.06) rotateY(3deg);
+      52% {{
+        transform: translate3d(calc(var(--cf-step-x, 370px) * 0.08), 0, 74px) scale(1.07) rotateY(4deg);
+        opacity: 1;
+        filter: none;
       }}
       100% {{
         transform: translate3d(0, 0, 24px) scale(1.04) rotateY(0deg);
+        opacity: 1;
+        filter: none;
       }}
     }}
 
     @keyframes coverFlipPrev {{
       0% {{
-        transform: translate3d(-42px, 0, -40px) scale(0.84) rotateY(24deg);
+        transform: translate3d(calc(var(--cf-step-x, 370px) * -1), 0, -90px) scale(var(--cf-scale-neighbor, 0.76)) rotateY(var(--cf-angle, 22deg));
+        opacity: 0.34;
+        filter: saturate(0.15);
       }}
-      58% {{
-        transform: translate3d(0, 0, 32px) scale(1.06) rotateY(-3deg);
+      52% {{
+        transform: translate3d(calc(var(--cf-step-x, 370px) * -0.08), 0, 74px) scale(1.07) rotateY(-4deg);
+        opacity: 1;
+        filter: none;
       }}
       100% {{
         transform: translate3d(0, 0, 24px) scale(1.04) rotateY(0deg);
+        opacity: 1;
+        filter: none;
+      }}
+    }}
+
+    @keyframes coverTuckLeft {{
+      0% {{
+        transform: translate3d(0, 0, 24px) scale(1.04) rotateY(0deg);
+        opacity: 1;
+        filter: none;
+      }}
+      48% {{
+        transform: translate3d(calc(var(--cf-step-x, 370px) * -0.58), 0, -135px) scale(0.82) rotateY(calc(var(--cf-angle, 22deg) * 1.15));
+        opacity: 0.62;
+        filter: saturate(0.4);
+      }}
+      100% {{
+        transform: translate3d(calc(var(--cf-step-x, 370px) * -1), 0, -90px) scale(var(--cf-scale-neighbor, 0.76)) rotateY(var(--cf-angle, 22deg));
+        opacity: 0.34;
+        filter: saturate(0.15);
+      }}
+    }}
+
+    @keyframes coverTuckRight {{
+      0% {{
+        transform: translate3d(0, 0, 24px) scale(1.04) rotateY(0deg);
+        opacity: 1;
+        filter: none;
+      }}
+      48% {{
+        transform: translate3d(calc(var(--cf-step-x, 370px) * 0.58), 0, -135px) scale(0.82) rotateY(calc(var(--cf-angle, 22deg) * -1.15));
+        opacity: 0.62;
+        filter: saturate(0.4);
+      }}
+      100% {{
+        transform: translate3d(var(--cf-step-x, 370px), 0, -90px) scale(var(--cf-scale-neighbor, 0.76)) rotateY(calc(var(--cf-angle, 22deg) * -1));
+        opacity: 0.34;
+        filter: saturate(0.15);
+      }}
+    }}
+
+    @keyframes cardArrivalSheen {{
+      0% {{
+        opacity: 0;
+        transform: translateX(-115%);
+      }}
+      25% {{
+        opacity: 1;
+      }}
+      100% {{
+        opacity: 0;
+        transform: translateX(115%);
+      }}
+    }}
+
+    @keyframes conduitRailDraw {{
+      0% {{
+        transform: scaleX(0);
+      }}
+      100% {{
+        transform: scaleX(1);
       }}
     }}
 
     .deck-slide.is-active.is-flip-next {{
-      animation: coverFlipNext 440ms var(--m-spring);
+      animation: coverFlipNext 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      z-index: 24;
     }}
 
     .deck-slide.is-active.is-flip-prev {{
-      animation: coverFlipPrev 440ms var(--m-spring);
+      animation: coverFlipPrev 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      z-index: 24;
+    }}
+
+    .deck-slide.is-leaving-prev {{
+      animation: coverTuckLeft 360ms var(--m-spring) both;
+      z-index: 10;
+    }}
+
+    .deck-slide.is-leaving-next {{
+      animation: coverTuckRight 360ms var(--m-spring) both;
+      z-index: 10;
+    }}
+
+    .deck-slide .persona-overview-card,
+    .deck-slide .ditl-stage-slide {{
+      position: relative;
+      overflow: hidden;
+    }}
+
+    .deck-slide .persona-overview-card::after,
+    .deck-slide .ditl-stage-slide::after {{
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: inherit;
+      background: var(--deck-sheen);
+      opacity: 0;
+      transform: translateX(-115%);
+      z-index: 4;
+    }}
+
+    .deck-slide.is-active.is-flip-next .persona-overview-card::after,
+    .deck-slide.is-active.is-flip-prev .persona-overview-card::after,
+    .deck-slide.is-active.is-flip-next .ditl-stage-slide::after,
+    .deck-slide.is-active.is-flip-prev .ditl-stage-slide::after {{
+      animation: cardArrivalSheen 560ms cubic-bezier(0.16, 1, 0.3, 1) 120ms 1 both;
+    }}
+
+    .deck-slide.is-active.is-flip-next .conduit-rail-fill,
+    .deck-slide.is-active.is-flip-prev .conduit-rail-fill {{
+      animation: conduitRailDraw 380ms cubic-bezier(0.16, 1, 0.3, 1) 140ms 1 both;
     }}
 
     .deck-slide.is-active .persona-overview-card,
@@ -4780,13 +4896,17 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
         slides.forEach((slide, idx) => {{
           const relInfo = getDeckRelInfo(idx, clamped);
-          slide.classList.remove('is-active', 'is-prev-1', 'is-next-1', 'is-prev-2', 'is-next-2', 'is-prev-far', 'is-next-far', 'is-neighbor', 'is-flip-next', 'is-flip-prev');
+          const isOutgoing = emit && clamped !== prevIdx && idx === prevIdx;
+          slide.classList.remove('is-active', 'is-prev-1', 'is-next-1', 'is-prev-2', 'is-next-2', 'is-prev-far', 'is-next-far', 'is-neighbor', 'is-flip-next', 'is-flip-prev', 'is-leaving-prev', 'is-leaving-next');
           relInfo.cls.split(' ').forEach(c => {{
             if (c) slide.classList.add(c);
           }});
           if (relInfo.isActive && emit && flipDir) {{
             void slide.offsetWidth;
             slide.classList.add(flipDir);
+          }} else if (isOutgoing && flipDir) {{
+            void slide.offsetWidth;
+            slide.classList.add(flipDir === 'is-flip-next' ? 'is-leaving-prev' : 'is-leaving-next');
           }}
           slide.setAttribute('data-pos', relInfo.dataPos);
 
