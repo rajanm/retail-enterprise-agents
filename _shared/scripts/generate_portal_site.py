@@ -1488,6 +1488,24 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       padding: 8px 0;
     }}
 
+    @media (min-width: 769px) {{
+      .deck-prev-btn,
+      .deck-next-btn {{
+        position: absolute;
+        top: 46%;
+        transform: translateY(-50%);
+        z-index: 30;
+        background: var(--deck-surface);
+        box-shadow: var(--deck-active-shadow);
+      }}
+      .deck-prev-btn {{
+        left: 14px;
+      }}
+      .deck-next-btn {{
+        right: 14px;
+      }}
+    }}
+
     .deck-nav-btn {{
       width: 44px;
       height: 44px;
@@ -2075,7 +2093,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
       width: 100%;
     }}
 
@@ -2120,7 +2138,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .task-bundle-wrap {{
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }}
 
     .task-bundle-title {{
@@ -2134,7 +2152,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .task-bundle-grid {{
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
+      gap: 8px;
     }}
 
     @media (max-width: 900px) {{
@@ -2153,10 +2171,10 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       background: var(--deck-surface);
       border: 1px solid var(--deck-border);
       border-radius: 9px;
-      padding: 12px;
+      padding: 8px 10px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 4px;
       cursor: pointer;
       text-align: left;
       font-family: inherit;
@@ -2193,10 +2211,10 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .task-tile-label {{
-      font-size: 0.85rem;
+      font-size: 0.78rem;
       font-weight: 600;
       color: var(--deck-ink);
-      line-height: 1.4;
+      line-height: 1.28;
     }}
 
     .task-tile-footer {{
@@ -2204,7 +2222,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       justify-content: space-between;
       align-items: center;
       margin-top: auto;
-      padding-top: 4px;
+      padding-top: 2px;
       font-size: 0.75rem;
       color: var(--deck-ink-muted);
     }}
