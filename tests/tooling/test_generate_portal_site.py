@@ -527,6 +527,13 @@ def test_portal_keyboard_accessibility_and_reduced_motion():
     assert "el.setAttribute('aria-pressed', 'false')" in html
 
 
+def test_portal_responsive_layout_and_persona_nav_dedup():
+    html = build_portal_html([], {})
+    assert "min-height: 44px" in html
+    assert "position: static" in html
+    assert "overflow-x: auto" in html
+    # In Persona Overview (activePersona === 'all'), personaPills should be hidden
+    assert "activePersona === 'all' ? 'none' : 'flex'" in html
 
 
 def test_zero_modifications_to_scaffold_agents_and_demos():

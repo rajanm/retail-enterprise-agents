@@ -545,7 +545,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     /* Hero Section */
     .hero {{
-      padding: 48px 24px 32px;
+      padding: 24px 24px 18px;
       max-width: 1360px;
       margin: 0 auto;
       width: 100%;
@@ -563,15 +563,15 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       background: var(--badge-bg);
       border: 1px solid var(--badge-border);
       color: var(--accent-blue);
-      margin-bottom: 16px;
+      margin-bottom: 10px;
     }}
 
     .hero-title {{
       font-family: 'Google Sans', sans-serif;
-      font-size: 2.5rem;
+      font-size: 2.15rem;
       font-weight: 700;
       letter-spacing: -0.02em;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
       color: var(--text-primary);
     }}
 
@@ -581,8 +581,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     .hero-desc {{
       max-width: 68ch;
-      margin: 0 auto 28px;
-      font-size: 1.05rem;
+      margin: 0 auto 18px;
+      font-size: 0.98rem;
       color: var(--text-secondary);
       line-height: 1.6;
     }}
@@ -590,9 +590,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     /* Stat Counters */
     .stat-row {{
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 12px;
-      max-width: 1080px;
+      max-width: 980px;
       margin: 0 auto;
     }}
 
@@ -641,8 +641,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       background: var(--bg-secondary);
       border: 1px solid var(--border-faint);
       border-radius: 14px;
-      padding: 18px;
-      margin-bottom: 28px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
       box-shadow: var(--shadow-card);
     }}
 
@@ -2817,6 +2817,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     /* Responsive adjustments */
     @media (max-width: 768px) {{
+      .site-header {{
+        position: static;
+      }}
       .hero-title {{
         font-size: 1.85rem;
       }}
@@ -2824,7 +2827,13 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         grid-template-columns: 1fr;
       }}
       .stat-row {{
-        grid-template-columns: repeat(2, 1fr);
+        display: flex;
+        overflow-x: auto;
+        gap: 8px;
+        padding-bottom: 4px;
+      }}
+      .stat-card {{
+        flex: 0 0 132px;
       }}
       .header-inner {{
         flex-direction: column;
@@ -2833,6 +2842,42 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       .header-actions {{
         width: 100%;
         justify-content: space-between;
+      }}
+      .domain-pills {{
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 6px;
+      }}
+      .domain-btn {{
+        flex: 0 0 auto;
+        min-height: 44px;
+      }}
+      .persona-pills {{
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 6px;
+      }}
+      .persona-btn {{
+        flex: 0 0 auto;
+        min-height: 44px;
+      }}
+      .view-mode-btn,
+      .btn-header,
+      .btn-watch,
+      .btn-showcase,
+      .btn-doc,
+      .persona-chip,
+      .modal-close,
+      .stage-maximize-btn,
+      .ditl-state-btn {{
+        min-height: 44px;
+      }}
+      .view-mode-btn {{
+        white-space: nowrap;
+        font-size: 0.8rem;
+        padding: 8px 12px;
       }}
       .persona-overview-grid {{
         grid-template-columns: 1fr;
@@ -4111,7 +4156,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         if (viewModeHint) viewModeHint.textContent = 'Organized by 9 enterprise retail business functions';
       }} else {{
         if (domainPills) domainPills.style.display = 'none';
-        if (personaPills) personaPills.style.display = 'flex';
+        if (personaPills) personaPills.style.display = activePersona === 'all' ? 'none' : 'flex';
         if (personaExperienceContainer) personaExperienceContainer.style.display = 'block';
         if (resultsBar) resultsBar.style.display = 'none';
         if (agentGrid) agentGrid.style.display = 'none';
@@ -4126,6 +4171,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     // Persona Selection
     function selectPersona(personaId) {{
       activePersona = personaId;
+      if (personaPills) {{
+        personaPills.style.display = activePersona === 'all' ? 'none' : 'flex';
+      }}
       if (viewMode !== 'persona') {{
         setViewMode('persona');
       }}
@@ -4433,8 +4481,27 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           `;
         }}).join('');
 
+        const queryTrimmed = searchQuery ? searchQuery.trim() : '';
+        const searchHintBannerHtml = queryTrimmed ? `
+          <div class="ditl-search-hint-banner" style="background: var(--badge-bg); border: 1px solid var(--badge-border); border-radius: 10px; padding: 10px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 0.85rem; color: var(--text-primary); flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span>🔍</span>
+              <span>Searching across all 100 agents — click 'All Personas' or 'Browse by Domain' to view matching agents</span>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button type="button" class="btn-header" onclick="selectPersona('all')" style="padding: 6px 12px; font-size: 0.8rem; cursor: pointer;">
+                👥 All Personas
+              </button>
+              <button type="button" class="btn-header" onclick="setViewMode('domain')" style="padding: 6px 12px; font-size: 0.8rem; cursor: pointer;">
+                🏬 Browse by Domain
+              </button>
+            </div>
+          </div>
+        ` : '';
+
         personaExperienceContainer.innerHTML = `
           <div class="ditl-banner">
+            ${{searchHintBannerHtml}}
             <div class="ditl-header">
               <div class="ditl-header-left">
                 <h2 class="ditl-title">
