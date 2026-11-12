@@ -28,6 +28,12 @@ def test_get_agent_info_existing_agent():
     assert len(info["subtitle"]) > 10
 
 
+def test_get_agent_info_strips_markdown_syntax():
+    info = get_agent_info("assortment_planning", "merchandising")
+    assert "**" not in info["subtitle"]
+    assert "`" not in info["subtitle"]
+
+
 def test_generate_html_showcase_output(tmp_path):
     output_dir = tmp_path / "demos"
     html_file = generate_html_showcase(

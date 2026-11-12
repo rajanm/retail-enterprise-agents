@@ -80,6 +80,21 @@ DOMAIN_ORDER = [
 ]
 
 
+def strip_inline_markdown(text: str) -> str:
+    """Strips inline Markdown links, bold/italic markers, and code backticks."""
+    cleaned = re.sub(r"\[(.*?)\]\(.*?\)", r"\1", text)
+    cleaned = cleaned.replace("**", "").replace("`", "").strip()
+    return re.sub(r"\s+", " ", cleaned)
+
+
+def markdown_inline_to_html(text: str) -> str:
+    """Converts inline markdown (bold, code, links) to safe HTML."""
+    out = re.sub(r"\[(.*?)\]\((.*?)\)", r'<a href="\2">\1</a>', text)
+    out = re.sub(r"\*\*(.*?)\*\*", r"<strong>\1</strong>", out)
+    out = re.sub(r"`(.*?)`", r"<code>\1</code>", out)
+    return out
+
+
 def extract_agent_metadata(agent_name: str, domain: str, reg_agent: dict, repo_root: Path) -> dict:
     """Extracts rich metadata, KPIs, prompts, personas, and transformations for an agent from its README.md."""
     readme_path = repo_root / "domains" / domain / "agents" / agent_name / "README.md"
@@ -124,15 +139,28 @@ def extract_agent_metadata(agent_name: str, domain: str, reg_agent: dict, repo_r
                 if len(cleaned) > 20:
                     description = cleaned
                     
-        # 2. Extract KPIs from KPI table
-        kpi_table_match = re.search(r"\|\s*Metric\s*\|\s*Definition\s*\|\s*Target\s*\|.*?\n((?:\|.*?\n)+)", content, re.IGNORECASE)
+        # 2. Extract KPIs from Key Metrics Tracked table (supports all 3 domain table schemas)
+        kpi_table_match = re.search(
+            r"\|\s*Metric(?:\s*/\s*KPI)?\s*\|([^\n]+)\n((?:\|.*?\n)+)",
+            content,
+            re.IGNORECASE,
+        )
         if kpi_table_match:
-            rows = kpi_table_match.group(1).strip().split("\n")
+            header_rest = kpi_table_match.group(1)
+            header_cols = [c.strip().lower() for c in header_rest.split("|") if c.strip()]
+            target_idx = 2
+            if len(header_cols) >= 2:
+                if "target" in header_cols[0] or "benchmark" in header_cols[0]:
+                    target_idx = 1
+                else:
+                    target_idx = 2
+
+            rows = kpi_table_match.group(2).strip().split("\n")
             for row in rows:
                 cols = [c.strip() for c in row.split("|")[1:-1]]
-                if len(cols) >= 3 and cols[0] and not cols[0].startswith("---") and cols[0] != ":---":
-                    metric_name = cols[0].replace("**", "").strip()
-                    target = cols[2].replace("**", "").strip()
+                if len(cols) >= 3 and cols[0] and not cols[0].startswith("---") and not cols[0].startswith(":---"):
+                    metric_name = strip_inline_markdown(cols[0])
+                    target = strip_inline_markdown(cols[target_idx]) if len(cols) > target_idx else ""
                     if metric_name and target:
                         kpis.append(f"{metric_name}: {target}")
                     elif metric_name:
@@ -2405,11 +2433,13 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      gap: 5px;
       background: none;
       color: var(--text-muted);
-      padding: 8px;
+      padding: 8px 10px;
       border-radius: 8px;
-      font-size: 1rem;
+      font-size: 0.8rem;
+      font-weight: 500;
       text-decoration: none;
       border: 1px solid transparent;
       transition: all 0.15s ease;
@@ -2687,6 +2717,16 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       font-size: 0.84rem;
     }}
 
+    .arch-item code,
+    .modal-turns-list code {{
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      background: var(--bg-primary);
+      padding: 1px 5px;
+      border-radius: 4px;
+      border: 1px solid var(--border-faint);
+    }}
+
     .arch-subagents-row {{
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -2957,7 +2997,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             <li><strong>Turn 1 (Data Insights):</strong> BigQuery Conversational Analytics natural language to SQL quantitative execution.</li>
             <li><strong>Turn 2 (Market Grounding):</strong> Live Google Search grounding against external industry benchmarks and regulatory statistics.</li>
             <li><strong>Turn 3 (Visual Analytics):</strong> Python Matplotlib visual chart generation with KPI callouts.</li>
-            <li><strong>Turn 4 (Canvas Presentation):</strong> Executive 4-slide slide deck generated in Gemini Enterprise Canvas.</li>
+            <li><strong>Turn 4 (Canvas Presentation):</strong> Executive 4-slide deck generated in Gemini Enterprise Canvas.</li>
           </ul>
         </div>
       </div>
@@ -3022,15 +3062,15 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             <div class="arch-layer-grid">
               <div class="arch-item">
                 <strong>Declarative ADK Framework</strong>
-                Zero-boilerplate root orchestrators (`root_agent.yaml`)
+                Zero-boilerplate root orchestrators (<code>root_agent.yaml</code>)
               </div>
               <div class="arch-item">
                 <strong>Multi-Region Hosting</strong>
-                `us-central1` & `us-east4` hosting containers with auto-scaling
+                <code>us-central1</code> & <code>us-east4</code> hosting containers with auto-scaling
               </div>
               <div class="arch-item">
                 <strong>Global Model Inference</strong>
-                `gemini-3.5-flash` with low latency via global inference endpoint
+                <code>gemini-3.5-flash</code> with low latency via global inference endpoint
               </div>
               <div class="arch-item">
                 <strong>Lifecycle Callbacks</strong>
@@ -3061,7 +3101,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                 </div>
                 <div class="arch-item">
                   <strong>Matplotlib Chart Generator</strong>
-                  Serverless visual chart rendering (`render_chart`)
+                  Serverless visual chart rendering (<code>render_chart</code>)
                 </div>
               </div>
             </div>
@@ -3103,11 +3143,11 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             <div class="arch-layer-grid">
               <div class="arch-item">
                 <strong>Enterprise Dataset</strong>
-                `retail_ent_agents` multi-tenant retail schema
+                <code>retail_ent_agents</code> multi-tenant retail schema
               </div>
               <div class="arch-item">
                 <strong>300+ Partitioned Tables</strong>
-                Structured namespace: `&lt;domain_id&gt;_&lt;agent_id&gt;_&lt;table_name&gt;`
+                Structured namespace: <code>&lt;domain_id&gt;_&lt;agent_id&gt;_&lt;table_name&gt;</code>
               </div>
               <div class="arch-item">
                 <strong>IAM Table Allowlisting</strong>
@@ -3121,7 +3161,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           <h3>🚀 Key Architectural Pillars</h3>
           <ul class="modal-turns-list">
             <li><strong>Declarative ADK Architecture:</strong> Zero-code orchestrator models bind BigQuery tools and Google Search tools with strict domain separation.</li>
-            <li><strong>Global Low-Latency Inference:</strong> `gemini-3.5-flash` global routing delivers ~30% faster time-to-first-token than regional clusters.</li>
+            <li><strong>Global Low-Latency Inference:</strong> <code>gemini-3.5-flash</code> global routing delivers ~30% faster time-to-first-token than regional clusters.</li>
             <li><strong>Dual Sub-Agent Pattern:</strong> Quantitative BigQuery queries and qualitative market grounding execute in specialized sub-agent contexts for hallucination-free answers.</li>
           </ul>
         </div>
@@ -3171,9 +3211,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         100 Enterprise Agents across 9 Strategic Retail Domains. Powered by Google ADK, Gemini Enterprise, and BigQuery.
       </p>
       <div class="footer-links">
-        <a href="https://github.com/rajanm/retail-enterprise-agents" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub Repository</a>
-        <a href="https://github.com/rajanm/retail-enterprise-agents/blob/master/README.md" target="_blank" rel="noopener noreferrer" class="footer-link">Project Documentation</a>
-        <a href="https://github.com/rajanm/retail-enterprise-agents/blob/master/ARCHITECTURE.md" target="_blank" rel="noopener noreferrer" class="footer-link">Architecture Reference</a>
+        <a href="https://github.com/rajanm/retail-enterprise-agents" class="footer-link">GitHub Repository</a>
+        <a href="https://github.com/rajanm/retail-enterprise-agents/blob/master/README.md" class="footer-link">Project Documentation</a>
+        <a href="https://github.com/rajanm/retail-enterprise-agents/blob/master/ARCHITECTURE.md" class="footer-link">Architecture Reference</a>
       </div>
     </div>
   </footer>
@@ -4455,8 +4495,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               <a href="${{agent.demo_html}}" target="_blank" rel="noopener noreferrer" class="btn-showcase" title="Open Dedicated Showcase Player">
                 <span>📄</span> Showcase
               </a>
-              <a href="${{agent.readme}}" target="_blank" rel="noopener noreferrer" class="btn-doc" title="View Technical README">
-                <span>📖</span>
+              <a href="https://github.com/rajanm/retail-enterprise-agents/blob/master/${{agent.readme}}" target="_blank" rel="noopener noreferrer" class="btn-doc" title="View Technical README">
+                <span>📖</span> Docs
               </a>
             </div>
           </div>
@@ -4565,7 +4605,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           <li><strong>Turn 1 (Data Insights):</strong> "${{htmlEscape(agent.prompts[0])}}"</li>
           <li><strong>Turn 2 (Market Grounding):</strong> "${{htmlEscape(agent.prompts[1])}}"</li>
           <li><strong>Turn 3 (Visual Analytics):</strong> "${{htmlEscape(agent.prompts[2])}}"</li>
-          <li><strong>Turn 4 (Canvas Presentation):</strong> Executive 4-slide slide deck generated in Gemini Enterprise Canvas.</li>
+          <li><strong>Turn 4 (Canvas Presentation):</strong> Executive 4-slide deck generated in Gemini Enterprise Canvas.</li>
         `;
       }}
 

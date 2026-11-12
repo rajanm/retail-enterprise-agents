@@ -61,6 +61,22 @@ def test_extract_agent_metadata_for_sample_agents(table_registry_data):
     assert len(meta_hr["prompts"]) >= 3
 
 
+def test_all_100_agents_extract_clean_kpis(table_registry_data):
+    agents = table_registry_data.get("agents", {})
+    missing_kpis = []
+    dirty_kpis = []
+    for agent_name, agent_info in agents.items():
+        meta = extract_agent_metadata(agent_name, agent_info["domain"], agent_info, REPO_ROOT)
+        kpis = meta.get("kpis", [])
+        if not (1 <= len(kpis) <= 4):
+            missing_kpis.append((agent_name, len(kpis)))
+        for k in kpis:
+            if "**" in k or "`" in k:
+                dirty_kpis.append((agent_name, k))
+    assert not missing_kpis, f"Agents missing parsed KPIs: {missing_kpis[:5]}"
+    assert not dirty_kpis, f"KPIs with raw markdown syntax: {dirty_kpis[:5]}"
+
+
 def test_generated_index_html_file_exists_and_is_valid():
     index_file = REPO_ROOT / "index.html"
     assert index_file.exists(), "index.html does not exist at repo root"

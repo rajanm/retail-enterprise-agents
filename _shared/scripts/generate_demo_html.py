@@ -442,6 +442,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 """
 
 
+def clean_subtitle_markdown(text: str) -> str:
+    """Removes inline Markdown syntax (**bold**, `code`, links) from subtitle text."""
+    cleaned = re.sub(r"\[(.*?)\]\(.*?\)", r"\1", text)
+    cleaned = cleaned.replace("**", "").replace("`", "")
+    return re.sub(r"\s+", " ", cleaned).strip()
+
+
 def get_agent_info(agent_name: str, domain: str) -> dict:
     """Extracts agent metadata, display name, and subtitle description."""
     agent_dir = REPO_ROOT / "domains" / domain / "agents" / agent_name
@@ -462,7 +469,7 @@ def get_agent_info(agent_name: str, domain: str) -> dict:
                     display_name = line.replace("# ", "").replace(" Agent", "").strip()
             for line in content.splitlines():
                 if line.startswith("Answers questions about"):
-                    subtitle = line.strip()
+                    subtitle = clean_subtitle_markdown(line.strip())
                     break
         except Exception:
             pass
