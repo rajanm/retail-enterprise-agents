@@ -2625,6 +2625,20 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     }}
 
+    .video-status-overlay {{
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: #0b1120;
+      color: #e2e8f0;
+      font-size: 0.9rem;
+      z-index: 2;
+    }}
+
     .video-container video {{
       width: 100%;
       display: block;
@@ -3077,6 +3091,11 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       </div>
       <div class="modal-body">
         <div class="video-container">
+          <div id="videoLoadingState" class="video-status-overlay">Loading 1080p walkthrough…</div>
+          <div id="videoErrorState" class="video-status-overlay" style="display: none;">
+            <span>Unable to stream video preview.</span>
+            <a id="videoFallbackLink" href="#" download class="btn-header">Download MP4</a>
+          </div>
           <video id="modalVideo" src="" controls playsinline preload="auto">
             Your browser does not support HTML5 video.
           </video>
@@ -3432,6 +3451,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     // Video Modal Elements
     const videoModal = document.getElementById('videoModal');
     const modalVideo = document.getElementById('modalVideo');
+    const videoLoadingState = document.getElementById('videoLoadingState');
+    const videoErrorState = document.getElementById('videoErrorState');
+    const videoFallbackLink = document.getElementById('videoFallbackLink');
     const modalAgentTitle = document.getElementById('modalAgentTitle');
     const modalDomainBadge = document.getElementById('modalDomainBadge');
     const modalRegionBadge = document.getElementById('modalRegionBadge');
@@ -4919,6 +4941,10 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       modalDownloadBtn.href = agent.demo_mp4;
       modalShowcaseBtn.href = agent.demo_html;
 
+      if (videoFallbackLink) videoFallbackLink.href = agent.demo_mp4;
+      if (videoLoadingState) videoLoadingState.style.display = 'flex';
+      if (videoErrorState) videoErrorState.style.display = 'none';
+
       if (agent.prompts && agent.prompts.length >= 3) {{
         modalTurnsList.innerHTML = `
           <li><strong>Turn 1 (Data Insights):</strong> "${{htmlEscape(agent.prompts[0])}}"</li>
@@ -4936,7 +4962,21 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       closeAccessibleModal(videoModal);
       modalVideo.pause();
       modalVideo.src = '';
+      if (videoLoadingState) videoLoadingState.style.display = 'none';
+      if (videoErrorState) videoErrorState.style.display = 'none';
     }}
+
+    modalVideo.addEventListener('loadeddata', () => {{
+      if (videoLoadingState) videoLoadingState.style.display = 'none';
+    }});
+    modalVideo.addEventListener('canplay', () => {{
+      if (videoLoadingState) videoLoadingState.style.display = 'none';
+    }});
+    modalVideo.addEventListener('error', () => {{
+      if (!modalVideo.getAttribute('src') || !videoModal.classList.contains('open')) return;
+      if (videoLoadingState) videoLoadingState.style.display = 'none';
+      if (videoErrorState) videoErrorState.style.display = 'flex';
+    }});
 
     modalCloseBtn.addEventListener('click', closeVideoModal);
     videoModal.addEventListener('click', (e) => {{

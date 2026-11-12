@@ -609,3 +609,10 @@ def test_zero_modifications_to_scaffold_agents_and_demos():
     )
 
 
+def test_portal_video_modal_has_loading_and_error_states():
+    html = build_portal_html([], {})
+    assert 'id="videoLoadingState"' in html
+    assert 'id="videoErrorState"' in html
+    assert "loadeddata" in html
+
+

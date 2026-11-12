@@ -67,3 +67,12 @@ def test_demo_html_accessibility_and_typography(tmp_path):
     assert "border: 1px solid" not in turns_block.group(1)
 
 
+def test_demo_html_video_loading_and_single_source(tmp_path):
+    html_file = generate_html_showcase("cart_checkout_analytics", "e_commerce", tmp_path / "demos")
+    content = html_file.read_text(encoding="utf-8")
+    assert 'id="videoLoadingState"' in content
+    assert 'id="videoErrorState"' in content
+    assert '<video id="demoVideo" controls' in content
+    assert '<source src="cart_checkout_analytics.mp4#t=10" type="video/mp4">' in content
+
+
