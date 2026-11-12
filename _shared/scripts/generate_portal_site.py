@@ -281,8 +281,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --border-subtle: #1e293b;
       --border-focus: #38bdf8;
       --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
       --accent-blue: #38bdf8;
       --accent-blue-hover: #0284c7;
       --accent-indigo: #818cf8;
@@ -341,8 +341,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
       --task-retired-bg: rgba(148, 163, 184, 0.04);
       --task-retired-border: rgba(148, 163, 184, 0.24);
-      --task-retired-text: #64748b;
-      --task-retired-dot: #64748b;
+      --task-retired-text: #94a3b8;
+      --task-retired-dot: #94a3b8;
     }}
 
     [data-theme="light"] {{
@@ -358,7 +358,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       --border-focus: #0284c7;
       --text-primary: #0f172a;
       --text-secondary: #475569;
-      --text-muted: #64748b;
+      --text-muted: #475569;
       --accent-blue: #0284c7;
       --accent-blue-hover: #0369a1;
       --accent-indigo: #6366f1;
@@ -417,7 +417,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
       --task-retired-bg: #f4f3ee;
       --task-retired-border: #c4bfb3;
-      --task-retired-text: #78716c;
+      --task-retired-text: #57534e;
       --task-retired-dot: #a8a29e;
     }}
 
@@ -428,7 +428,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     body {{
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: 'Google Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: var(--bg-primary);
       color: var(--text-primary);
       min-height: 100vh;
@@ -526,8 +526,20 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .btn-primary-header:hover {{
-      background: var(--accent-blue-hover);
-      border-color: var(--accent-blue-hover);
+      background: #075985;
+      border-color: #075985;
+      color: #ffffff !important;
+    }}
+
+    [data-theme="light"] .btn-primary-header {{
+      background: #0369a1;
+      border-color: #0369a1;
+      color: #ffffff !important;
+    }}
+
+    [data-theme="light"] .btn-primary-header:hover {{
+      background: #075985;
+      border-color: #075985;
       color: #ffffff !important;
     }}
 
@@ -564,13 +576,11 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .hero-title span {{
-      background: linear-gradient(135deg, var(--accent-blue), var(--accent-indigo));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--accent-blue);
     }}
 
     .hero-desc {{
-      max-width: 820px;
+      max-width: 68ch;
       margin: 0 auto 28px;
       font-size: 1.05rem;
       color: var(--text-secondary);
@@ -609,7 +619,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .stat-label {{
-      font-size: 0.68rem;
+      font-size: 0.75rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -674,6 +684,12 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .search-input:focus {{
       border-color: var(--border-focus);
       box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+    }}
+
+    .search-input::placeholder,
+    #searchInput::placeholder {{
+      color: var(--text-secondary);
+      opacity: 0.9;
     }}
 
     .search-clear {{
@@ -827,11 +843,11 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .persona-btn.active {{
-      background: var(--accent-indigo);
+      background: #4338ca;
       color: #ffffff;
-      border-color: var(--accent-indigo);
+      border-color: #4338ca;
       font-weight: 700;
-      box-shadow: 0 2px 8px rgba(129, 140, 248, 0.35);
+      box-shadow: 0 2px 8px rgba(67, 56, 202, 0.35);
     }}
 
     .persona-btn.active .domain-count {{
@@ -913,6 +929,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       font-size: 1.15rem;
       font-weight: 700;
       color: var(--text-primary);
+      text-wrap: balance;
     }}
 
     .persona-agent-badge {{
@@ -1441,11 +1458,11 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .ditl-state-btn.active-after {{
-      background: #10b981 !important;
-      border-color: #059669 !important;
+      background: #047857 !important;
+      border-color: #065f46 !important;
       color: #ffffff !important;
       font-weight: 700;
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.30);
+      box-shadow: 0 4px 12px rgba(4, 120, 87, 0.30);
     }}
 
     .mode-radio-dot {{
@@ -1480,7 +1497,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .filter-reset-pill {{
-      font-size: 0.70rem;
+      font-size: 0.75rem;
       font-weight: 700;
       padding: 3px 8px;
       border-radius: 6px;
@@ -1608,7 +1625,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .task-state-tag {{
-      font-size: 0.68rem;
+      font-size: 0.75rem;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.04em;
@@ -1617,7 +1634,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     .task-step-ref {{
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.66rem;
+      font-size: 0.75rem;
       font-weight: 800;
       padding: 2px 6px;
       border-radius: 4px;
@@ -1636,14 +1653,14 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.64rem;
+      font-size: 0.75rem;
       color: var(--text-muted);
       padding-top: 4px;
       border-top: 1px dashed rgba(0, 0, 0, 0.08);
     }}
 
     .task-pin-chip {{
-      font-size: 0.64rem;
+      font-size: 0.75rem;
       font-weight: 600;
       opacity: 0.75;
     }}
@@ -1765,7 +1782,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .stage-flow-hint {{
-      font-size: 0.68rem;
+      font-size: 0.75rem;
       color: var(--text-muted);
       font-weight: 500;
     }}
@@ -1890,7 +1907,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     .conduit-linked-badge {{
       display: none;
-      font-size: 0.62rem;
+      font-size: 0.75rem;
       font-weight: 800;
       color: var(--accent-emerald);
       background: var(--kpi-bg);
@@ -1947,14 +1964,14 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     .flow-step-badge {{
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.66rem;
+      font-size: 0.75rem;
       font-weight: 800;
       color: var(--accent-blue);
       letter-spacing: 0.04em;
     }}
 
     .flow-demo-pill {{
-      font-size: 0.64rem;
+      font-size: 0.75rem;
       font-weight: 700;
       color: var(--text-muted);
       display: inline-flex;
@@ -2093,6 +2110,14 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       padding: 0 4px;
     }}
 
+    .results-section-heading {{
+      font-family: 'Google Sans', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-wrap: balance;
+    }}
+
     .results-count {{
       font-size: 0.9rem;
       font-weight: 600;
@@ -2161,7 +2186,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       font-weight: 700;
       padding: 3px 8px;
       border-radius: 6px;
@@ -2178,6 +2203,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       color: var(--text-primary);
       margin-bottom: 8px;
       line-height: 1.35;
+      text-wrap: balance;
     }}
 
     .card-desc {{
@@ -2185,7 +2211,6 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       color: var(--text-secondary);
       line-height: 1.5;
       margin-bottom: 16px;
-      flex: 1;
       display: -webkit-box;
       -webkit-line-clamp: 4;
       -webkit-box-orient: vertical;
@@ -2932,6 +2957,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     <!-- Results Header -->
     <div class="results-bar">
+      <h2 class="results-section-heading">Agent Directory</h2>
       <div class="results-count" id="resultsCount">
         Showing <strong>{total_agents}</strong> of {total_agents} enterprise agents
       </div>
@@ -3083,7 +3109,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
           <!-- Tier 3: Parallel Sub-Agents -->
           <div class="arch-subagents-row">
-            <div class="arch-layer-card" style="border-top: 3px solid var(--accent-emerald);">
+            <div class="arch-layer-card">
               <div class="arch-layer-header">
                 <div class="arch-layer-title" style="font-size:0.95rem;">
                   <span>📊</span> Sub-Agent 3A: BigQuery Data Insights
@@ -3106,7 +3132,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               </div>
             </div>
 
-            <div class="arch-layer-card" style="border-top: 3px solid var(--accent-blue);">
+            <div class="arch-layer-card">
               <div class="arch-layer-header">
                 <div class="arch-layer-title" style="font-size:0.95rem;">
                   <span>🌐</span> Sub-Agent 3B: Market Context & Grounding
@@ -3133,7 +3159,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           <div class="arch-arrow">▼</div>
 
           <!-- Tier 4 -->
-          <div class="arch-layer-card" style="border-top: 3px solid var(--accent-indigo);">
+          <div class="arch-layer-card">
             <div class="arch-layer-header">
               <div class="arch-layer-title">
                 <span>🗄️</span> Tier 4: Enterprise Retail Data Lakehouse

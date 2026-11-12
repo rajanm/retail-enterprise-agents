@@ -484,6 +484,24 @@ def test_v5_interactive_states_conduit_and_fullscreen_theater():
     assert "switchTheaterStage" in content
 
 
+def test_portal_wcag_tokens_typography_and_heading_hierarchy():
+    html = build_portal_html([], {})
+    # Minimum 0.75rem (12px) on stat/task micro-labels
+    assert "font-size: 0.68rem" not in html
+    assert "font-size: 0.66rem" not in html
+    assert "font-size: 0.64rem" not in html
+    # Accessible active button contrast (no #ffffff on #10b981 or #818cf8)
+    assert "background: #10b981" not in html
+    assert "#ffffff" in html
+    # Visible/semantic h2 before h3 agent cards & balanced headings
+    assert "<h2 " in html
+    assert "text-wrap: balance" in html
+    # .card-desc must not flex-expand past -webkit-line-clamp: 4
+    card_desc_block = re.search(r"\.card-desc\s*\{([^}]*)\}", html)
+    assert card_desc_block is not None
+    assert "flex: 1" not in card_desc_block.group(1)
+
+
 def test_zero_modifications_to_scaffold_agents_and_demos():
     res = subprocess.run(
         ["git", "status", "--porcelain"],
@@ -495,8 +513,10 @@ def test_zero_modifications_to_scaffold_agents_and_demos():
     allowed_files = {
         "_shared/scripts/persona_catalog.py",
         "_shared/scripts/generate_portal_site.py",
+        "_shared/scripts/generate_demo_html.py",
         "index.html",
         "tests/tooling/test_generate_portal_site.py",
+        "tests/tooling/test_generate_demo_html.py",
     }
     unexpected_changes = []
     for line in res.stdout.splitlines():

@@ -75,7 +75,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       --border-subtle: #1e293b;
       --text-primary: #f8fafc;
       --text-secondary: #94a3b8;
-      --text-muted: #64748b;
+      --text-muted: #94a3b8;
       --accent-blue: #38bdf8;
       --accent-indigo: #818cf8;
       --badge-bg: rgba(56, 189, 248, 0.12);
@@ -93,7 +93,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       --border-subtle: #e2e8f0;
       --text-primary: #0f172a;
       --text-secondary: #475569;
-      --text-muted: #64748b;
+      --text-muted: #475569;
       --accent-blue: #0284c7;
       --accent-indigo: #6366f1;
       --badge-bg: #e0f2fe;
@@ -109,7 +109,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }}
 
     body {{
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: 'Google Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: var(--bg-primary);
       color: var(--text-primary);
       min-height: 100vh;
@@ -210,12 +210,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       display: flex;
       align-items: center;
       gap: 10px;
+      text-wrap: balance;
     }}
 
     p.subtitle {{
       color: var(--text-secondary);
       font-size: 0.95rem;
       line-height: 1.5;
+      max-width: 68ch;
     }}
 
     .video-wrapper {{
@@ -239,10 +241,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 12px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-faint);
-      border-radius: 10px;
-      padding: 16px;
+      background: transparent;
+      border-top: 1px solid var(--border-faint);
+      border-bottom: 1px solid var(--border-faint);
+      border-radius: 0;
+      padding: 16px 0;
       margin-bottom: 24px;
     }}
 
@@ -266,10 +269,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }}
 
     .turns-section {{
-      background: var(--bg-surface);
-      border: 1px solid var(--border-faint);
-      border-radius: 10px;
-      padding: 20px;
+      background: transparent;
+      border-top: 1px solid var(--border-faint);
+      border-bottom: 1px solid var(--border-faint);
+      border-radius: 0;
+      padding: 20px 0;
       margin-bottom: 24px;
     }}
 
@@ -278,6 +282,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       font-size: 1.1rem;
       margin-bottom: 12px;
       color: var(--accent-indigo);
+      text-wrap: balance;
     }}
 
     .turn-list {{
@@ -291,6 +296,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       font-size: 0.9rem;
       line-height: 1.5;
       color: var(--text-secondary);
+      max-width: 72ch;
     }}
 
     .turn-list strong {{

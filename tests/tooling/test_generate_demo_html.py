@@ -1,5 +1,6 @@
 """Unit tests for _shared/scripts/generate_demo_html.py."""
 
+import re
 import sys
 from pathlib import Path
 import pytest
@@ -53,4 +54,16 @@ def test_generate_html_showcase_output(tmp_path):
     assert "cart_checkout_analytics.mp4#t=10" in content
     assert "timeupdate" in content
     assert 'target="_blank"' not in content
+
+
+def test_demo_html_accessibility_and_typography(tmp_path):
+    html_file = generate_html_showcase("cart_checkout_analytics", "e_commerce", tmp_path / "demos")
+    content = html_file.read_text(encoding="utf-8")
+    assert "text-wrap: balance" in content
+    assert "max-width: 72ch" in content or "max-width: 68ch" in content
+    # Avoid nested bordered cards inside .container
+    turns_block = re.search(r"\.turns-section\s*\{([^}]*)\}", content)
+    assert turns_block is not None
+    assert "border: 1px solid" not in turns_block.group(1)
+
 
