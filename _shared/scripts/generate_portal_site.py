@@ -3450,7 +3450,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       <div class="stage-theater-header">
         <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
           <div style="display:flex; align-items:center; gap:8px;">
-            <span id="theaterPersonaIcon" style="font-size:1.4rem;">👤</span>
+            <span id="theaterPersonaIcon" style="display:inline-flex; align-items:center;"></span>
             <span id="theaterPersonaTitle" style="font-family:'Google Sans',sans-serif; font-size:1.05rem; font-weight:700; color:var(--text-primary);">Persona Focus Theater</span>
           </div>
           <div class="stage-theater-tabs" id="theaterStageTabs">
@@ -4058,7 +4058,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               tile.classList.add('is-pinned');
               tile.setAttribute('aria-pressed', 'true');
               const chip = tile.querySelector('.task-pin-chip');
-              if (chip) chip.textContent = '📌 Pinned Focus';
+              if (chip) chip.textContent = 'Pinned Focus';
               applyProminentSpotlight(tile);
             }} else {{
               tile.setAttribute('aria-pressed', 'false');
@@ -4120,9 +4120,10 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       applyProminentSpotlight(null);
       const p = PERSONA_MAP[activePersona];
       if (!p) return;
+      ditlStageIdx = stageIdx;
       maximizedStageIdx = stageIdx;
 
-      theaterPersonaIcon.textContent = p.icon || '👤';
+      theaterPersonaIcon.innerHTML = getPersonaSvgIcon(p.id);
       theaterPersonaTitle.textContent = `${{p.title}} — Stage Focus Theater`;
 
       renderStageTheater();
@@ -4141,11 +4142,17 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     function closeStageTheater() {{
       closeAccessibleModal(stageTheaterModal);
+      if (viewMode === 'persona' && activePersona !== 'all') {{
+        renderPersonaExperience();
+        syncUrlHash();
+      }}
     }}
 
     function switchTheaterStage(stageIdx) {{
       maximizedStageIdx = stageIdx;
+      ditlStageIdx = stageIdx;
       renderStageTheater();
+      syncUrlHash();
       if (stageTheaterBody && window.Motion && typeof window.Motion.animate === 'function') {{
         try {{
           window.Motion.animate(
@@ -4190,21 +4197,20 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
         if (ditlStateMode === 'before') {{
           const isNew = t.state === 'new';
           const stateClass = isNew ? 'state-dormant' : 'state-unchanged';
-          const tagText = isNew ? '◌ NOT PERFORMED' : '🟫 MANUAL STEP';
           return `
             <div class="task-tile ${{stateClass}}" data-task-state="${{t.state}}" data-task-idx="${{tileIdx}}">
               <div class="task-tile-top">
-                <span class="task-state-tag">${{tagText}}</span>
+                <span class="task-state-tag"><span class="state-dot ${{isNew ? 'dot-retired' : 'dot-unchanged'}}"></span> ${{isNew ? 'Not Performed' : 'Manual Step'}}</span>
               </div>
               <div class="task-tile-label">${{htmlEscape(t.label)}}</div>
             </div>
           `;
         }} else {{
-          let stateTag = '🟫 UNCHANGED';
-          if (t.state === 'augmented') stateTag = '🟪 AUGMENTED';
-          else if (t.state === 'automated') stateTag = '🟦 AUTOMATED';
-          else if (t.state === 'new') stateTag = '🟨 NEW AI TASK';
-          else if (t.state === 'retired') stateTag = '◌ RETIRED';
+          let stateLabel = 'Unchanged';
+          if (t.state === 'augmented') stateLabel = 'Augmented';
+          else if (t.state === 'automated') stateLabel = 'Automated';
+          else if (t.state === 'new') stateLabel = 'New AI Task';
+          else if (t.state === 'retired') stateLabel = 'Retired';
 
           const stepIndicesStr = (t.step_indices || []).join(',');
           const stepRefHtml = t.steps_label ? `<span class="task-step-ref">${{htmlEscape(t.steps_label)}}</span>` : '';
@@ -4212,7 +4218,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           return `
             <div class="task-tile state-${{t.state}}" data-task-state="${{t.state}}" data-task-idx="${{tileIdx}}" data-steps="${{stepIndicesStr}}" tabindex="0">
               <div class="task-tile-top">
-                <span class="task-state-tag">${{stateTag}}</span>
+                <span class="task-state-tag"><span class="state-dot dot-${{t.state}}"></span> ${{stateLabel}}</span>
                 ${{stepRefHtml}}
               </div>
               <div class="task-tile-label">${{htmlEscape(t.label)}}</div>
@@ -4257,7 +4263,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                 </div>
                 <div class="flow-step-agent" title="${{htmlEscape(agentLabel)}}">${{htmlEscape(agentLabel)}}</div>
                 <button type="button" class="conduit-demo-btn" onclick="openVideoModal('${{f.slug}}')" title="Watch 1080p Demo for ${{htmlEscape(agentLabel)}}">
-                  <span>🎬</span> Watch Demo
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg> Watch Demo
                 </button>
               </div>
             </div>
@@ -4270,7 +4276,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               <span class="stage-flow-title">
                 <span class="static-status-dot"></span> Recommended Agent Execution Flow (${{flow.length}} Sequenced Steps)
               </span>
-              <span class="stage-flow-hint">⚡ Hover or click any task, state pill, or step to spotlight linked agents · Click 🎬 Watch Demo for 1080p video</span>
+              <span class="stage-flow-hint">Hover or click any task, state pill, or step to spotlight linked agents · Click Watch Demo for 1080p video</span>
             </div>
             <div class="flow-conduit-track" style="--conduit-cols: ${{flow.length}};">
               <div class="conduit-rail-line">
@@ -4286,13 +4292,13 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       }}
 
       const horizonBadge = ditlStateMode === 'before'
-        ? `<span class="ditl-stage-horizon manual-mode">⏱️ Manual: ${{htmlEscape(stage.time_before)}}</span>`
-        : `<span class="ditl-stage-horizon">⏱️ ${{htmlEscape(stage.time_before)}} → ⚡ ${{htmlEscape(stage.time_after)}}</span>`;
+        ? `<span class="ditl-stage-horizon manual-mode">Manual: ${{htmlEscape(stage.time_before)}}</span>`
+        : `<span class="ditl-stage-horizon">${{htmlEscape(stage.time_before)}} → ${{htmlEscape(stage.time_after)}}</span>`;
 
       stageTheaterBody.innerHTML = `
         <div class="ditl-stage-card" style="box-shadow: none; border: none; padding: 0; background: transparent;">
           <div class="ditl-stage-top">
-            <span class="ditl-time-stage">📋 ${{htmlEscape(stage.time)}} · ${{htmlEscape(stage.stage)}}</span>
+            <span class="ditl-time-stage">${{htmlEscape(stage.time)}} · ${{htmlEscape(stage.stage)}}</span>
             <div class="ditl-stage-top-right">
               ${{horizonBadge}}
             </div>
@@ -4325,7 +4331,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
           <div class="task-bundle-wrap">
             <div class="task-bundle-title">
               <span>${{ditlStateMode === 'before' ? 'Manual Task Bundle (Baseline)' : '5-State Task Transformation Bundle (6 Tasks)'}}</span>
-              <span>${{ditlStateMode === 'before' ? '⏱️ Legacy Manual Effort' : '⚡ AI-Augmented Horizon'}}</span>
+              <span>${{ditlStateMode === 'before' ? 'Legacy Manual Effort' : 'AI-Augmented Horizon'}}</span>
             </div>
             <div class="task-bundle-grid">
               ${{taskTilesHtml}}
@@ -4375,8 +4381,15 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     // Persona Selection
-    function selectPersona(personaId) {{
+    function selectPersona(personaId, fromOverviewCta = false) {{
       activePersona = personaId;
+      if (personaId !== 'all') {{
+        const foundIdx = PERSONA_ARCHETYPES.findIndex(p => p.id === personaId);
+        if (foundIdx >= 0) {{
+          overviewDeckIdx = foundIdx;
+        }}
+        ditlStageIdx = 0;
+      }}
       if (personaPills) {{
         personaPills.style.display = activePersona === 'all' ? 'none' : 'flex';
       }}
@@ -4620,23 +4633,15 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     // Switch to Persona Archetype from Domain View Card Chip
     function switchToPersonaArchetype(personaId) {{
+      const foundIdx = PERSONA_ARCHETYPES.findIndex(p => p.id === personaId);
+      if (foundIdx >= 0) {{
+        overviewDeckIdx = foundIdx;
+      }}
+      ditlStageIdx = 0;
       setViewMode('persona');
       selectPersona(personaId);
       if (viewModeBar) {{
         viewModeBar.scrollIntoView({{ behavior: 'smooth', block: 'start' }});
-      }}
-    }}
-
-    // Day in the Life Collapsible Toggle
-    function toggleDitlStoryboard() {{
-      ditlCollapsed = !ditlCollapsed;
-      const grid = document.getElementById('ditlGrid');
-      const btn = document.getElementById('ditlToggleBtn');
-      if (grid) {{
-        grid.style.display = ditlCollapsed ? 'none' : 'grid';
-      }}
-      if (btn) {{
-        btn.textContent = ditlCollapsed ? '▼ Show Storyboard' : '▲ Hide Storyboard';
       }}
     }}
 
@@ -4788,28 +4793,27 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
         const count = AGENTS_DATA.filter(a => (a.persona_archetypes || []).includes(p.id)).length;
 
-        const stagesHtml = (p.day_in_the_life || []).map((stage, stageIdx) => {{
+        const stageSlides = (p.day_in_the_life || []).map((stage, stageIdx) => {{
           // 1. Task Bundle (6 tiles)
           const bundle = stage.task_bundle || [];
           const taskTilesHtml = bundle.map((t, tileIdx) => {{
             if (ditlStateMode === 'before') {{
               const isNew = t.state === 'new';
               const stateClass = isNew ? 'state-dormant' : 'state-unchanged';
-              const tagText = isNew ? '◌ NOT PERFORMED' : '🟫 MANUAL STEP';
               return `
                 <div class="task-tile ${{stateClass}}" data-task-state="${{t.state}}" data-task-idx="${{tileIdx}}">
                   <div class="task-tile-top">
-                    <span class="task-state-tag">${{tagText}}</span>
+                    <span class="task-state-tag"><span class="state-dot ${{isNew ? 'dot-retired' : 'dot-unchanged'}}"></span> ${{isNew ? 'Not Performed' : 'Manual Step'}}</span>
                   </div>
                   <div class="task-tile-label">${{htmlEscape(t.label)}}</div>
                 </div>
               `;
             }} else {{
-              let stateTag = '🟫 UNCHANGED';
-              if (t.state === 'augmented') stateTag = '🟪 AUGMENTED';
-              else if (t.state === 'automated') stateTag = '🟦 AUTOMATED';
-              else if (t.state === 'new') stateTag = '🟨 NEW AI TASK';
-              else if (t.state === 'retired') stateTag = '◌ RETIRED';
+              let stateLabel = 'Unchanged';
+              if (t.state === 'augmented') stateLabel = 'Augmented';
+              else if (t.state === 'automated') stateLabel = 'Automated';
+              else if (t.state === 'new') stateLabel = 'New AI Task';
+              else if (t.state === 'retired') stateLabel = 'Retired';
 
               const stepIndicesStr = (t.step_indices || []).join(',');
               const stepRefHtml = t.steps_label ? `<span class="task-step-ref">${{htmlEscape(t.steps_label)}}</span>` : '';
@@ -4817,7 +4821,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               return `
                 <div class="task-tile state-${{t.state}}" data-task-state="${{t.state}}" data-task-idx="${{tileIdx}}" data-steps="${{stepIndicesStr}}" tabindex="0">
                   <div class="task-tile-top">
-                    <span class="task-state-tag">${{stateTag}}</span>
+                    <span class="task-state-tag"><span class="state-dot dot-${{t.state}}"></span> ${{stateLabel}}</span>
                     ${{stepRefHtml}}
                   </div>
                   <div class="task-tile-label">${{htmlEscape(t.label)}}</div>
@@ -4829,8 +4833,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             }}
           }}).join('');
 
-          // 2. Option A — Connected Orchestration Conduit (Only when ditlStateMode === 'after')
-          let bentoFlowHtml = '';
+          // 2. Connected Orchestration Conduit (Only when ditlStateMode === 'after')
+          let bentoFlowHtml = '<div class="flow-bento-grid" style="display: none;"></div>';
           if (ditlStateMode === 'after') {{
             let flow = stage.agent_flow || [];
             if (!flow.length && stage.featured_agents) {{
@@ -4863,7 +4867,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                     </div>
                     <div class="flow-step-agent" title="${{htmlEscape(agentLabel)}}">${{htmlEscape(agentLabel)}}</div>
                     <button type="button" class="conduit-demo-btn" onclick="openVideoModal('${{f.slug}}')" title="Watch 1080p Demo for ${{htmlEscape(agentLabel)}}">
-                      <span>🎬</span> Watch Demo
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg> Watch Demo
                     </button>
                   </div>
                 </div>
@@ -4876,7 +4880,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
                   <span class="stage-flow-title">
                     <span class="static-status-dot"></span> Recommended Agent Execution Flow (${{flow.length}} Sequenced Steps)
                   </span>
-                  <span class="stage-flow-hint">Hover or click any task, state pill, or step to spotlight linked agents · Click 🎬 Watch Demo for 1080p video</span>
+                  <span class="stage-flow-hint">Hover or click any task, state pill, or step to spotlight linked agents · Click Watch Demo for 1080p video</span>
                 </div>
                 <div class="flow-conduit-track" style="--conduit-cols: ${{flow.length}};">
                   <div class="conduit-rail-line">
@@ -4891,20 +4895,18 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             `;
           }}
 
-          // 3. Stage Header Horizon Badge & Maximize Stage Button
+          // 3. Stage Header Horizon Badge
           const horizonBadge = ditlStateMode === 'before'
             ? `<span class="ditl-stage-horizon manual-mode">Manual: ${{htmlEscape(stage.time_before)}}</span>`
             : `<span class="ditl-stage-horizon">${{htmlEscape(stage.time_before)}} → ${{htmlEscape(stage.time_after)}}</span>`;
 
           return `
-            <div class="ditl-stage-card">
-              <div class="ditl-stage-top">
-                <span class="ditl-time-stage">📋 ${{htmlEscape(stage.time)}} · ${{htmlEscape(stage.stage)}}</span>
-                <div class="ditl-stage-top-right">
+            <div class="ditl-stage-slide ditl-stage-card" data-stage-idx="${{stageIdx}}">
+              <div class="ditl-stage-header-row">
+                <h3 class="ditl-stage-title">${{htmlEscape(stage.stage)}}</h3>
+                <span class="ditl-stage-stagepill">${{htmlEscape(stage.time)}} · Stage ${{stageIdx + 1}} of ${{(p.day_in_the_life || []).length}}</span>
+                <div class="ditl-stage-top-right" style="margin-left: auto;">
                   ${{horizonBadge}}
-                  <button type="button" class="stage-maximize-btn" onclick="openStageTheater(${{stageIdx}})" title="Maximize stage in Full-Screen Focus Theater">
-                    <span>⤢</span> Maximize Stage
-                  </button>
                 </div>
               </div>
 
@@ -4921,7 +4923,17 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               ${{bentoFlowHtml}}
             </div>
           `;
-        }}).join('');
+        }});
+
+        const stageLabels = (p.day_in_the_life || []).map(s => s.stage);
+        const clampedStageIdx = Math.max(0, Math.min(ditlStageIdx, stageSlides.length - 1));
+        const deckHtml = renderDeckShell({{
+          id: 'ditlStageDeck',
+          slidesHtml: stageSlides,
+          activeIdx: clampedStageIdx,
+          labels: stageLabels,
+          prevNoun: 'stage'
+        }});
 
         const queryTrimmed = searchQuery ? searchQuery.trim() : '';
         const searchHintBannerHtml = queryTrimmed ? `
@@ -4945,24 +4957,28 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
             ${{searchHintBannerHtml}}
             <div class="ditl-header">
               <div class="ditl-header-left">
-                <h2 class="ditl-title">
-                  <span>${{p.icon}}</span> ${{htmlEscape(p.title)}} — Day in the Life
-                </h2>
-                <div class="ditl-subtitle">${{htmlEscape(p.subtitle)}}</div>
-                <div class="ditl-stat-pills">
-                  <span class="ditl-stat-pill"><strong>${{htmlEscape(p.hours_saved)}}</strong></span>
-                  <span class="ditl-stat-pill"><strong>${{htmlEscape(p.decision_speed)}}</strong></span>
-                  <span class="ditl-stat-pill"><strong>${{htmlEscape(p.automated_label || 'Automated: Data, SQL & Visuals')}}</strong></span>
-                  <span class="ditl-stat-pill"><strong>${{htmlEscape(p.augmented_label || 'Augmented: Strategy & Sign-Off')}}</strong></span>
-                  <span class="ditl-stat-pill"><strong>${{count}} Agents</strong></span>
+                <button class="btn-header" id="backToAllPersonasBtn" onclick="selectPersona('all')">
+                  ← All Personas
+                </button>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                  <h2 class="ditl-title" style="margin: 0; display: inline-flex; align-items: center; gap: 8px;">
+                    ${{getPersonaSvgIcon(p.id)}} ${{htmlEscape(p.title)}}
+                  </h2>
+                  <div class="ditl-subtitle" style="margin: 0;">
+                    ${{htmlEscape(p.subtitle)}}
+                    <span style="color: var(--deck-ink-muted); margin: 0 6px;">·</span>
+                    <span style="font-weight: 600; color: var(--deck-accent);">${{htmlEscape(p.hours_saved)}}</span>
+                    <span style="color: var(--deck-ink-muted); margin: 0 6px;">·</span>
+                    <span style="font-weight: 600; color: var(--deck-accent);">${{htmlEscape(p.decision_speed)}}</span>
+                    <span style="color: var(--deck-ink-muted); margin: 0 6px;">·</span>
+                    <span style="font-weight: 600; color: var(--deck-accent);">${{count}} agents</span>
+                  </div>
                 </div>
               </div>
               <div class="ditl-header-right">
-                <button class="btn-header" id="backToAllPersonasBtn" onclick="selectPersona('all')">
-                  ← All Personas Overview
-                </button>
-                <button class="btn-header" id="ditlToggleBtn" onclick="toggleDitlStoryboard()">
-                  ${{ditlCollapsed ? '▼ Show Storyboard' : '▲ Hide Storyboard'}}
+                <button type="button" class="stage-maximize-btn" onclick="openStageTheater(ditlStageIdx)" title="Maximize stage in Full-Screen Focus Theater">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                  Fullscreen
                 </button>
               </div>
             </div>
@@ -5002,12 +5018,21 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
               </div>
             </div>
 
-            <div class="ditl-grid" id="ditlGrid" style="${{ditlCollapsed ? 'display: none;' : ''}}">
-              ${{stagesHtml}}
-            </div>
+            ${{deckHtml}}
           </div>
         `;
-        runMotionChoreography(personaExperienceContainer);
+
+        initDeckController(document.getElementById('ditlStageDeck'), {{
+          total: stageSlides.length,
+          initialIdx: clampedStageIdx,
+          labels: stageLabels,
+          prevNoun: 'stage',
+          onChange: (idx) => {{
+            ditlStageIdx = idx;
+            syncUrlHash();
+          }}
+        }});
+
         if (activePersona !== 'all') {{
           bindPipelineSpotlightEvents(personaExperienceContainer);
           if (activeTaskStateFilter) {{
@@ -5157,7 +5182,12 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       if (viewMode === 'domain') {{
         if (activeDomain && activeDomain !== 'all') params.set('domain', activeDomain);
       }} else if (viewMode === 'persona') {{
-        if (activePersona && activePersona !== 'all') params.set('persona', activePersona);
+        if (activePersona && activePersona !== 'all') {{
+          params.set('persona', activePersona);
+          if (ditlStageIdx > 0) params.set('stage', String(ditlStageIdx + 1));
+        }} else {{
+          if (overviewDeckIdx > 0) params.set('pidx', String(overviewDeckIdx + 1));
+        }}
       }}
       if (searchQuery && searchQuery.trim()) {{
         params.set('q', searchQuery.trim());
@@ -5175,6 +5205,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       const urlDomain = params.get('domain');
       const urlPersona = params.get('persona');
       const urlQ = params.get('q');
+      const urlPidx = params.get('pidx');
+      const urlStage = params.get('stage');
 
       // 1. Search Query (defaults to empty string when omitted)
       searchQuery = (urlQ !== null && urlQ !== undefined) ? urlQ : '';
@@ -5217,6 +5249,32 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       document.querySelectorAll('.persona-btn').forEach(btn => {{
         btn.classList.toggle('active', btn.dataset.persona === activePersona);
       }});
+
+      // 4b. Synchronize deck indices from hash (pidx and stage)
+      if (urlPidx) {{
+        const parsedPidx = parseInt(urlPidx, 10);
+        if (!isNaN(parsedPidx) && parsedPidx >= 1) {{
+          overviewDeckIdx = Math.max(0, Math.min(parsedPidx - 1, PERSONA_ARCHETYPES.length - 1));
+        }}
+      }} else {{
+        overviewDeckIdx = 0;
+      }}
+
+      if (resolvedPersona !== 'all') {{
+        const foundPersonaIdx = PERSONA_ARCHETYPES.findIndex(p => p.id === resolvedPersona);
+        if (foundPersonaIdx >= 0) {{
+          overviewDeckIdx = foundPersonaIdx;
+        }}
+      }}
+
+      if (urlStage) {{
+        const parsedStage = parseInt(urlStage, 10);
+        if (!isNaN(parsedStage) && parsedStage >= 1) {{
+          ditlStageIdx = Math.max(0, Math.min(parsedStage - 1, 3));
+        }}
+      }} else {{
+        ditlStageIdx = 0;
+      }}
 
       // 5. Container & Navigation Visibility
       if (viewMode === 'domain') {{

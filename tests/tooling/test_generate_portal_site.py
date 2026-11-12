@@ -702,6 +702,42 @@ def test_persona_overview_single_card_deck():
         assert emoji not in body, f"Unexpected emoji {emoji} in renderPersonaExperience()"
 
 
+def test_ditl_stage_deck_and_theater_sync():
+    html = build_portal_html([], {})
+    render_fn_match = re.search(
+        r"function renderPersonaExperience\(\)\s*\{(.*?)\n    function renderAgents\(\)",
+        html,
+        re.DOTALL,
+    )
+    assert render_fn_match is not None
+    body = render_fn_match.group(1)
+
+    for snippet in [
+        "id: 'ditlStageDeck'",
+        "ditl-stage-slide ditl-stage-card",
+        "openStageTheater(ditlStageIdx)",
+        "← All Personas",
+        "static-status-dot",
+        "state-dot dot-augmented",
+        "state-dot dot-automated",
+        "state-dot dot-new",
+        "state-dot dot-retired",
+    ]:
+        assert snippet in body, f"Missing State B snippet in renderPersonaExperience(): {snippet}"
+
+    # Ensure emojis in State B and Stage Theater were replaced with clean SVGs / state dots
+    for emoji in ["🟫", "🟪", "🟦", "🟨", "◌", "🎬", "📋", "⏱️", "⚡", "📌"]:
+        assert emoji not in body, f"Unexpected emoji {emoji} in renderPersonaExperience()"
+
+    # Verify Theater and URL hash sync (pidx / stage)
+    assert "params.set('pidx'" in html
+    assert "params.set('stage'" in html
+    assert "params.get('pidx')" in html
+    assert "params.get('stage')" in html
+    assert "ditlStageIdx = stageIdx" in html
+
+
+
 
 
 
