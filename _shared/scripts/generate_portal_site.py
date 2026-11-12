@@ -1028,12 +1028,25 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     #ditlStageDeck {{
-      --slide-w: min(860px, 84vw);
+      --slide-w: min(860px, 82vw);
       --slide-gap: 0px;
-      --cf-step-x: min(470px, 48vw);
+      --cf-step-x: min(540px, 54vw);
       --cf-step-z: 90px;
       --cf-angle: 9deg;
-      --cf-scale-neighbor: 0.88;
+      --cf-scale-neighbor: 0.86;
+    }}
+
+    #ditlStageDeck .deck-slide {{
+      background: var(--deck-canvas);
+      border-radius: 16px;
+      padding: 12px 18px;
+    }}
+
+    #ditlStageDeck .deck-slide.is-prev-2,
+    #ditlStageDeck .deck-slide[data-pos="-2"],
+    #ditlStageDeck .deck-slide.is-next-2,
+    #ditlStageDeck .deck-slide[data-pos="2"] {{
+      opacity: 0;
     }}
 
     .deck-viewport {{
