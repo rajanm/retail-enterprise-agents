@@ -659,4 +659,26 @@ def test_minimalist_persona_tokens_and_deck_css():
     assert ".static-status-dot" in html, "Expected static .static-status-dot indicator"
 
 
+def test_shared_deck_controller_and_monochrome_svg():
+    html = build_portal_html([], {})
+
+    for symbol in [
+        "function getPersonaSvgIcon(",
+        'stroke="currentColor"',
+        'stroke-width="1.5"',
+        "function renderDeckShell(",
+        "function initDeckController(",
+        "function clearPersonaSearch(",
+        "deck-slide-content",
+        "deck-peek-overlay",
+        "setDeckIndex",
+        "ArrowLeft",
+        "ArrowRight",
+        "pointerdown",
+        "pointerup",
+    ]:
+        assert symbol in html, f"Missing deck controller symbol/attribute: {symbol}"
+
+
+
 

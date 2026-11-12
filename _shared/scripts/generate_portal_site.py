@@ -3509,6 +3509,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     const PERSONA_MAP = Object.fromEntries(PERSONA_ARCHETYPES.map(p => [p.id, p]));
     let viewMode = 'domain';
     let activePersona = 'all';
+    let overviewDeckIdx = 0;
+    let ditlStageIdx = 0;
     let ditlCollapsed = false;
     let ditlStateMode = 'after';
     let activeTaskStateFilter = null; // null or 'unchanged' | 'augmented' | 'automated' | 'new' | 'retired'
@@ -4389,6 +4391,231 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       renderPersonaExperience();
       renderAgents();
       syncUrlHash();
+    }}
+
+    // Monochrome 1.5px-stroke SVG icons per persona archetype
+    function getPersonaSvgIcon(personaId) {{
+      const paths = {{
+        c_suite_exec: '<path d="M3 20h18M5 20V9l7-5 7 5v11M9 20v-5h6v5"/>',
+        vp_merchandising: '<path d="M4 7h16l-1.5 11h-13L4 7zM9 7V5a3 3 0 0 1 6 0v2"/>',
+        supply_chain_dir: '<path d="M3 7h11v10H3zM14 10h4l3 3v4h-7v-7zM6.5 19a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm10.5 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/>',
+        store_ops_dir: '<path d="M3 10l1.5-5h15L21 10M4 10v9h16v-9M9 19v-5h6v5"/>',
+        ecommerce_lead: '<path d="M3 6h18v10H3zM8 20h8M12 16v4"/>',
+        cfo_finance_vp: '<path d="M4 19h16M7 16v-5M12 16V7M17 16v-8"/>',
+        cmo_marketing_vp: '<path d="M4 14l9-6v8l-9-2zm9-4l6-3v10l-6-3M7 15l1 4h2l-.5-3.5"/>',
+        customer_care_dir: '<path d="M4 12a8 8 0 0 1 16 0v4a2 2 0 0 1-2 2h-2v-5h4M4 13h4v5H6a2 2 0 0 1-2-2v-3z"/>',
+        chro_hr_vp: '<path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm6.5 1a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM4 19a5 5 0 0 1 10 0M15 19a4 4 0 0 1 5-3.8"/>',
+        cso_esg_dir: '<path d="M12 20c4.5 0 8-3.5 8-8 0-3.5-2-6.5-5-8-1 3.5-3.5 6-7 7.5C6.5 12 4 14.5 4 17a3 3 0 0 0 3 3h5z"/>',
+      }};
+      const d = paths[personaId] || '<circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/>';
+      return `<svg class="persona-svg-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${{d}}</svg>`;
+    }}
+
+    function formatSlideCounter(idx, total) {{
+      if (total <= 0) return '00 / 00';
+      return `${{String(idx + 1).padStart(2, '0')}} / ${{String(total).padStart(2, '0')}}`;
+    }}
+
+    function clearPersonaSearch() {{
+      searchQuery = '';
+      if (searchInput) searchInput.value = '';
+      if (searchClear) searchClear.style.display = 'none';
+      overviewDeckIdx = 0;
+      renderPersonaExperience();
+      syncUrlHash();
+      if (searchInput) searchInput.focus();
+    }}
+
+    function renderDeckShell({{ id, slidesHtml, activeIdx, labels, prevNoun, emptyHtml }}) {{
+      const total = labels.length;
+      if (total === 0) {{
+        return `<div class="deck-shell" id="${{id}}">${{emptyHtml || ''}}</div>`;
+      }}
+      const safeIdx = Math.max(0, Math.min(activeIdx, total - 1));
+      const prevDisabled = safeIdx <= 0 ? 'disabled aria-disabled="true"' : '';
+      const nextDisabled = safeIdx >= total - 1 ? 'disabled aria-disabled="true"' : '';
+      const prevTarget = safeIdx > 0 ? labels[safeIdx - 1] : '';
+      const nextTarget = safeIdx < total - 1 ? labels[safeIdx + 1] : '';
+
+      const wrappedSlides = slidesHtml.map((innerHtml, idx) => {{
+        const isActive = idx === safeIdx;
+        const isNeighbor = !isActive && Math.abs(idx - safeIdx) === 1;
+        const cls = isActive ? 'is-active' : (isNeighbor ? 'is-neighbor' : '');
+        const inertAttr = isActive ? '' : 'inert aria-hidden="true"';
+        return `
+          <div class="deck-slide ${{cls}}" data-slide-idx="${{idx}}">
+            <div class="deck-slide-content" ${{inertAttr}}>${{innerHtml}}</div>
+            ${{!isActive ? `<button type="button" class="deck-peek-overlay" data-peek-idx="${{idx}}" tabindex="-1" aria-hidden="true" title="Go to ${{htmlEscape(labels[idx] || '')}}"></button>` : ''}}
+          </div>
+        `;
+      }}).join('');
+
+      const dotsHtml = labels.map((lbl, idx) => `
+        <button type="button"
+          class="deck-dot ${{idx === safeIdx ? 'is-active' : ''}}"
+          role="tab"
+          aria-selected="${{idx === safeIdx ? 'true' : 'false'}}"
+          aria-label="${{htmlEscape(lbl)}}"
+          data-dot-idx="${{idx}}"
+          title="${{htmlEscape(lbl)}}">
+        </button>
+      `).join('');
+
+      return `
+        <div class="deck-shell" id="${{id}}" style="--deck-idx: ${{safeIdx}};">
+          <div class="deck-viewport" tabindex="0" role="region" aria-roledescription="carousel" aria-label="${{htmlEscape(prevNoun)}} deck">
+            <div class="deck-track">
+              ${{wrappedSlides}}
+            </div>
+          </div>
+          <div class="deck-controls">
+            <button type="button" class="deck-nav-btn deck-prev-btn" ${{prevDisabled}} aria-label="Previous ${{htmlEscape(prevNoun)}}${{prevTarget ? ': ' + htmlEscape(prevTarget) : ''}}">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <div class="deck-scrubber-wrap">
+              <div class="deck-scrubber" role="tablist" aria-label="${{htmlEscape(prevNoun)}} slides">
+                ${{dotsHtml}}
+              </div>
+              <div class="deck-counter" aria-live="polite">${{formatSlideCounter(safeIdx, total)}}</div>
+            </div>
+            <button type="button" class="deck-nav-btn deck-next-btn" ${{nextDisabled}} aria-label="Next ${{htmlEscape(prevNoun)}}${{nextTarget ? ': ' + htmlEscape(nextTarget) : ''}}">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }}
+
+    function initDeckController(deckEl, {{ total, initialIdx, labels, prevNoun, onChange }}) {{
+      if (!deckEl || total <= 0) return null;
+      let currentIdx = Math.max(0, Math.min(initialIdx || 0, total - 1));
+      const viewport = deckEl.querySelector('.deck-viewport');
+      const slides = Array.from(deckEl.querySelectorAll('.deck-slide'));
+      const dots = Array.from(deckEl.querySelectorAll('.deck-dot'));
+      const prevBtn = deckEl.querySelector('.deck-prev-btn');
+      const nextBtn = deckEl.querySelector('.deck-next-btn');
+      const counter = deckEl.querySelector('.deck-counter');
+
+      function setDeckIndex(nextIdx, emit = true) {{
+        const clamped = Math.max(0, Math.min(nextIdx, total - 1));
+        currentIdx = clamped;
+        deckEl.style.setProperty('--deck-idx', String(clamped));
+
+        slides.forEach((slide, idx) => {{
+          const isActive = idx === clamped;
+          const isNeighbor = !isActive && Math.abs(idx - clamped) === 1;
+          slide.classList.toggle('is-active', isActive);
+          slide.classList.toggle('is-neighbor', isNeighbor);
+          const content = slide.querySelector('.deck-slide-content');
+          const overlay = slide.querySelector('.deck-peek-overlay');
+          if (content) {{
+            if (isActive) {{
+              content.removeAttribute('inert');
+              content.removeAttribute('aria-hidden');
+            }} else {{
+              content.setAttribute('inert', '');
+              content.setAttribute('aria-hidden', 'true');
+            }}
+          }}
+          if (overlay) {{
+            overlay.style.display = isActive ? 'none' : '';
+          }}
+        }});
+
+        dots.forEach((dot, idx) => {{
+          const active = idx === clamped;
+          dot.classList.toggle('is-active', active);
+          dot.setAttribute('aria-selected', active ? 'true' : 'false');
+        }});
+
+        if (counter) {{
+          counter.textContent = formatSlideCounter(clamped, total);
+        }}
+
+        if (prevBtn) {{
+          const atStart = clamped <= 0;
+          prevBtn.disabled = atStart;
+          prevBtn.setAttribute('aria-disabled', atStart ? 'true' : 'false');
+          const prevLabel = clamped > 0 ? labels[clamped - 1] : '';
+          prevBtn.setAttribute('aria-label', `Previous ${{prevNoun}}${{prevLabel ? ': ' + prevLabel : ''}}`);
+        }}
+
+        if (nextBtn) {{
+          const atEnd = clamped >= total - 1;
+          nextBtn.disabled = atEnd;
+          nextBtn.setAttribute('aria-disabled', atEnd ? 'true' : 'false');
+          const nextLabel = clamped < total - 1 ? labels[clamped + 1] : '';
+          nextBtn.setAttribute('aria-label', `Next ${{prevNoun}}${{nextLabel ? ': ' + nextLabel : ''}}`);
+        }}
+
+        if (emit && typeof onChange === 'function') {{
+          onChange(clamped);
+        }}
+      }}
+
+      if (prevBtn) {{
+        prevBtn.addEventListener('click', () => setDeckIndex(currentIdx - 1));
+      }}
+      if (nextBtn) {{
+        nextBtn.addEventListener('click', () => setDeckIndex(currentIdx + 1));
+      }}
+      dots.forEach((dot) => {{
+        dot.addEventListener('click', () => {{
+          const targetIdx = parseInt(dot.getAttribute('data-dot-idx') || '0', 10);
+          setDeckIndex(targetIdx);
+        }});
+      }});
+      deckEl.querySelectorAll('.deck-peek-overlay').forEach((overlay) => {{
+        overlay.addEventListener('click', () => {{
+          const targetIdx = parseInt(overlay.getAttribute('data-peek-idx') || '0', 10);
+          setDeckIndex(targetIdx);
+        }});
+      }});
+
+      const controlsEl = deckEl.querySelector('.deck-controls');
+      const onDeckKey = (e) => {{
+        const openModal = [videoModal, archModal, stageTheaterModal].find(m => m && m.classList.contains('open'));
+        if (openModal) return;
+        const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+        if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') return;
+        if (e.key === 'ArrowLeft') {{
+          e.preventDefault();
+          setDeckIndex(currentIdx - 1);
+        }} else if (e.key === 'ArrowRight') {{
+          e.preventDefault();
+          setDeckIndex(currentIdx + 1);
+        }}
+      }};
+      if (viewport) viewport.addEventListener('keydown', onDeckKey);
+      if (controlsEl) controlsEl.addEventListener('keydown', onDeckKey);
+
+      // Horizontal touch / pointer swipe without fighting vertical scroll
+      if (viewport) {{
+        let pointerStartX = null;
+        let pointerStartY = null;
+        viewport.addEventListener('pointerdown', (e) => {{
+          if (e.target.closest('button, a, input, [data-task-idx], .conduit-node')) return;
+          pointerStartX = e.clientX;
+          pointerStartY = e.clientY;
+        }});
+        viewport.addEventListener('pointerup', (e) => {{
+          if (pointerStartX === null || pointerStartY === null) return;
+          const dx = e.clientX - pointerStartX;
+          const dy = e.clientY - pointerStartY;
+          pointerStartX = null;
+          pointerStartY = null;
+          if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2) {{
+            setDeckIndex(dx < 0 ? currentIdx + 1 : currentIdx - 1);
+          }}
+        }});
+        viewport.addEventListener('pointercancel', () => {{
+          pointerStartX = null;
+          pointerStartY = null;
+        }});
+      }}
+
+      setDeckIndex(currentIdx, false);
+      return {{ setDeckIndex }};
     }}
 
     // Switch to Persona Archetype from Domain View Card Chip
