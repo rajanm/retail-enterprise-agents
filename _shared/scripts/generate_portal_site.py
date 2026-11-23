@@ -55,6 +55,26 @@ DOMAIN_ICONS = {
     "human_resources": "👥",
 }
 
+def _svg_icon(paths: str, size: int = 15) -> str:
+    return (
+        f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" '
+        f'stroke="currentColor" stroke-width="1.5" stroke-linecap="round" '
+        f'stroke-linejoin="round" aria-hidden="true">{paths}</svg>'
+    )
+
+DOMAIN_SVG_ICONS = {
+    "all": _svg_icon('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
+    "merchandising": _svg_icon('<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>'),
+    "supply_chain": _svg_icon('<rect x="1" y="3" width="15" height="13" rx="1.5"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>'),
+    "store_operations": _svg_icon('<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>'),
+    "e_commerce": _svg_icon('<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>'),
+    "marketing": _svg_icon('<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>'),
+    "finance": _svg_icon('<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'),
+    "customer_care": _svg_icon('<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>'),
+    "sustainability_compliance": _svg_icon('<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>'),
+    "human_resources": _svg_icon('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+}
+
 DOMAIN_DISPLAY_NAMES = {
     "merchandising": "Merchandising",
     "supply_chain": "Supply Chain & Logistics",
@@ -674,12 +694,12 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     /* Search & Filter Toolbar */
     .toolbar {{
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-faint);
+      background: var(--deck-surface);
+      border: 1px solid var(--deck-border);
       border-radius: 14px;
-      padding: 14px 16px;
-      margin-bottom: 20px;
-      box-shadow: var(--shadow-card);
+      padding: 16px 18px;
+      margin-bottom: 22px;
+      box-shadow: var(--deck-top-highlight);
     }}
 
     .search-row {{
@@ -699,33 +719,36 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       left: 14px;
       top: 50%;
       transform: translateY(-50%);
-      color: var(--text-muted);
-      font-size: 1rem;
+      color: var(--deck-ink-muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       pointer-events: none;
     }}
 
     .search-input {{
       width: 100%;
-      background: var(--bg-input);
-      border: 1px solid var(--border-faint);
+      background: var(--deck-surface-subtle);
+      border: 1px solid var(--deck-border);
       border-radius: 10px;
-      padding: 12px 14px 12px 42px;
-      font-size: 0.95rem;
-      color: var(--text-primary);
+      padding: 11px 14px 11px 42px;
+      font-size: 0.92rem;
+      color: var(--deck-ink);
       font-family: inherit;
       outline: none;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
     }}
 
     .search-input:focus {{
-      border-color: var(--border-focus);
-      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+      border-color: var(--deck-accent);
+      background: var(--deck-surface);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.16);
     }}
 
     .search-input::placeholder,
     #searchInput::placeholder {{
-      color: var(--text-secondary);
-      opacity: 0.9;
+      color: var(--deck-ink-muted);
+      opacity: 0.95;
     }}
 
     .search-clear {{
@@ -735,7 +758,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       transform: translateY(-50%);
       background: none;
       border: none;
-      color: var(--text-muted);
+      color: var(--deck-ink-muted);
       cursor: pointer;
       font-size: 1rem;
       padding: 4px;
@@ -743,7 +766,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .search-clear:hover {{
-      color: var(--text-primary);
+      color: var(--deck-ink);
     }}
 
     /* View Mode Bar */
@@ -756,10 +779,10 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     .view-mode-toggle {{
       display: inline-flex;
-      background: var(--bg-surface);
+      background: var(--deck-surface-subtle);
       padding: 4px;
       border-radius: 12px;
-      border: 1px solid var(--border-faint);
+      border: 1px solid var(--deck-border);
       width: fit-content;
       gap: 4px;
     }}
@@ -768,48 +791,48 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 18px;
+      padding: 8px 16px;
       border-radius: 8px;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       font-weight: 600;
       cursor: pointer;
       border: none;
       background: transparent;
-      color: var(--text-secondary);
-      transition: all 0.15s ease;
+      color: var(--deck-ink-secondary);
+      transition: background-color 0.15s ease, color 0.15s ease;
       font-family: inherit;
     }}
 
     .view-mode-btn:hover {{
-      color: var(--text-primary);
+      color: var(--deck-ink);
     }}
 
     .view-mode-btn.active {{
-      background: var(--accent-blue);
-      color: #0f172a;
+      background: var(--deck-accent);
+      color: var(--deck-accent-ink);
       font-weight: 700;
-      box-shadow: 0 2px 8px rgba(56, 189, 248, 0.3);
+      box-shadow: none;
     }}
 
     .view-mode-btn.active .domain-count {{
-      background: rgba(15, 23, 42, 0.25);
-      color: #0f172a;
+      background: rgba(15, 23, 42, 0.18);
+      color: var(--deck-accent-ink);
     }}
 
     [data-theme="light"] .view-mode-btn.active {{
-      background: #0369a1;
-      color: #ffffff;
+      background: var(--deck-accent);
+      color: var(--deck-accent-ink);
     }}
 
     [data-theme="light"] .view-mode-btn.active .domain-count {{
       background: rgba(255, 255, 255, 0.22);
-      color: #ffffff;
+      color: var(--deck-accent-ink);
     }}
 
     .view-mode-hint {{
       font-size: 0.8rem;
-      color: var(--text-muted);
-      font-style: italic;
+      color: var(--deck-ink-muted);
+      font-style: normal;
     }}
 
     /* Domain Tabs */
@@ -820,44 +843,50 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     }}
 
     .domain-btn {{
-      background: var(--bg-surface);
-      border: 1px solid var(--border-faint);
-      color: var(--text-secondary);
-      padding: 8px 14px;
+      background: var(--deck-surface-subtle);
+      border: 1px solid var(--deck-border);
+      color: var(--deck-ink-secondary);
+      padding: 7px 13px;
       border-radius: 9999px;
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      transition: all 0.15s ease;
+      gap: 7px;
+      transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
       font-family: inherit;
     }}
 
     .domain-btn:hover {{
-      color: var(--text-primary);
-      border-color: var(--border-focus);
+      color: var(--deck-ink);
+      border-color: var(--deck-accent);
     }}
 
     .domain-btn.active {{
-      background: var(--accent-blue);
-      color: #0f172a;
-      border-color: var(--accent-blue);
+      background: var(--deck-accent);
+      color: var(--deck-accent-ink);
+      border-color: var(--deck-accent);
       font-weight: 700;
     }}
 
     .domain-count {{
-      font-size: 0.72rem;
-      padding: 2px 6px;
+      font-size: 0.75rem;
+      padding: 1px 7px;
       border-radius: 9999px;
-      background: rgba(0, 0, 0, 0.15);
+      background: rgba(128, 128, 128, 0.14);
       font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
     }}
 
     .domain-btn.active .domain-count {{
-      background: rgba(15, 23, 42, 0.25);
-      color: #0f172a;
+      background: rgba(15, 23, 42, 0.18);
+      color: var(--deck-accent-ink);
+    }}
+
+    [data-theme="light"] .domain-btn.active .domain-count {{
+      background: rgba(255, 255, 255, 0.22);
+      color: var(--deck-accent-ink);
     }}
 
     /* Persona Tabs */
@@ -2682,55 +2711,97 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     /* Agent Grid */
     .agent-grid {{
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(390px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
       gap: 20px;
     }}
 
+    .domain-section-header {{
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 0 10px;
+      margin-top: 8px;
+      border-bottom: 1px solid var(--deck-border);
+    }}
+
+    .domain-section-header:first-child {{
+      margin-top: 0;
+      padding-top: 2px;
+    }}
+
+    .domain-section-title {{
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      font-family: 'Google Sans', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--deck-ink);
+      letter-spacing: -0.01em;
+    }}
+
+    .domain-section-title svg {{
+      color: var(--deck-accent);
+      flex-shrink: 0;
+    }}
+
+    .domain-section-count {{
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--deck-ink-muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }}
+
     .agent-card {{
-      background: var(--bg-card);
-      border: 1px solid var(--border-faint);
+      background: var(--deck-surface);
+      border: 1px solid var(--deck-border);
       border-radius: 14px;
-      padding: 22px;
+      padding: 20px 22px;
       display: flex;
       flex-direction: column;
-      box-shadow: var(--shadow-card);
-      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: var(--deck-top-highlight);
+      transition: transform 0.2s var(--m-ease-out), border-color 0.2s ease, box-shadow 0.2s ease;
       position: relative;
     }}
 
     .agent-card:hover {{
-      transform: translateY(-3px);
-      border-color: var(--border-focus);
-      box-shadow: 0 14px 30px -8px rgba(0, 0, 0, 0.35);
+      transform: translateY(-2px);
+      border-color: var(--deck-accent);
+      box-shadow: var(--deck-active-shadow);
     }}
 
     .card-top {{
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 12px;
+      align-items: center;
+      margin-bottom: 10px;
       gap: 8px;
     }}
 
     .card-badges {{
       display: flex;
-      gap: 6px;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 8px;
       flex-wrap: wrap;
     }}
 
     .badge-domain {{
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      font-size: 0.72rem;
+      gap: 6px;
+      font-size: 0.75rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      padding: 3px 8px;
-      border-radius: 6px;
-      background: var(--badge-bg);
-      border: 1px solid var(--badge-border);
-      color: var(--badge-text);
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: var(--deck-accent);
     }}
 
     .badge-region {{
@@ -2738,32 +2809,32 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       align-items: center;
       gap: 4px;
       font-size: 0.75rem;
-      font-weight: 700;
-      padding: 3px 8px;
+      font-weight: 600;
+      padding: 2px 8px;
       border-radius: 6px;
-      background: var(--region-bg);
-      border: 1px solid var(--region-border);
-      color: var(--region-text);
+      background: var(--deck-surface-subtle);
+      border: 1px solid var(--deck-border);
+      color: var(--deck-ink-muted);
       font-family: 'JetBrains Mono', monospace;
     }}
 
     .card-title {{
       font-family: 'Google Sans', sans-serif;
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       font-weight: 700;
-      color: var(--text-primary);
+      color: var(--deck-ink);
       margin-bottom: 8px;
-      line-height: 1.35;
+      line-height: 1.32;
       text-wrap: balance;
     }}
 
     .card-desc {{
       font-size: 0.88rem;
-      color: var(--text-secondary);
+      color: var(--deck-ink-secondary);
       line-height: 1.5;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       display: -webkit-box;
-      -webkit-line-clamp: 4;
+      -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }}
@@ -2772,149 +2843,100 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     .persona-row {{
       display: flex;
       flex-wrap: wrap;
+      align-items: center;
       gap: 6px;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }}
 
     .persona-chip {{
-      background: var(--persona-pill-bg);
-      border: 1px solid var(--persona-pill-border);
-      color: var(--persona-pill-text);
-      padding: 3px 8px;
+      background: var(--deck-surface-subtle);
+      border: 1px solid var(--deck-border);
+      color: var(--deck-ink-secondary);
+      padding: 3px 9px;
       border-radius: 6px;
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       font-weight: 600;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
       font-family: inherit;
     }}
 
     .persona-chip:hover {{
-      transform: translateY(-1px);
-      filter: brightness(1.15);
+      border-color: var(--deck-accent);
+      color: var(--deck-ink);
     }}
 
-    /* Target Persona Spotlight & Transformation Box on Agent Card */
-    .card-persona-spotlight {{
-      background: var(--bg-surface);
-      border: 1px solid var(--persona-pill-border);
-      border-radius: 8px;
-      padding: 10px 12px;
-      margin-bottom: 12px;
-    }}
-
-    .card-persona-spotlight-title {{
-      font-size: 0.74rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--persona-pill-text);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      margin-bottom: 6px;
-    }}
-
-    .card-persona-spotlight-roles {{
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      font-size: 0.78rem;
-      color: var(--text-secondary);
-      line-height: 1.4;
-    }}
-
-    .card-persona-spotlight-roles strong {{
-      color: var(--text-primary);
-    }}
-
-    .card-transform-box {{
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 12px;
-    }}
-
-    .card-transform-without {{
-      background: var(--without-bg);
-      border: 1px solid var(--without-border);
-      color: var(--without-text);
-      padding: 8px 10px;
-      border-radius: 6px;
-      font-size: 0.76rem;
-      line-height: 1.4;
-    }}
-
-    .card-transform-with {{
-      background: var(--with-bg);
-      border: 1px solid var(--with-border);
-      color: var(--with-text);
-      padding: 8px 10px;
-      border-radius: 6px;
-      font-size: 0.76rem;
-      line-height: 1.4;
-    }}
-
-    .card-transform-split {{
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-    }}
-
-    .card-split-tag {{
-      padding: 6px 8px;
-      border-radius: 6px;
-      font-size: 0.72rem;
-      line-height: 1.35;
-    }}
-
-    .card-split-tag.auto {{
-      background: var(--with-bg);
-      border: 1px solid var(--with-border);
-      color: var(--with-text);
-    }}
-
-    .card-split-tag.aug {{
-      background: var(--aug-bg);
-      border: 1px solid var(--aug-border);
-      color: var(--aug-text);
-    }}
-
-    /* KPI Tags */
-    .kpi-row {{
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 16px;
-    }}
-
-    .kpi-pill {{
-      font-size: 0.72rem;
+    .persona-overflow-tag {{
+      font-size: 0.75rem;
       font-weight: 600;
-      padding: 3px 8px;
-      border-radius: 6px;
-      background: var(--kpi-bg);
-      border: 1px solid var(--kpi-border);
-      color: var(--kpi-text);
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
+      color: var(--deck-ink-muted);
+      padding: 0 4px;
+      font-variant-numeric: tabular-nums;
+    }}
+
+    /* Clean Key Metrics List (replaces dense KPI pills) */
+    .kpi-list {{
+      border-left: 2px solid var(--deck-accent);
+      padding-left: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 14px;
+    }}
+
+    .kpi-line {{
+      font-size: 0.78rem;
+      line-height: 1.42;
+      color: var(--deck-ink-secondary);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }}
+
+    .kpi-line strong {{
+      color: var(--deck-ink);
+      font-weight: 600;
+    }}
+
+    .kpi-extra-item {{
+      display: none;
+    }}
+
+    .kpi-list.expanded .kpi-extra-item {{
+      display: -webkit-box;
+    }}
+
+    .kpi-more-btn {{
+      align-self: flex-start;
+      background: none;
+      border: none;
+      padding: 2px 0;
+      color: var(--deck-accent);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }}
+
+    .kpi-more-btn:hover {{
+      text-decoration: underline;
     }}
 
     /* Prompts Collapsible */
     .prompts-container {{
-      border-top: 1px solid var(--border-color);
-      padding-top: 12px;
-      margin-bottom: 16px;
+      border-top: 1px solid var(--deck-border);
+      padding-top: 10px;
+      margin-bottom: 14px;
     }}
 
     .prompts-toggle {{
       background: none;
       border: none;
-      color: var(--text-secondary);
+      color: var(--deck-ink-secondary);
       font-size: 0.78rem;
       font-weight: 600;
       display: flex;
@@ -2923,10 +2945,17 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       width: 100%;
       cursor: pointer;
       padding: 2px 0;
+      font-family: inherit;
+    }}
+
+    .prompts-toggle-label {{
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }}
 
     .prompts-toggle:hover {{
-      color: var(--accent-blue);
+      color: var(--deck-accent);
     }}
 
     .prompts-list {{
@@ -2942,12 +2971,12 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
     .prompt-item {{
       font-size: 0.78rem;
-      color: var(--text-secondary);
-      background: var(--bg-surface);
-      padding: 6px 10px;
+      color: var(--deck-ink-secondary);
+      background: var(--deck-surface-subtle);
+      padding: 7px 10px;
       border-radius: 6px;
-      border-left: 3px solid var(--accent-indigo);
-      line-height: 1.4;
+      border-left: 2px solid var(--deck-accent);
+      line-height: 1.45;
       font-style: italic;
     }}
 
@@ -2957,8 +2986,8 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       gap: 8px;
       align-items: center;
       margin-top: auto;
-      padding-top: 14px;
-      border-top: 1px solid var(--border-color);
+      padding-top: 12px;
+      border-top: 1px solid var(--deck-border);
     }}
 
     .btn-watch {{
@@ -2967,20 +2996,20 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       align-items: center;
       justify-content: center;
       gap: 6px;
-      background: var(--accent-blue);
-      color: #0f172a;
+      background: var(--deck-accent);
+      color: var(--deck-accent-ink);
       padding: 9px 14px;
       border-radius: 8px;
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       font-weight: 700;
       border: none;
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: filter 0.15s ease, transform 0.15s ease;
+      font-family: inherit;
     }}
 
     .btn-watch:hover {{
-      background: var(--accent-blue-hover);
-      color: #ffffff;
+      filter: brightness(1.08);
       transform: translateY(-1px);
     }}
 
@@ -2988,21 +3017,21 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      background: var(--bg-surface);
-      color: var(--text-primary);
-      padding: 9px 12px;
+      gap: 5px;
+      background: var(--deck-surface-subtle);
+      color: var(--deck-ink);
+      padding: 8px 12px;
       border-radius: 8px;
       font-size: 0.82rem;
       font-weight: 600;
       text-decoration: none;
-      border: 1px solid var(--border-color);
-      transition: all 0.15s ease;
+      border: 1px solid var(--deck-border);
+      transition: border-color 0.15s ease, color 0.15s ease;
     }}
 
     .btn-showcase:hover {{
-      border-color: var(--border-focus);
-      color: var(--accent-blue);
+      border-color: var(--deck-accent);
+      color: var(--deck-accent);
     }}
 
     .btn-doc {{
@@ -3011,20 +3040,20 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       justify-content: center;
       gap: 5px;
       background: none;
-      color: var(--text-muted);
+      color: var(--deck-ink-muted);
       padding: 8px 10px;
       border-radius: 8px;
       font-size: 0.8rem;
       font-weight: 500;
       text-decoration: none;
       border: 1px solid transparent;
-      transition: all 0.15s ease;
+      transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
     }}
 
     .btn-doc:hover {{
-      color: var(--text-primary);
-      border-color: var(--border-color);
-      background: var(--bg-surface);
+      color: var(--deck-ink);
+      border-color: var(--deck-border);
+      background: var(--deck-surface-subtle);
     }}
 
     /* No Results State */
@@ -3582,7 +3611,7 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     <section class="toolbar">
       <div class="search-row">
         <div class="search-input-wrapper">
-          <span class="search-icon">🔍</span>
+          <span class="search-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
           <input type="text" id="searchInput" class="search-input" placeholder="Search 100 agents by name, KPI (e.g. TRIR, OTIF, ROAS), business question, or BigQuery table..." autocomplete="off">
           <button id="searchClear" class="search-clear" aria-label="Clear search">✕</button>
         </div>
@@ -3592,10 +3621,10 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       <div class="view-mode-bar" id="viewModeBar" role="tablist" aria-label="Catalog View Mode">
         <div class="view-mode-toggle">
           <button class="view-mode-btn active" data-view="domain" role="tab" aria-selected="true">
-            <span>🏢</span> Browse by Domain <span class="domain-count">9</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg> Browse by Domain <span class="domain-count">9</span>
           </button>
           <button class="view-mode-btn" data-view="persona" role="tab" aria-selected="false">
-            <span>👤</span> Browse by Persona <span class="domain-count">10</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Browse by Persona <span class="domain-count">10</span>
           </button>
         </div>
         <div class="view-mode-hint" id="viewModeHint">
@@ -3606,10 +3635,10 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       <!-- Domain Pills -->
       <div class="domain-pills" id="domainPills">
         <button class="domain-btn active" data-domain="all">
-          <span>🌐</span> All Domains <span class="domain-count">{total_agents}</span>
+          {DOMAIN_SVG_ICONS["all"]} All Domains <span class="domain-count">{total_agents}</span>
         </button>
         {"".join([f'''<button class="domain-btn" data-domain="{d}">
-          <span>{DOMAIN_ICONS[d]}</span> {DOMAIN_DISPLAY_NAMES[d]} <span class="domain-count">{domain_counts.get(d, 0)}</span>
+          {DOMAIN_SVG_ICONS[d]} {DOMAIN_DISPLAY_NAMES[d]} <span class="domain-count">{domain_counts.get(d, 0)}</span>
         </button>''' for d in DOMAIN_ORDER])}
       </div>
 
@@ -3938,6 +3967,9 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
     let activeDomain = 'all';
     const PERSONA_ARCHETYPES = {personas_json};
     const PERSONA_MAP = Object.fromEntries(PERSONA_ARCHETYPES.map(p => [p.id, p]));
+    const DOMAIN_SVG_ICONS = {json.dumps(DOMAIN_SVG_ICONS)};
+    const DOMAIN_ORDER = {json.dumps(DOMAIN_ORDER)};
+    const DOMAIN_DISPLAY_NAMES = {json.dumps(DOMAIN_DISPLAY_NAMES)};
     const PERSONA_ALIASES = {{
       vp_merchandising: 'merchandising_buyers',
       c_suite_exec: 'exec_leadership',
@@ -5651,27 +5683,43 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
       noResults.style.display = 'none';
 
-      agentGrid.innerHTML = filtered.map(agent => {{
-        const kpiPills = (agent.kpis || []).map(kpi => 
-          `<span class="kpi-pill">🎯 ${{htmlEscape(kpi)}}</span>`
-        ).join('');
+      function renderAgentCard(agent) {{
+        const domainSvg = DOMAIN_SVG_ICONS[agent.domain] || DOMAIN_SVG_ICONS.all || '';
+        const kpis = agent.kpis || [];
+        const kpiLines = kpis.map((kpi, idx) => {{
+          const extraClass = idx >= 2 ? ' kpi-extra-item' : '';
+          const colonIdx = kpi.indexOf(':');
+          if (colonIdx > 0 && colonIdx < 48) {{
+            const label = kpi.slice(0, colonIdx);
+            const rest = kpi.slice(colonIdx + 1).trim();
+            return `<div class="kpi-line${{extraClass}}"><strong>${{htmlEscape(label)}}:</strong> ${{htmlEscape(rest)}}</div>`;
+          }}
+          return `<div class="kpi-line${{extraClass}}">${{htmlEscape(kpi)}}</div>`;
+        }}).join('');
+        const kpiMoreBtn = kpis.length > 2
+          ? `<button type="button" class="kpi-more-btn" onclick="toggleKpis(this)" data-more-count="${{kpis.length - 2}}" aria-expanded="false">+${{kpis.length - 2}} more metrics</button>`
+          : '';
 
-        const promptItems = (agent.prompts || []).map((prompt, idx) => 
+        const promptItems = (agent.prompts || []).map((prompt) =>
           `<div class="prompt-item">"${{htmlEscape(prompt)}}"</div>`
         ).join('');
 
-        // Persona Chips for Domain View
-        const personaChips = (agent.personas || []).slice(0, 3).map(p => 
+        // Persona Chips for Domain View (max 2 visible + quiet overflow count)
+        const allPersonas = agent.personas || [];
+        const visiblePersonas = allPersonas.slice(0, 2);
+        const overflowPersonas = allPersonas.length - visiblePersonas.length;
+        const personaChips = visiblePersonas.map(p =>
           `<button class="persona-chip" onclick="switchToPersonaArchetype('${{p.archetype}}')" title="${{htmlEscape(p.title)}}: ${{htmlEscape(p.description)}}">
-            <span>👤</span> ${{htmlEscape(p.title)}}
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>${{htmlEscape(p.title)}}</span>
           </button>`
-        ).join('');
+        ).join('') + (overflowPersonas > 0 ? `<span class="persona-overflow-tag">+${{overflowPersonas}}</span>` : '');
 
         return `
           <div class="agent-card" data-agent-id="${{agent.id}}">
             <div class="card-top">
               <div class="card-badges">
-                <span class="badge-domain">${{agent.icon}} ${{htmlEscape(agent.domain_display)}}</span>
+                <span class="badge-domain">${{domainSvg}} ${{htmlEscape(agent.domain_display)}}</span>
                 <span class="badge-region">${{agent.location}}</span>
               </div>
             </div>
@@ -5680,13 +5728,16 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
             ${{personaChips ? `<div class="persona-row">${{personaChips}}</div>` : ''}}
 
-            ${{kpiPills ? `<div class="kpi-row">${{kpiPills}}</div>` : ''}}
+            ${{kpiLines ? `<div class="kpi-list">${{kpiLines}}${{kpiMoreBtn}}</div>` : ''}}
 
             ${{promptItems ? `
               <div class="prompts-container">
                 <button class="prompts-toggle" onclick="togglePrompts(this)" aria-expanded="false">
-                  <span>💬 Sample Business Questions (${{agent.prompts.length}})</span>
-                  <span class="toggle-icon">▼</span>
+                  <span class="prompts-toggle-label">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Sample Business Questions (${{agent.prompts.length}})
+                  </span>
+                  <span class="toggle-icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
                 </button>
                 <div class="prompts-list">
                   ${{promptItems}}
@@ -5696,18 +5747,50 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
 
             <div class="card-actions">
               <button class="btn-watch" onclick="openVideoModal('${{agent.name}}')">
-                <span>🎬</span> Watch Demo
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span>Watch Demo</span>
               </button>
               <a href="${{agent.demo_html}}" target="_blank" rel="noopener noreferrer" class="btn-showcase" title="Open Dedicated Showcase Player">
-                <span>📄</span> Showcase
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+                <span>Showcase</span>
               </a>
               <a href="https://github.com/rajanm/retail-enterprise-agents/blob/master/${{agent.readme}}" target="_blank" rel="noopener noreferrer" class="btn-doc" title="View Technical README">
-                <span>📖</span> Docs
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                <span>Docs</span>
               </a>
             </div>
           </div>
         `;
-      }}).join('');
+      }}
+
+      if (activeDomain === 'all' && !query) {{
+        const groupedHtml = [];
+        DOMAIN_ORDER.forEach(domainKey => {{
+          const domainAgents = filtered.filter(a => a.domain === domainKey);
+          if (!domainAgents.length) return;
+          const domainLabel = DOMAIN_DISPLAY_NAMES[domainKey] || domainAgents[0].domain_display || domainKey;
+          const domainSvg = DOMAIN_SVG_ICONS[domainKey] || '';
+          groupedHtml.push(`
+            <div class="domain-section-header" data-domain-section="${{domainKey}}">
+              <h3 class="domain-section-title">${{domainSvg}} <span>${{htmlEscape(domainLabel)}}</span></h3>
+              <span class="domain-section-count">${{domainAgents.length}} agents</span>
+            </div>
+          `);
+          groupedHtml.push(domainAgents.map(renderAgentCard).join(''));
+        }});
+        agentGrid.innerHTML = groupedHtml.join('');
+      }} else {{
+        agentGrid.innerHTML = filtered.map(renderAgentCard).join('');
+      }}
+    }}
+
+    function toggleKpis(btn) {{
+      const list = btn.closest('.kpi-list');
+      if (!list) return;
+      const isExpanded = list.classList.toggle('expanded');
+      btn.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+      const moreCount = btn.getAttribute('data-more-count') || '';
+      btn.textContent = isExpanded ? 'Show fewer metrics' : `+${{moreCount}} more metrics`;
     }}
 
     function togglePrompts(btn) {{
@@ -5717,11 +5800,11 @@ def build_portal_html(agents_data: list[dict], domains_data: dict) -> str:
       if (isOpen) {{
         list.classList.remove('open');
         btn.setAttribute('aria-expanded', 'false');
-        if (icon) icon.textContent = '▼';
+        if (icon) icon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
       }} else {{
         list.classList.add('open');
         btn.setAttribute('aria-expanded', 'true');
-        if (icon) icon.textContent = '▲';
+        if (icon) icon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>';
       }}
     }}
 

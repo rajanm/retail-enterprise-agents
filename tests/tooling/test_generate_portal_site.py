@@ -806,6 +806,32 @@ def test_coverflow_faint_neighbors_flip_and_maximize_revert():
         assert snippet in html, f"Missing Cover Flow polish snippet: {snippet}"
 
 
+def test_functional_view_minimalist_cards_and_svg_icons():
+    html = build_portal_html([], {})
+
+    for snippet in [
+        "const DOMAIN_SVG_ICONS =",
+        ".domain-section-header",
+        ".kpi-list",
+        ".kpi-line",
+        ".kpi-more-btn",
+        "function toggleKpis(",
+        "function renderAgentCard(",
+    ]:
+        assert snippet in html, f"Missing Functional View upgrade snippet: {snippet}"
+
+    render_agents_match = re.search(
+        r"function renderAgents\(\)\s*\{(.*?)\n    function toggleKpis\(",
+        html,
+        re.DOTALL,
+    )
+    assert render_agents_match is not None
+    render_agents_body = render_agents_match.group(1)
+    for emoji in ["🎯", "💬", "🎬", "📄", "📖", "👤"]:
+        assert emoji not in render_agents_body, f"Unexpected emoji {emoji} in renderAgents()"
+
+
+
 
 
 
